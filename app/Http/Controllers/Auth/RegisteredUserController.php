@@ -44,8 +44,6 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        Auth::login($user);
-
-        return redirect('/');
+        return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng đăng nhập.');
     }
 }
