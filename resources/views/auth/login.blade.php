@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Đăng nhập</title>
+    <title>Đăng nhập - SanBongLFC</title>
     <link href="/css/app.css" rel="stylesheet">
 </head>
 <body style="background:#f8fafc;">
@@ -42,11 +42,13 @@
 
         <div style="text-align:center;color:#6b7280;font-size:14px;margin-bottom:20px;">Hoặc đăng nhập bằng email</div>
 
+
         @if (session('success'))
             <div style="background:#f0fdf4;color:#15803d;padding:14px;border:1px solid #86efac;border-radius:12px;margin-bottom:20px;">
                 {{ session('success') }}
             </div>
         @endif
+
 
         @if ($errors->any())
             <div style="background:#fef2f2;color:#991b1b;padding:14px;border:1px solid #fca5a5;border-radius:12px;margin-bottom:20px;">
