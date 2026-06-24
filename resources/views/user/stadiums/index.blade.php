@@ -47,11 +47,10 @@
                             {{ number_format($stadium->price) }}đ/giờ
                         </span>
                     </div>
-
-                    {{-- <a href="{{ route('stadiums.show', $stadium->id) }}"
-                       class="btn btn-success mt-2">
-                        Xem chi tiết
-                    </a> --}}
+<a href="{{ route('stadiums.show', $stadium->id) }}"
+   class="btn-detail">
+    ⚽ Xem chi tiết
+</a>
 
                 </div>
 

@@ -9,7 +9,8 @@ use App\Http\Controllers\Auth\LoginController;
 
 Route::get('/', [StadiumController::class, 'index'])
     ->name('home');
-
+Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
+    ->name('stadiums.show');
 
 Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('/register', [RegisteredUserController::class, 'store'])->name('register.store');
