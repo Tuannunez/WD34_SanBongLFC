@@ -19,16 +19,7 @@ return new class extends Migration
         });
 
         // 2. Cơ sở sân bóng
-        Schema::create('stadiums', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('phone')->nullable();
-            $table->string('address');
-            $table->text('description')->nullable();
-            $table->boolean('status')->default(true);
-            $table->timestamps();
-        });
-
+   
         // 3. Loại sân
         Schema::create('field_types', function (Blueprint $table) {
             $table->id();

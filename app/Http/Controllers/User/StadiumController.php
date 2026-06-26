@@ -24,41 +24,38 @@ class StadiumController extends Controller
     }
 
     public function show($id)
-{
-    $stadium = Stadium::findOrFail($id);
+    {
+        $stadium = Stadium::findOrFail($id);
 
-    $timeSlots = [
-        [
-            'session' => 'Buổi sáng',
-            'slots' => [
-                ['time' => '06:00 - 08:00', 'price' => 160000],
-                ['time' => '08:00 - 10:00', 'price' => 160000],
-                ['time' => '10:00 - 12:00', 'price' => 140000],
+        $timeSlots = [
+            [
+                'session' => 'Buổi sáng',
+                'slots' => [
+                    ['time' => '06:00 - 08:00', 'price' => 160000],
+                    ['time' => '08:00 - 10:00', 'price' => 160000],
+                    ['time' => '10:00 - 12:00', 'price' => 140000],
+                ]
+            ],
+            [
+                'session' => 'Buổi chiều',
+                'slots' => [
+                    ['time' => '14:00 - 16:00', 'price' => 180000],
+                    ['time' => '16:00 - 18:00', 'price' => 200000],
+                ]
+            ],
+            [
+                'session' => 'Buổi tối',
+                'slots' => [
+                    ['time' => '18:00 - 19:30', 'price' => 240000],
+                    ['time' => '19:30 - 21:00', 'price' => 260000],
+                    ['time' => '21:00 - 22:30', 'price' => 200000],
+                ]
             ]
-        ],
-        [
-            'session' => 'Buổi chiều',
-            'slots' => [
-                ['time' => '14:00 - 16:00', 'price' => 180000],
-                ['time' => '16:00 - 18:00', 'price' => 200000],
-            ]
-        ],
-        [
-            'session' => 'Buổi tối',
-            'slots' => [
-                ['time' => '18:00 - 19:30', 'price' => 240000],
-                ['time' => '19:30 - 21:00', 'price' => 260000],
-                ['time' => '21:00 - 22:30', 'price' => 200000],
-            ]
-        ]
-    ];
+        ];
 
-    return view(
-        'user.stadiums.show',
-        compact('stadium', 'timeSlots')
-    );
-}
-
-    
-    
+        return view(
+            'user.stadiums.show',
+            compact('stadium', 'timeSlots')
+        );
+    }
 }
