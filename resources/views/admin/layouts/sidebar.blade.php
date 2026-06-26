@@ -1,6 +1,6 @@
 <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-brand">
-        <i class="bi bi-dribbble me-2"></i>
+        <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC" class="sidebar-logo" />
         SanBongLFC
     </div>
 

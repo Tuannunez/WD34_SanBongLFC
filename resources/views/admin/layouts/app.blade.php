@@ -54,10 +54,18 @@
             height: 64px;
             display: flex;
             align-items: center;
+            gap: 10px;
             padding: 0 20px;
             font-size: 20px;
             font-weight: bold;
             border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            display: block;
         }
 
         .sidebar-menu {
