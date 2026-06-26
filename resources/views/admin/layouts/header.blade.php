@@ -39,7 +39,7 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item text-danger" href="#">
+                    <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); document.getElementById('admin-logout-form').submit();">
                         <i class="bi bi-box-arrow-right me-2"></i>
                         Đăng xuất
                     </a>
@@ -48,3 +48,6 @@
         </div>
     </div>
 </header>
+<form id="admin-logout-form" method="POST" action="{{ route('logout') }}" style="display:none;">
+    @csrf
+</form>

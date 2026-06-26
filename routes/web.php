@@ -24,10 +24,26 @@ Route::post('/logout', function (Request $request) {
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', function () {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (Auth::user()->role !== 'admin') {
+            return redirect('/');
+        }
+
         return redirect()->route('admin.dashboard');
     });
 
     Route::get('/dashboard', function () {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (Auth::user()->role !== 'admin') {
+            return redirect('/');
+        }
+
         return view('admin.dashboard');
     })->name('dashboard');
 });
