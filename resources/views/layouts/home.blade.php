@@ -80,27 +80,9 @@
         </div>
     </section>
 
-    <main class="content">
-        <div class="section-head">
-            <h2>Sân nổi bật</h2>
-            <a class="see-more" href="#">Xem tất cả →</a>
-        </div>
-        <div class="cards">
-            @for ($i = 1; $i <= 6; $i++)
-                <div class="pitch-card">
-                    <div class="pitch-thumb">⚽</div>
-                    <div class="pitch-body">
-                        <div class="pitch-title">Sân bóng {{ $i }}</div>
-                        <div class="pitch-meta">Địa chỉ: Quận {{ chr(64 + $i) }}, TP.HCM</div>
-                        <div class="pitch-footer">
-                            <span>⭐ 4.{{ $i }}</span>
-                            <span>{{ 5 + $i }} km</span>
-                        </div>
-                    </div>
-                </div>
-            @endfor
-        </div>
-    </main>
+    <main class="container">
+    @yield('content')
+</main>
 
     <footer>
         <div class="footer-top">
