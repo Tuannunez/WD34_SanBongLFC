@@ -30,6 +30,11 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
+            if (Auth::user()->status === false) {
+                Auth::logout();
+                return redirect()->route('login')->withErrors(['email' => 'Tài khoản của bạn đã bị khóa.']);
+            }
+
             return Auth::user()->role === 'admin'
                 ? redirect()->route('admin.dashboard')
                 : redirect('/');

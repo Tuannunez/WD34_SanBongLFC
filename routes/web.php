@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\StadiumController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
 
 Route::get('/', [StadiumController::class, 'index'])
     ->name('home');
@@ -48,4 +50,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         return view('admin.dashboard');
     })->name('dashboard');
+
+    Route::resource('roles', RoleController::class);
+    Route::resource('users', UserController::class)->except(['show']);
+    Route::match(['get', 'post', 'patch'], 'users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 });
