@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\FieldType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FieldTypeController extends Controller
 {
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!auth()->check() || auth()->user()->role !== 'admin') {
+            if (!Auth::check() || Auth::user()->role !== 'admin') {
                 return redirect('/');
             }
 
@@ -42,7 +43,7 @@ class FieldTypeController extends Controller
             'name' => 'required|string|max:255',
             'number_of_players' => 'nullable|integer',
             'description' => 'nullable|string',
-            'status' => 'boolean',
+            'status' => 'nullable',
         ]);
 
         $data['status'] = $request->has('status');
@@ -63,7 +64,7 @@ class FieldTypeController extends Controller
             'name' => 'required|string|max:255',
             'number_of_players' => 'nullable|integer',
             'description' => 'nullable|string',
-            'status' => 'boolean',
+            'status' => 'nullable',
         ]);
 
         $data['status'] = $request->has('status');

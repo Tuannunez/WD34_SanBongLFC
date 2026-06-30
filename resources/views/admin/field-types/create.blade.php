@@ -10,6 +10,16 @@
             <form action="{{ route('admin.field-types.store') }}" method="POST">
                 @csrf
 
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Tên loại</label>
@@ -24,7 +34,7 @@
                         <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
                     </div>
                     <div class="col-12 form-check">
-                        <input type="checkbox" name="status" class="form-check-input" id="status" checked>
+                        <input type="checkbox" name="status" class="form-check-input" id="status" value="1" {{ old('status', true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="status">Hoạt động</label>
                     </div>
                 </div>

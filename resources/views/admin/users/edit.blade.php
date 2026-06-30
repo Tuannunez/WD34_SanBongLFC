@@ -10,6 +10,16 @@
                 @csrf
                 @method('PUT')
 
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="mb-3">
                     <label class="form-label">Tên</label>
                     <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
