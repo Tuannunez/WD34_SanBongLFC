@@ -15,6 +15,8 @@ return new class extends Migration
     $table->id();
     $table->string('name');
     $table->string('image');
+    $table->string('phone')->nullable();   // Số điện thoại
+    $table->string('email')->nullable();   // Email
     $table->string('address');
     $table->time('open_time');
     $table->time('close_time');

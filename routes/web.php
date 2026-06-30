@@ -50,6 +50,4 @@ Route::prefix('admin')->name('admin.')->group(function () {
     })->name('dashboard');
 
     Route::resource('field-types', App\Http\Controllers\Admin\FieldTypeController::class);
-    Route::resource('stadiums', App\Http\Controllers\Admin\StadiumsController::class)
-        ->except(['create', 'store']);
 });
