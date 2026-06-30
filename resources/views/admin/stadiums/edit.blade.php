@@ -33,6 +33,17 @@
                         <input type="text" name="address" class="form-control" value="{{ old('address', $stadium->address) }}" required>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label">Loại sân</label>
+                        <select name="field_type_id" class="form-select" required>
+                            <option value="">Chọn loại sân</option>
+                            @foreach($fieldTypes as $fieldType)
+                                <option value="{{ $fieldType->id }}" {{ old('field_type_id', $stadium->field_type_id) == $fieldType->id ? 'selected' : '' }}>
+                                    {{ $fieldType->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label">Giờ mở</label>
                         <input type="time" name="open_time" class="form-control" value="{{ old('open_time', $stadium->open_time) }}" required>
                     </div>

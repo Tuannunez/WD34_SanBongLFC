@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Stadium;
+use App\Models\FieldType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,13 +19,16 @@ class StadiumsController extends Controller
 
     public function create()
     {
-        return view('admin.stadiums.create');
+        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
+
+        return view('admin.stadiums.create', compact('fieldTypes'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|max:255',
+            'field_type_id' => 'required|exists:field_types,id',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',
             'email' => 'nullable|email|max:255',
@@ -51,13 +55,16 @@ class StadiumsController extends Controller
 
     public function edit(Stadium $stadium)
     {
-        return view('admin.stadiums.edit', compact('stadium'));
+        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
+
+        return view('admin.stadiums.edit', compact('stadium', 'fieldTypes'));
     }
 
     public function update(Request $request, Stadium $stadium)
     {
         $data = $request->validate([
             'name' => 'required|max:255',
+            'field_type_id' => 'required|exists:field_types,id',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',
             'email' => 'nullable|email|max:255',

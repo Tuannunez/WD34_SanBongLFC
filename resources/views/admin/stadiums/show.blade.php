@@ -16,6 +16,7 @@
                     <p><strong>Địa chỉ:</strong> {{ $stadium->address }}</p>
                     <p><strong>Số điện thoại:</strong> {{ $stadium->phone }}</p>
                     <p><strong>Email:</strong> {{ $stadium->email }}</p>
+                    <p><strong>Loại sân:</strong> {{ $stadium->fieldType?->name ?? 'Chưa chọn' }}</p>
                     <p><strong>Giờ hoạt động:</strong> {{ $stadium->open_time }} - {{ $stadium->close_time }}</p>
                     <a href="{{ route('admin.stadiums.index') }}" class="btn btn-secondary">Quay lại</a>
                 </div>
