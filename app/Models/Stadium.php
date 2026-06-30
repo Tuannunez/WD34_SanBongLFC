@@ -10,10 +10,9 @@ class Stadium extends Model
         'name',
         'image',
         'address',
+        'phone',
+        'email',
         'open_time',
         'close_time',
-        'rating',
-        'price',
-        'description'
     ];
 }
