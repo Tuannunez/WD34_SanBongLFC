@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StadiumsController;
 use App\Http\Controllers\Admin\FieldTypeController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\BookingServiceController;
 
 Route::middleware(['web'])->group(function () {
     Route::get('/', [StadiumController::class, 'index'])
@@ -60,5 +62,7 @@ Route::middleware(['web'])->group(function () {
 
     Route::resource('stadiums', StadiumsController::class);
     Route::resource('field-types', FieldTypeController::class);
+    Route::resource('services', ServiceController::class);
+    Route::resource('booking-services', BookingServiceController::class);
     });
 });
