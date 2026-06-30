@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -13,7 +14,7 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            $user = auth()->user();
+            $user = Auth::user();
             if (!$user || $user->role !== 'admin') {
                 return redirect('/');
             }
@@ -40,7 +41,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'string'],
-            'status' => ['nullable', 'boolean'],
+            'status' => ['nullable'],
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -64,7 +65,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8'],
             'role' => ['required', 'string'],
-            'status' => ['nullable', 'boolean'],
+            'status' => ['nullable'],
         ]);
 
         if (!empty($data['password'])) {
