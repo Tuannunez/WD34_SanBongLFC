@@ -36,32 +36,32 @@ class DefaultDataSeeder extends Seeder
             ],
         ]);
 
-    //     DB::table('field_types')->insertOrIgnore([
-    //         [
-    //             'name' => 'Sân 5 người',
-    //             'number_of_players' => 5,
-    //             'description' => 'Loại sân dành cho 5 người mỗi đội',
-    //             'status' => true,
-    //             'created_at' => now(),
-    //             'updated_at' => now(),
-    //         ],
-    //         [
-    //             'name' => 'Sân 7 người',
-    //             'number_of_players' => 7,
-    //             'description' => 'Loại sân dành cho 7 người mỗi đội',
-    //             'status' => true,
-    //             'created_at' => now(),
-    //             'updated_at' => now(),
-    //         ],
-    //         [
-    //             'name' => 'Sân 11 người',
-    //             'number_of_players' => 11,
-    //             'description' => 'Loại sân tiêu chuẩn 11 người',
-    //             'status' => true,
-    //             'created_at' => now(),
-    //             'updated_at' => now(),
-    //         ],
-    //     ]);
+        DB::table('field_types')->insertOrIgnore([
+            [
+                'name' => 'Sân 5',
+                'number_of_players' => 5,
+                'description' => 'Loại sân dành cho 5 người mỗi đội',
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Sân 7',
+                'number_of_players' => 7,
+                'description' => 'Loại sân dành cho 7 người mỗi đội',
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Sân 11',
+                'number_of_players' => 11,
+                'description' => 'Loại sân tiêu chuẩn 11 người',
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
 
     //     DB::table('time_slots')->insertOrIgnore([
     //         [

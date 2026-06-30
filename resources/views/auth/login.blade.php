@@ -60,7 +60,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login.store') }}">
+        <form method="POST" action="/login">
             @csrf
 
             <div style="margin-bottom:16px;">
