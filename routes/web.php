@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\StadiumsController;
 
 Route::get('/', [StadiumController::class, 'index'])
     ->name('home');
@@ -54,4 +55,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class)->except(['show']);
     Route::match(['get', 'post', 'patch'], 'users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    Route::resource('stadiums', StadiumsController::class);
 });

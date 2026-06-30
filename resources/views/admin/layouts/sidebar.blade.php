@@ -25,7 +25,7 @@
 
         <div class="sidebar-title">Quản lý sân bóng</div>
 
-        <a href="{{ url('/admin/stadiums') }}" class="sidebar-link {{ request()->is('admin/stadiums*') ? 'active' : '' }}">
+        <a href="{{ url('admin/stadiums') }}" class="sidebar-link {{ request()->is('admin/stadiums*') ? 'active' : '' }}">
             <i class="bi bi-building"></i>
             Cơ sở sân bóng
         </a>
