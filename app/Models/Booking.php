@@ -3,45 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Booking extends Model
 {
-    protected $fillable = [
-        'booking_code',
-        'user_id',
-        'promotion_id',
-        'customer_name',
-        'customer_phone',
-        'customer_email',
-        'total_amount',
-        'discount_amount',
-        'final_amount',
-        'status',
-        'note',
-    ];
+    protected $table = 'bookings';
 
-    public function user()
+    protected $guarded = [];
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function promotion()
+    public function bookingDetails(): HasMany
     {
-        return $this->belongsTo(Promotion::class);
+        return $this->hasMany(BookingDetail::class, 'booking_id');
     }
 
-    public function bookingDetails()
+    public function bookingServices(): HasMany
     {
-        return $this->hasMany(BookingDetail::class);
+        return $this->hasMany(BookingService::class, 'booking_id');
     }
 
-    public function bookingServices()
+    public function details(): HasMany
     {
-        return $this->hasMany(BookingService::class);
+        return $this->bookingDetails();
     }
 
-    public function payment()
+    public function services(): HasMany
     {
-        return $this->hasOne(Payment::class);
+        return $this->bookingServices();
     }
 }

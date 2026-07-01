@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Stadium;
+use App\Models\Field;
+use App\Models\Service;
+use App\Models\TimeSlot;
 use App\Models\FieldType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -48,9 +51,22 @@ class StadiumsController extends Controller
             ->with('success', 'Thêm cơ sở sân thành công.');
     }
 
-    public function show(Stadium $stadium)
+    public function show($id)
     {
-        return view('admin.stadiums.show', compact('stadium'));
+        $stadium = Stadium::findOrFail($id);
+
+        $fields = Field::where('stadium_id', $stadium->id)->get();
+
+        $timeSlots = TimeSlot::query()->get();
+
+        $services = Service::query()->get();
+
+        return view('user.stadiums.show', compact(
+            'stadium',
+            'fields',
+            'timeSlots',
+            'services'
+        ));
     }
 
     public function edit(Stadium $stadium)
