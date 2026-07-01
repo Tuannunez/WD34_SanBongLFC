@@ -14,7 +14,7 @@ class BookingController extends Controller
 {
     public function index()
     {
-        $bookings = DB::table('bookings')
+        $query = DB::table('bookings')
             ->leftJoin('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
             ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
             ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
@@ -28,8 +28,13 @@ class BookingController extends Controller
                 'time_slots.start_time as slot_start_time',
                 'time_slots.end_time as slot_end_time'
             )
-            ->orderByDesc('bookings.id')
-            ->paginate(10);
+            ->orderByDesc('bookings.id');
+
+        if (Schema::hasColumn('bookings', 'status')) {
+            $query->where('bookings.status', '!=', 'cancelled');
+        }
+
+        $bookings = $query->paginate(10);
 
         return view('user.bookings.index', compact('bookings'));
     }
@@ -331,6 +336,61 @@ class BookingController extends Controller
                 'booking_detail_data' => $bookingDetailData ?? null,
                 'bookings_columns' => Schema::hasTable('bookings') ? Schema::getColumnListing('bookings') : null,
                 'booking_details_columns' => Schema::hasTable('booking_details') ? Schema::getColumnListing('booking_details') : null,
+            ]);
+        }
+    }
+
+    public function destroy($booking)
+    {
+        $bookingData = DB::table('bookings')
+            ->where('id', $booking)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$bookingData) {
+            abort(404);
+        }
+
+        $status = $bookingData->status ?? 'pending';
+
+        if (in_array($status, ['confirmed', 'completed'])) {
+            return back()->withErrors([
+                'delete_booking' => 'Đơn đã xác nhận hoặc đã hoàn thành nên không thể xóa. Vui lòng liên hệ quản trị viên.',
+            ]);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            if (Schema::hasColumn('bookings', 'status')) {
+                DB::table('bookings')
+                    ->where('id', $bookingData->id)
+                    ->where('user_id', Auth::id())
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            if (Schema::hasTable('booking_details') && Schema::hasColumn('booking_details', 'status')) {
+                DB::table('booking_details')
+                    ->where('booking_id', $bookingData->id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('user.bookings.index')
+                ->with('success', 'Đã xóa đơn đặt sân khỏi lịch sử của bạn.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()->withErrors([
+                'delete_booking' => 'Không thể xóa đơn đặt sân. Vui lòng thử lại.',
             ]);
         }
     }
