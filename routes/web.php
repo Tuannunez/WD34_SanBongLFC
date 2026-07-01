@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\User\StadiumController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
+use App\Http\Controllers\User\ProfileController;
 
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
+
 
 Route::middleware(['web'])->group(function () {
 
@@ -58,6 +60,19 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
             ->name('user.bookings.show');
+            
+        Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
+            ->name('user.bookings.destroy');
+
+        Route::get('/ho-so-ca-nhan', [ProfileController::class, 'index'])
+            ->name('user.profile.index');
+
+        Route::put('/ho-so-ca-nhan', [ProfileController::class, 'update'])
+            ->name('user.profile.update');
+
+        Route::put('/ho-so-ca-nhan/mat-khau', [ProfileController::class, 'updatePassword'])
+            ->name('user.profile.password');
+
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();

@@ -10,21 +10,35 @@ use App\Models\TimeSlot;
 use App\Models\FieldType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StadiumsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $stadiums = Stadium::latest()->get();
+        $query = DB::table('stadiums')
+            ->orderByDesc('id');
+
+        if ($request->filled('keyword')) {
+            $keyword = trim($request->keyword);
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%");
+
+                if (Schema::hasColumn('stadiums', 'address')) {
+                    $q->orWhere('address', 'like', "%{$keyword}%");
+                }
+
+                if (Schema::hasColumn('stadiums', 'phone')) {
+                    $q->orWhere('phone', 'like', "%{$keyword}%");
+                }
+            });
+        }
+
+        $stadiums = $query->paginate(10)->withQueryString();
 
         return view('admin.stadiums.index', compact('stadiums'));
-    }
-
-    public function create()
-    {
-        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
-
-        return view('admin.stadiums.create', compact('fieldTypes'));
     }
 
     public function store(Request $request)
