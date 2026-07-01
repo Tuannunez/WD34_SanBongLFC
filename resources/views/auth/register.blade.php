@@ -68,6 +68,12 @@
             </div>
 
             <div style="margin-bottom:16px;">
+                <label for="phone" style="display:block;font-weight:600;color:#111827;margin-bottom:6px;">Số điện thoại</label>
+                <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;" placeholder="Nhập số điện thoại">
+                @error('phone')<p style="color:#b91c1c;font-size:13px;margin-top:6px;">{{ $message }}</p>@enderror
+            </div>
+
+            <div style="margin-bottom:16px;">
                 <label for="password" style="display:block;font-weight:600;color:#111827;margin-bottom:6px;">Mật khẩu bảo mật</label>
                 <input id="password" type="password" name="password" required style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;" placeholder="Nhập mật khẩu">
                 @error('password')<p style="color:#b91c1c;font-size:13px;margin-top:6px;">{{ $message }}</p>@enderror
