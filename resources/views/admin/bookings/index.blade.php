@@ -280,9 +280,25 @@
             </div>
         </div>
 
-        @if(method_exists($bookings, 'links'))
+        @if(method_exists($bookings, 'links') && $bookings->hasPages())
             <div class="card-footer bg-white border-0 py-3">
-                {{ $bookings->links() }}
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+
+                    <div class="text-muted small">
+                        Hiển thị
+                        <span class="fw-semibold text-dark">{{ $bookings->firstItem() }}</span>
+                        -
+                        <span class="fw-semibold text-dark">{{ $bookings->lastItem() }}</span>
+                        trong tổng số
+                        <span class="fw-semibold text-dark">{{ $bookings->total() }}</span>
+                        đơn đặt sân
+                    </div>
+
+                    <div class="booking-pagination">
+                        {{ $bookings->onEachSide(1)->links('pagination::bootstrap-5') }}
+                    </div>
+
+                </div>
             </div>
         @endif
     </div>
