@@ -256,8 +256,16 @@
 
         {{-- CỘT BÊN PHẢI: CARD ĐẶT SÂN --}}
         <div class="col-lg-4">
-            <form action="#" method="POST" class="custom-card booking-sidebar">
+            <form action="{{ route('user.bookings.store.from-stadium', $stadium->id) }}" method="POST" class="custom-card booking-sidebar">
                 @csrf
+                @if ($errors->any())
+                    <div class="alert alert-danger rounded-3">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
+                <input type="hidden" name="stadium_id" value="{{ $stadium->id }}">
                 <input type="hidden" name="booking_date" id="input_booking_date" value="">
                 <input type="hidden" name="time_slot" id="input_time_slot" value="">
                 <input type="hidden" name="total_price" id="input_total_price" value="0">
