@@ -37,6 +37,8 @@
 
                         <th>Địa chỉ</th>
 
+                        <th>Mô tả</th>
+
                         <th>SĐT</th>
 
                         <th>Email</th>
@@ -78,6 +80,14 @@
                         <td>
 
                             {{ $stadium->address }}
+
+                        </td>
+
+                        <td>
+
+                            <span title="{{ $stadium->description }}">
+                                {{ \Illuminate\Support\Str::limit($stadium->description, 50) }}
+                            </span>
 
                         </td>
 
