@@ -41,6 +41,13 @@ class StadiumsController extends Controller
         return view('admin.stadiums.index', compact('stadiums'));
     }
 
+    public function create()
+    {
+        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
+
+        return view('admin.stadiums.create', compact('fieldTypes'));
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
