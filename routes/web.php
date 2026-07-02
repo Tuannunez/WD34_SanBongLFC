@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
+use App\Http\Controllers\Admin\PromotionController;
 
 
 Route::middleware(['web'])->group(function () {
@@ -120,6 +121,8 @@ Route::middleware(['web'])->group(function () {
 
         Route::resource('bookings', BookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
+
+        Route::resource('promotions', PromotionController::class);
 
         Route::get('booking-details', [BookingDetailController::class, 'index'])
             ->name('booking-details.index');
