@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+</td>@extends('admin.layouts.app')
 
 @section('title', 'Đánh giá')
 @section('page-title', 'Quản lý đánh giá')
@@ -57,7 +57,6 @@
                                     @else
                                         <span class="badge bg-secondary-subtle text-secondary">Ẩn</span>
                                     @endif
-                                </td>
                                 <td>{{ $review->created_at?->format('d/m/Y H:i') }}</td>
                                 <td class="text-center">
                                     <form action="{{ route('admin.reviews.destroy', $review->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa đánh giá này?');">
