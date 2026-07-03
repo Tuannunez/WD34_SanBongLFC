@@ -4,55 +4,270 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Đăng nhập - SanBongLFC</title>
+
     <link href="/css/app.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --green: #16a34a;
+            --green-dark: #15803d;
+            --dark: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --soft: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(34, 197, 94, .22), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, .16), transparent 34%),
+                linear-gradient(135deg, #ecfdf5 0%, #f8fafc 45%, #eff6ff 100%);
+        }
+
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .auth-box {
+            width: 100%;
+            max-width: 520px;
+            background: #fff;
+            border-radius: 34px;
+            padding: 44px 38px 36px;
+            position: relative;
+            border: 1px solid rgba(229, 231, 235, .9);
+            box-shadow: 0 30px 80px rgba(15, 23, 42, .14);
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 18px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 0;
+            background: #f3f4f6;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 20px;
+            transition: .2s;
+        }
+
+        .close-btn:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .auth-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 22px;
+            font-size: 32px;
+            box-shadow: 0 16px 32px rgba(22, 163, 74, .25);
+        }
+
+        .auth-title {
+            text-align: center;
+            font-size: 34px;
+            line-height: 1.2;
+            font-weight: 900;
+            color: var(--dark);
+            margin: 0 0 8px;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: #374151;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 20px;
+            z-index: 3;
+        }
+
+        .auth-input {
+            width: 100%;
+            height: 60px;
+            border-radius: 17px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            padding: 0 52px;
+            font-size: 17px;
+            color: var(--dark);
+            outline: none;
+            transition: .2s;
+        }
+
+        .auth-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .auth-input:focus {
+            background: #fff;
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, .12);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 18px;
+            z-index: 4;
+        }
+
+        .btn-auth {
+            width: 100%;
+            height: 60px;
+            border: 0;
+            border-radius: 17px;
+            background: #16a34a;
+            color: #fff;
+            font-weight: 900;
+            font-size: 19px;
+            margin-top: 4px;
+            transition: .2s;
+            box-shadow: 0 16px 30px rgba(22, 163, 74, .22);
+        }
+
+        .btn-auth:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .forgot-link {
+            display: inline-block;
+            margin: 8px 0 18px;
+            color: #374151;
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        .forgot-link:hover {
+            color: var(--green);
+        }
+
+        .bottom-text {
+            margin-top: 26px;
+            text-align: center;
+            color: #374151;
+            font-size: 17px;
+        }
+
+        .bottom-text a {
+            color: var(--green);
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .alert {
+            border-radius: 16px;
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .remember-row label {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        @media (max-width: 576px) {
+            .auth-page {
+                padding: 14px;
+            }
+
+            .auth-box {
+                border-radius: 28px;
+                padding: 40px 22px 30px;
+            }
+
+            .auth-title {
+                font-size: 30px;
+            }
+
+            .auth-subtitle {
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
-<body style="background:#f8fafc;">
-    <div style="max-width:520px;margin:40px auto;padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(15,23,42,0.08);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-            <div>
-                <div style="font-size:14px;color:#10b981;font-weight:700;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px;">
-                    <span style="width:8px;height:8px;background:#10b981;border-radius:9999px;display:inline-block;"></span>
-                    NGƯỜI DÙNG
-                </div>
-                <h1 style="margin:0;font-size:28px;color:#111827;">Đăng nhập tài khoản</h1>
-            </div>
+
+<body>
+<div class="auth-page">
+    <div class="auth-box">
+        <a href="{{ url('/') }}" class="close-btn" title="Quay về trang chủ">
+            <i class="bi bi-x-lg"></i>
+        </a>
+
+        <div class="auth-logo">
+            <i class="bi bi-dribbble"></i>
         </div>
 
-        <div style="display:grid;gap:12px;margin-bottom:20px;">
-            <button type="button" style="border:1px solid #d1d5db;border-radius:12px;padding:12px 16px;background:#fff;color:#111827;text-align:left;display:flex;gap:12px;align-items:center;cursor:pointer;">
-                <span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #d1d5db;border-radius:8px;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22.5 12.26c0-.82-.07-1.62-.21-2.4H12.24v4.55h5.97c-.26 1.4-1.03 2.59-2.2 3.38v2.8h3.55c2.08-1.92 3.29-4.73 3.29-8.33z" fill="#4285F4"/>
-                        <path d="M12.24 23.99c2.97 0 5.47-.98 7.29-2.65l-3.55-2.8c-.98.66-2.23 1.05-3.74 1.05-2.87 0-5.3-1.94-6.17-4.55H2.37v2.87c1.8 3.56 5.55 6.08 9.87 6.08z" fill="#34A853"/>
-                        <path d="M6.07 14.05a7.45 7.45 0 010-4.1V7.08H2.37a11.99 11.99 0 000 9.84l3.7-2.87z" fill="#FBBC05"/>
-                        <path d="M12.24 4.47c1.62 0 3.08.56 4.22 1.66l3.16-3.16C17.7 1.17 15.2 0 12.24 0 7.92 0 4.17 2.52 2.37 6.08l3.7 2.87c.86-2.61 3.3-4.48 6.17-4.48z" fill="#EA4335"/>
-                    </svg>
-                </span>
-                Đăng nhập bằng Google
-            </button>
-            <button type="button" style="border:1px solid #d1d5db;border-radius:12px;padding:12px 16px;background:#fff;color:#111827;text-align:left;display:flex;gap:12px;align-items:center;cursor:pointer;">
-                <span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:#1877f2;border-radius:8px;">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.99 3.65 9.13 8.44 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99C18.35 21.13 22 16.99 22 12z" fill="#fff"/>
-                    </svg>
-                </span>
-                Đăng nhập bằng Facebook
-            </button>
-        </div>
-
-        <div style="text-align:center;color:#6b7280;font-size:14px;margin-bottom:20px;">Hoặc đăng nhập bằng email</div>
-
+        <h1 class="auth-title">Đăng nhập</h1>
+        <p class="auth-subtitle">Đăng nhập để đặt sân nhanh hơn</p>
 
         @if (session('success'))
-            <div style="background:#f0fdf4;color:#15803d;padding:14px;border:1px solid #86efac;border-radius:12px;margin-bottom:20px;">
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-1"></i>
                 {{ session('success') }}
             </div>
         @endif
 
-
         @if ($errors->any())
-            <div style="background:#fef2f2;color:#991b1b;padding:14px;border:1px solid #fca5a5;border-radius:12px;margin-bottom:20px;">
-                <ul style="margin:0;padding-left:18px;">
+            <div class="alert alert-danger">
+                <div class="fw-bold mb-1">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Đăng nhập không thành công
+                </div>
+                <ul class="mb-0 ps-3">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -63,20 +278,85 @@
         <form method="POST" action="/login">
             @csrf
 
-            <div style="margin-bottom:16px;">
-                <label for="email" style="display:block;font-weight:600;color:#111827;margin-bottom:6px;">Email</label>
-                <input id="email" type="email" name="email" value="{{ old('email') }}" required style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;" placeholder="Nhập email">
+            <div class="form-group">
+                <div class="input-wrap">
+                    <i class="bi bi-envelope input-icon"></i>
+                    <input id="email"
+                           type="email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           class="auth-input @error('email') is-invalid @enderror"
+                           placeholder="Email"
+                           required
+                           autofocus>
+                </div>
+                @error('email')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
             </div>
 
-            <div style="margin-bottom:24px;">
-                <label for="password" style="display:block;font-weight:600;color:#111827;margin-bottom:6px;">Mật khẩu</label>
-                <input id="password" type="password" name="password" required style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;" placeholder="Nhập mật khẩu">
+            <div class="form-group">
+                <div class="input-wrap">
+                    <i class="bi bi-lock-fill input-icon"></i>
+                    <input id="password"
+                           type="password"
+                           name="password"
+                           class="auth-input @error('password') is-invalid @enderror"
+                           placeholder="Mật khẩu"
+                           required>
+
+                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                @error('password')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
             </div>
 
-            <button type="submit" style="width:100%;background:#2563eb;color:#fff;padding:14px;border-radius:14px;border:none;font-weight:700;">Đăng nhập</button>
+            <div class="remember-row">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                    <label class="form-check-label" for="remember">
+                        Ghi nhớ đăng nhập
+                    </label>
+                </div>
+
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="forgot-link mb-0">
+                        Quên mật khẩu?
+                    </a>
+                @endif
+            </div>
+
+            <button type="submit" class="btn-auth">
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Đăng nhập
+            </button>
         </form>
 
-        <div style="text-align:center;color:#6b7280;font-size:13px;margin-top:20px;">Chưa có tài khoản? <a href="{{ route('register') }}" style="color:#2563eb;text-decoration:none;">Đăng ký</a></div>
+        <div class="bottom-text">
+            Chưa có tài khoản?
+            <a href="{{ route('register') }}">Đăng ký ngay</a>
+        </div>
     </div>
+</div>
+
+<script>
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+</script>
 </body>
 </html>
