@@ -42,7 +42,7 @@ class RoleController extends Controller
 
         Role::create($data);
 
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được tạo.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được tạo.');
     }
 
     public function edit(Role $role)
@@ -63,12 +63,12 @@ class RoleController extends Controller
 
         $role->update($data);
 
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được cập nhật.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được cập nhật.');
     }
 
     public function destroy(Role $role)
     {
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được xóa.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được xóa.');
     }
 }

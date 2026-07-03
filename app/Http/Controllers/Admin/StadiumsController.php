@@ -122,7 +122,7 @@ class StadiumsController extends Controller
         // Chuyển về mảng indexed
         $timeSlots = array_values($timeSlots);
 
-        return view('user.stadiums.show', compact(
+        return view('admin.stadiums.show', compact(
             'stadium',
             'fields',
             'timeSlots',
