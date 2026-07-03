@@ -24,4 +24,14 @@ class Stadium extends Model
     {
         return $this->belongsTo(FieldType::class);
     }
+
+    public function fields()
+    {
+        return $this->hasMany(Field::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasManyThrough(Review::class, Field::class, 'stadium_id', 'field_id', 'id', 'id');
+    }
 }
