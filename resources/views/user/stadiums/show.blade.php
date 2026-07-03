@@ -3,6 +3,8 @@
 @section('title', 'Chi tiết sân bóng')
 
 @push('styles')
+
+
 <style>
     .stadium-detail-hero {
         background: linear-gradient(135deg, #0f766e, #16a34a);

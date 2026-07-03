@@ -11,6 +11,7 @@ use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StadiumsController;
@@ -21,10 +22,16 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 
-
 Route::middleware(['web'])->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | USER ROUTES
+    |--------------------------------------------------------------------------
+    */
 
     Route::get('/', [StadiumController::class, 'index'])
         ->name('home');
@@ -43,9 +50,12 @@ Route::middleware(['web'])->group(function () {
 
     Route::post('/login', [LoginController::class, 'store'])
         ->name('login.store');
-    
-    Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
-        ->name('user.bookings.store.from-stadium');
+
+    /*
+    |--------------------------------------------------------------------------
+    | USER AUTH ROUTES
+    |--------------------------------------------------------------------------
+    */
 
     Route::middleware(['auth'])->group(function () {
 
@@ -63,7 +73,7 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
             ->name('user.bookings.show');
-            
+
         Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
             ->name('user.bookings.destroy');
 
@@ -76,6 +86,8 @@ Route::middleware(['web'])->group(function () {
         Route::put('/ho-so-ca-nhan/mat-khau', [ProfileController::class, 'updatePassword'])
             ->name('user.profile.password');
 
+        Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
+            ->name('stadiums.reviews.store');
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();
@@ -85,10 +97,13 @@ Route::middleware(['web'])->group(function () {
 
             return redirect('/');
         })->name('logout');
-
-        Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
-            ->name('stadiums.reviews.store');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN ROUTES
+    |--------------------------------------------------------------------------
+    */
 
     Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
 
@@ -105,7 +120,7 @@ Route::middleware(['web'])->group(function () {
                 return redirect('/');
             }
 
-            return view('admin.dashboard');
+            return app(DashboardController::class)->index();
         })->name('dashboard');
 
         Route::resource('roles', RoleController::class);
@@ -128,7 +143,9 @@ Route::middleware(['web'])->group(function () {
             ->only(['index', 'show', 'update', 'destroy']);
 
         Route::resource('promotions', PromotionController::class);
-        Route::resource('reviews', AdminReviewController::class)->only(['index', 'destroy']);
+
+        Route::resource('reviews', AdminReviewController::class)
+            ->only(['index', 'destroy']);
 
         Route::get('booking-details', [BookingDetailController::class, 'index'])
             ->name('booking-details.index');
