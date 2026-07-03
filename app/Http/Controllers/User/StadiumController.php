@@ -27,6 +27,21 @@ class StadiumController extends Controller
     {
         $stadium = Stadium::findOrFail($id);
 
+        $fields = $stadium->fields()->where('status', true)->get();
+
+        $reviews = $stadium->reviews()
+            ->where('reviews.status', true)
+            ->with(['user', 'field'])
+            ->latest()
+            ->get();
+
+
+        $averageRating = $stadium->reviews()
+            ->where('reviews.status', true)
+            ->avg('rating');
+
+        $averageRating = $averageRating ? round($averageRating, 1) : 0;
+
         $timeSlots = [
             [
                 'session' => 'Buổi sáng',
@@ -55,7 +70,7 @@ class StadiumController extends Controller
 
         return view(
             'user.stadiums.show',
-            compact('stadium', 'timeSlots')
+            compact('stadium', 'timeSlots', 'fields', 'reviews', 'averageRating')
         );
     }
 }

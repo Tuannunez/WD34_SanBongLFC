@@ -28,6 +28,10 @@
                     <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="tel" name="phone" class="form-control" value="{{ old('phone') }}">
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Mật khẩu</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>

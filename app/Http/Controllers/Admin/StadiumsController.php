@@ -41,6 +41,13 @@ class StadiumsController extends Controller
         return view('admin.stadiums.index', compact('stadiums'));
     }
 
+    public function create()
+    {
+        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
+
+        return view('admin.stadiums.create', compact('fieldTypes'));
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -52,6 +59,7 @@ class StadiumsController extends Controller
             'address' => 'required|max:255',
             'open_time' => 'required',
             'close_time' => 'required',
+            'description' => 'nullable|string',
         ]);
 
         if ($request->hasFile('image')) {
@@ -71,9 +79,48 @@ class StadiumsController extends Controller
 
         $fields = Field::where('stadium_id', $stadium->id)->get();
 
-        $timeSlots = TimeSlot::query()->get();
-
         $services = Service::query()->get();
+
+        // Lấy và xử lý timeSlots
+        $slots = TimeSlot::query()->where('status', true)->orderBy('start_time')->get();
+
+        $timeSlots = [];
+        
+        foreach ($slots as $slot) {
+            // Parse time string
+            $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $slot->start_time);
+            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $slot->end_time);
+            $hour = $startTime->hour;
+            
+            // Xác định session dựa trên start_time
+            if ($hour >= 6 && $hour < 12) {
+                $session = 'Sáng';
+            } elseif ($hour >= 12 && $hour < 18) {
+                $session = 'Chiều';
+            } else {
+                $session = 'Tối';
+            }
+
+            // Nếu session chưa tồn tại trong mảng, tạo mới
+            if (!isset($timeSlots[$session])) {
+                $timeSlots[$session] = [
+                    'session' => $session,
+                    'slots' => []
+                ];
+            }
+
+            // Thêm slot vào session
+            $timeSlots[$session]['slots'][] = [
+                'id' => $slot->id,
+                'time' => $startTime->format('H:i') . ' - ' . $endTime->format('H:i'),
+                'start_time' => $startTime->format('H:i'),
+                'end_time' => $endTime->format('H:i'),
+                'price' => 0 // Giá mặc định, có thể cập nhật sau
+            ];
+        }
+
+        // Chuyển về mảng indexed
+        $timeSlots = array_values($timeSlots);
 
         return view('user.stadiums.show', compact(
             'stadium',
@@ -101,6 +148,7 @@ class StadiumsController extends Controller
             'address' => 'required|max:255',
             'open_time' => 'required',
             'close_time' => 'required',
+            'description' => 'nullable|string',
         ]);
 
         if ($request->hasFile('image')) {

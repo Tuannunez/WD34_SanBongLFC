@@ -50,6 +50,10 @@
                         <label class="form-label">Giờ đóng</label>
                         <input type="time" name="close_time" class="form-control" required>
                     </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Nhập mô tả về cơ sở sân bóng..."></textarea>
+                    </div>
                 </div>
 
                 <div class="mt-4">

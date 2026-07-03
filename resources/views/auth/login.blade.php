@@ -275,7 +275,7 @@
             </div>
         @endif
 
-        <form method="POST" action="/login">
+        <form method="POST" action="{{ route('login.store') }}">
             @csrf
 
             <div class="form-group">

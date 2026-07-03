@@ -325,44 +325,7 @@
                 </table>
             </div>
         </div>
-        @if(method_exists($bookings, 'links') && $bookings->hasPages())
-            <div class="card-footer bg-white border-0 py-3">
-                <div class="custom-pagination d-flex justify-content-center align-items-center gap-2">
 
-                    {{-- Nút trang trước --}}
-                    @if($bookings->onFirstPage())
-                        <span class="page-btn disabled">
-                            <i class="bi bi-chevron-left"></i>
-                        </span>
-                    @else
-                        <a href="{{ $bookings->previousPageUrl() }}" class="page-btn">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    @endif
-
-                    {{-- Số trang --}}
-                    @foreach($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
-                        @if($page == $bookings->currentPage())
-                            <span class="page-btn active">
-                                {{ $page }}
-                            </span>
-                        @else
-                            <a href="{{ $url }}" class="page-btn">
-                                {{ $page }}
-                            </a>
-                        @endif
-                    @endforeach
-
-                    {{-- Nút trang sau --}}
-                    @if($bookings->hasMorePages())
-                        <a href="{{ $bookings->nextPageUrl() }}" class="page-btn">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    @else
-                        <span class="page-btn disabled">
-                            <i class="bi bi-chevron-right"></i>
-                        </span>
-                    @endif
 
                 </div>
             </div>

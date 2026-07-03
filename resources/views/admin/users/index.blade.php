@@ -22,6 +22,7 @@
                             <th>#</th>
                             <th>Tên</th>
                             <th>Email</th>
+                            <th>Điện thoại</th>
                             <th>Vai trò</th>
                             <th>Trạng thái</th>
                             <th>Ngày tạo</th>
@@ -34,6 +35,7 @@
                                 <td>{{ $user->id }}</td>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
+                                <td>{{ $user->phone ?? '-' }}</td>
                                 <td>{{ ucfirst($user->role) }}</td>
                                 <td>{{ $user->status ? 'Kích hoạt' : 'Khóa' }}</td>
                                 <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>

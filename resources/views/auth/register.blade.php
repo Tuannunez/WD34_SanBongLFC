@@ -293,23 +293,6 @@
                 @enderror
             </div>
 
-            <div class="form-group">
-                <div class="input-wrap">
-                    <i class="bi bi-lock-fill input-icon"></i>
-                    <input id="password"
-                           type="password"
-                           name="password"
-                           class="auth-input @error('password') is-invalid @enderror"
-                           placeholder="Mật khẩu"
-                           required>
-
-                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-                @error('password')
-                    <div class="text-danger small mt-1">{{ $message }}</div>
-                @enderror
             </div>
 
             <div class="form-group">

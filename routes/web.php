@@ -19,6 +19,9 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
 
 
 Route::middleware(['web'])->group(function () {
@@ -82,6 +85,9 @@ Route::middleware(['web'])->group(function () {
 
             return redirect('/');
         })->name('logout');
+
+        Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
+            ->name('stadiums.reviews.store');
     });
 
     Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
@@ -120,6 +126,9 @@ Route::middleware(['web'])->group(function () {
 
         Route::resource('bookings', BookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
+
+        Route::resource('promotions', PromotionController::class);
+        Route::resource('reviews', AdminReviewController::class)->only(['index', 'destroy']);
 
         Route::get('booking-details', [BookingDetailController::class, 'index'])
             ->name('booking-details.index');

@@ -25,6 +25,8 @@ class RegisteredUserController extends Controller
             'email.email' => 'Email không hợp lệ.',
             'email.max' => 'Email không được quá 255 ký tự.',
             'email.unique' => 'Email đã được sử dụng.',
+            'phone.string' => 'Số điện thoại không hợp lệ.',
+            'phone.max' => 'Số điện thoại không được quá 20 ký tự.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
             'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
@@ -34,6 +36,7 @@ class RegisteredUserController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['required', 'string', 'min:8'],
         ], $messages);
@@ -41,6 +44,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
         ]);
 

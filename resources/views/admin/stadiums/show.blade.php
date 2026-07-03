@@ -18,6 +18,10 @@
                     <p><strong>Email:</strong> {{ $stadium->email }}</p>
                     <p><strong>Loại sân:</strong> {{ $stadium->fieldType?->name ?? 'Chưa chọn' }}</p>
                     <p><strong>Giờ hoạt động:</strong> {{ $stadium->open_time }} - {{ $stadium->close_time }}</p>
+                    @if($stadium->description)
+                        <p><strong>Mô tả:</strong></p>
+                        <p>{{ $stadium->description }}</p>
+                    @endif
                     <a href="{{ route('admin.stadiums.index') }}" class="btn btn-secondary">Quay lại</a>
                 </div>
             </div>
