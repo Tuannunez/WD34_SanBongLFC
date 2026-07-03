@@ -325,7 +325,44 @@
                 </table>
             </div>
         </div>
+        @if ($bookings instanceof \Illuminate\Pagination\LengthAwarePaginator && $bookings->hasPages())
+            <div class="card-footer bg-white border-0 pt-3 pb-4">
+                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
 
+                    {{-- Nút trước --}}
+                    @if ($bookings->onFirstPage())
+                        <span class="btn btn-sm btn-light text-muted disabled px-3">
+                            <i class="bi bi-chevron-left"></i>
+                        </span>
+                    @else
+                        <a href="{{ $bookings->previousPageUrl() }}" class="btn btn-sm btn-light px-3">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    @endif
+
+                    {{-- Số trang --}}
+                    @foreach ($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
+                        @if ($page == $bookings->currentPage())
+                            <span class="btn btn-sm btn-primary px-3">
+                                {{ $page }}
+                            </span>
+                        @else
+                            <a href="{{ $url }}" class="btn btn-sm btn-light px-3">
+                                {{ $page }}
+                            </a>
+                        @endif
+                    @endforeach
+
+                    {{-- Nút sau --}}
+                    @if ($bookings->hasMorePages())
+                        <a href="{{ $bookings->nextPageUrl() }}" class="btn btn-sm btn-light px-3">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    @else
+                        <span class="btn btn-sm btn-light text-muted disabled px-3">
+                            <i class="bi bi-chevron-right"></i>
+                        </span>
+                    @endif
 
                 </div>
             </div>

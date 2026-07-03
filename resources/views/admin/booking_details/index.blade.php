@@ -232,9 +232,46 @@
             </div>
         </div>
 
-        @if(method_exists($bookingDetails, 'links'))
-            <div class="card-footer bg-white border-0 py-3">
-                {{ $bookingDetails->links() }}
+        @if ($bookingDetails instanceof \Illuminate\Pagination\LengthAwarePaginator && $bookingDetails->hasPages())
+            <div class="card-footer bg-white border-0 pt-3 pb-4">
+                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+
+                    {{-- Nút trước --}}
+                    @if ($bookingDetails->onFirstPage())
+                        <span class="btn btn-sm btn-light text-muted disabled px-3">
+                            <i class="fa-solid fa-angle-left"></i>
+                        </span>
+                    @else
+                        <a href="{{ $bookingDetails->previousPageUrl() }}" class="btn btn-sm btn-light px-3">
+                            <i class="fa-solid fa-angle-left"></i>
+                        </a>
+                    @endif
+
+                    {{-- Số trang --}}
+                    @foreach ($bookingDetails->getUrlRange(1, $bookingDetails->lastPage()) as $page => $url)
+                        @if ($page == $bookingDetails->currentPage())
+                            <span class="btn btn-sm btn-primary px-3">
+                                {{ $page }}
+                            </span>
+                        @else
+                            <a href="{{ $url }}" class="btn btn-sm btn-light px-3">
+                                {{ $page }}
+                            </a>
+                        @endif
+                    @endforeach
+
+                    {{-- Nút sau --}}
+                    @if ($bookingDetails->hasMorePages())
+                        <a href="{{ $bookingDetails->nextPageUrl() }}" class="btn btn-sm btn-light px-3">
+                            <i class="fa-solid fa-angle-right"></i>
+                        </a>
+                    @else
+                        <span class="btn btn-sm btn-light text-muted disabled px-3">
+                            <i class="fa-solid fa-angle-right"></i>
+                        </span>
+                    @endif
+
+                </div>
             </div>
         @endif
     </div>
