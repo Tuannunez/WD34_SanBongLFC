@@ -1,104 +1,120 @@
 <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-brand">
-        <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC" class="sidebar-logo" />
-        SanBongLFC
+        <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC" class="sidebar-logo">
+        <span>SanBongLFC</span>
     </div>
 
     <div class="sidebar-menu">
         <a href="{{ route('admin.dashboard') }}"
            class="sidebar-link {{ request()->is('admin/dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i>
-            Dashboard
+            <span>Dashboard</span>
         </a>
 
         <div class="sidebar-title">Quản lý hệ thống</div>
 
-        <a href="{{ url('/admin/roles') }}" class="sidebar-link {{ request()->is('admin/roles*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/roles') }}"
+           class="sidebar-link {{ request()->is('admin/roles*') ? 'active' : '' }}">
             <i class="bi bi-shield-lock"></i>
-            Vai trò
+            <span>Vai trò</span>
         </a>
 
-        <a href="{{ url('/admin/users') }}" class="sidebar-link {{ request()->is('admin/users*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/users') }}"
+           class="sidebar-link {{ request()->is('admin/users*') ? 'active' : '' }}">
             <i class="bi bi-people"></i>
-            Người dùng
+            <span>Người dùng</span>
         </a>
 
         <div class="sidebar-title">Quản lý sân bóng</div>
 
-        <a href="{{ route('admin.stadiums.index') }}"class="sidebar-link {{ request()->routeIs('admin.stadiums.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.stadiums.index') }}"
+           class="sidebar-link {{ request()->routeIs('admin.stadiums.*') ? 'active' : '' }}">
             <i class="bi bi-building"></i>
-            Cơ sở sân bóng
+            <span>Cơ sở sân bóng</span>
         </a>
 
-        <a href="{{ url('/admin/field-types') }}" class="sidebar-link {{ request()->is('admin/field-types*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/field-types') }}"
+           class="sidebar-link {{ request()->is('admin/field-types*') ? 'active' : '' }}">
             <i class="bi bi-grid-3x3-gap"></i>
-            Loại sân
+            <span>Loại sân</span>
         </a>
 
-        <a href="{{ url('/admin/fields') }}" class="sidebar-link {{ request()->is('admin/fields*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/fields') }}"
+           class="sidebar-link {{ request()->is('admin/fields*') ? 'active' : '' }}">
             <i class="bi bi-map"></i>
-            Sân bóng
+            <span>Sân bóng</span>
         </a>
 
-        <a href="{{ url('/admin/field-images') }}" class="sidebar-link {{ request()->is('admin/field-images*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/field-images') }}"
+           class="sidebar-link {{ request()->is('admin/field-images*') ? 'active' : '' }}">
             <i class="bi bi-images"></i>
-            Hình ảnh sân
+            <span>Hình ảnh sân</span>
         </a>
 
-        <a href="{{ url('/admin/time-slots') }}" class="sidebar-link {{ request()->is('admin/time-slots*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/time-slots') }}"
+           class="sidebar-link {{ request()->is('admin/time-slots*') ? 'active' : '' }}">
             <i class="bi bi-clock"></i>
-            Khung giờ
+            <span>Khung giờ</span>
         </a>
 
         <div class="sidebar-title">Đặt sân</div>
 
-        <a href="{{ url('/admin/bookings') }}" class="sidebar-link {{ request()->is('admin/bookings*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/bookings') }}"
+           class="sidebar-link {{ request()->is('admin/bookings*') ? 'active' : '' }}">
             <i class="bi bi-calendar-check"></i>
-            Đơn đặt sân
+            <span>Đơn đặt sân</span>
         </a>
 
-        <a href="{{ url('/admin/booking-details') }}" class="sidebar-link {{ request()->is('admin/booking-details*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/booking-details') }}"
+           class="sidebar-link {{ request()->is('admin/booking-details*') ? 'active' : '' }}">
             <i class="bi bi-card-list"></i>
-            Chi tiết đặt sân
+            <span>Chi tiết đặt sân</span>
         </a>
 
-        <a href="{{ url('/admin/services') }}" class="sidebar-link {{ request()->is('admin/services*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/services') }}"
+           class="sidebar-link {{ request()->is('admin/services*') ? 'active' : '' }}">
             <i class="bi bi-cup-straw"></i>
-            Dịch vụ
+            <span>Dịch vụ</span>
         </a>
 
-        <a href="{{ url('/admin/booking-services') }}" class="sidebar-link {{ request()->is('admin/booking-services*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/booking-services') }}"
+           class="sidebar-link {{ request()->is('admin/booking-services*') ? 'active' : '' }}">
             <i class="bi bi-bag-check"></i>
-            Dịch vụ đặt sân
+            <span>Dịch vụ đặt sân</span>
         </a>
 
         <div class="sidebar-title">Thanh toán</div>
 
-        <a href="{{ url('/admin/payment-methods') }}" class="sidebar-link {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/payment-methods') }}"
+           class="sidebar-link {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
             <i class="bi bi-credit-card"></i>
-            Phương thức thanh toán
+            <span>Phương thức thanh toán</span>
         </a>
 
-        <a href="{{ url('/admin/payments') }}" class="sidebar-link {{ request()->is('admin/payments*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/payments') }}"
+           class="sidebar-link {{ request()->is('admin/payments*') ? 'active' : '' }}">
             <i class="bi bi-cash-coin"></i>
-            Thanh toán
+            <span>Thanh toán</span>
         </a>
 
         <div class="sidebar-title">Marketing</div>
 
-        <a href="{{ url('/admin/promotions') }}" class="sidebar-link {{ request()->is('admin/promotions*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/promotions') }}"
+           class="sidebar-link {{ request()->is('admin/promotions*') ? 'active' : '' }}">
             <i class="bi bi-ticket-perforated"></i>
-            Khuyến mãi
+            <span>Khuyến mãi</span>
         </a>
 
-        <a href="{{ url('/admin/reviews') }}" class="sidebar-link {{ request()->is('admin/reviews*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/reviews') }}"
+           class="sidebar-link {{ request()->is('admin/reviews*') ? 'active' : '' }}">
             <i class="bi bi-star"></i>
-            Đánh giá
+            <span>Đánh giá</span>
         </a>
 
-        <a href="{{ url('/admin/notifications') }}" class="sidebar-link {{ request()->is('admin/notifications*') ? 'active' : '' }}">
+        <a href="{{ url('/admin/notifications') }}"
+           class="sidebar-link {{ request()->is('admin/notifications*') ? 'active' : '' }}">
             <i class="bi bi-bell"></i>
-            Thông báo
+            <span>Thông báo</span>
         </a>
     </div>
 </aside>

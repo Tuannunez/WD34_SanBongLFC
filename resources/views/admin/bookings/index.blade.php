@@ -1,6 +1,52 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
+<style>
+    .custom-pagination {
+        padding: 4px 0;
+    }
+
+    .custom-pagination .page-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        color: #374151;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all .2s ease;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+    }
+
+    .custom-pagination .page-btn:hover {
+        background: #ecfdf5;
+        border-color: #16a34a;
+        color: #15803d;
+        transform: translateY(-1px);
+    }
+
+    .custom-pagination .page-btn.active {
+        background: #16a34a;
+        border-color: #16a34a;
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(22, 163, 74, .25);
+    }
+
+    .custom-pagination .page-btn.disabled {
+        background: #f1f5f9;
+        color: #94a3b8;
+        border-color: #e5e7eb;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+</style>
+
 <div class="container-fluid py-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -280,23 +326,6 @@
             </div>
         </div>
 
-        @if(method_exists($bookings, 'links') && $bookings->hasPages())
-            <div class="card-footer bg-white border-0 py-3">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-
-                    <div class="text-muted small">
-                        Hiển thị
-                        <span class="fw-semibold text-dark">{{ $bookings->firstItem() }}</span>
-                        -
-                        <span class="fw-semibold text-dark">{{ $bookings->lastItem() }}</span>
-                        trong tổng số
-                        <span class="fw-semibold text-dark">{{ $bookings->total() }}</span>
-                        đơn đặt sân
-                    </div>
-
-                    <div class="booking-pagination">
-                        {{ $bookings->onEachSide(1)->links('pagination::bootstrap-5') }}
-                    </div>
 
                 </div>
             </div>
