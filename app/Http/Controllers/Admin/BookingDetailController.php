@@ -40,7 +40,7 @@ class BookingDetailController extends Controller
             });
         }
 
-        $bookingDetails = $query->paginate(15)->withQueryString();
+        $bookingDetails = $query->paginate(10)->withQueryString();
 
         return view('admin.booking_details.index', compact('bookingDetails'));
     }
