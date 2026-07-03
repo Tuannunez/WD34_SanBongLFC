@@ -150,6 +150,16 @@
                     {{ $stadiumDescription }}
                 </p>
 
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                    <span class="badge bg-white text-success rounded-pill px-3 py-2">
+                        <i class="bi bi-star-fill me-1"></i>
+                        {{ $averageRating ?? 0 }}/5
+                    </span>
+                    <span class="text-white-75">
+                        {{ optional($reviews)->count() ?? 0 }} đánh giá
+                    </span>
+                </div>
+
                 <div class="row g-3">
                     <div class="col-md-4">
                         <div class="bg-white bg-opacity-10 rounded-4 p-3 h-100">
@@ -294,6 +304,96 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+            </div>
+
+            <div class="card info-card mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="fw-bold mb-0">
+                        <i class="bi bi-chat-left-text text-info me-2"></i>
+                        Đánh giá khách hàng
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+                    @auth
+                        <form action="{{ route('stadiums.reviews.store', $stadium->id) }}" method="POST" class="mb-4">
+                            @csrf
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Chọn sân</label>
+                                    <select name="field_id" class="form-select rounded-3 @error('field_id') is-invalid @enderror" required>
+                                        <option value="">-- Chọn sân --</option>
+                                        @foreach($fields as $field)
+                                            <option value="{{ $field->id }}" @selected(old('field_id') == $field->id)>
+                                                {{ $field->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('field_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Điểm đánh giá</label>
+                                    <select name="rating" class="form-select rounded-3 @error('rating') is-invalid @enderror" required>
+                                        <option value="">-- Chọn điểm --</option>
+                                        @for($i = 5; $i >= 1; $i--)
+                                            <option value="{{ $i }}" @selected(old('rating') == $i)>{{ $i }} sao</option>
+                                        @endfor
+                                    </select>
+                                    @error('rating')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nội dung đánh giá</label>
+                                <textarea name="comment" rows="4" class="form-control rounded-3 @error('comment') is-invalid @enderror" placeholder="Chia sẻ ý kiến của bạn...">{{ old('comment') }}</textarea>
+                                @error('comment')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <button type="submit" class="btn btn-success rounded-3 px-4">
+                                <i class="bi bi-send me-1"></i>
+                                Gửi đánh giá
+                            </button>
+                        </form>
+                    @else
+                        <div class="alert alert-warning rounded-4">
+                            <strong>Đăng nhập</strong> để gửi đánh giá cho cơ sở này.
+                        </div>
+                    @endauth
+
+                    <div class="border-top pt-4">
+                        @if($reviews->isNotEmpty())
+                            @foreach($reviews as $review)
+                                <div class="mb-4 pb-4 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <strong>{{ $review->user?->name ?? 'Khách' }}</strong>
+                                            <div class="text-muted small">
+                                                {{ $review->field?->name ?? 'Sân' }} - {{ $review->field?->stadium?->name ?? '' }}
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-warning-subtle text-warning px-3 py-2">
+                                            {{ $review->rating }} sao
+                                        </span>
+                                    </div>
+                                    <p class="mb-2">{{ $review->comment ?? 'Không có nhận xét.' }}</p>
+                                    <div class="text-muted small">{{ $review->created_at?->format('d/m/Y H:i') }}</div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center py-4 text-muted">
+                                Chưa có đánh giá nào cho sân bóng này.
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
