@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StadiumsController;
+use App\Http\Controllers\Admin\TimeSlotsController;
 use App\Http\Controllers\Admin\FieldTypeController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
@@ -117,6 +118,23 @@ Route::middleware(['web'])->group(function () {
             ->name('users.toggle-status');
 
         Route::resource('stadiums', StadiumsController::class);
+
+        Route::get('time-slots', [TimeSlotsController::class, 'index'])
+            ->name('time-slots.index');
+        Route::get('time-slots/{stadium}', [TimeSlotsController::class, 'show'])
+            ->name('time-slots.show');
+        Route::post('time-slots/{stadium}', [TimeSlotsController::class, 'storeForStadium'])
+            ->name('time-slots.store');
+        Route::post('time-slots/{stadium}/add', [TimeSlotsController::class, 'addForStadium'])
+            ->name('time-slots.add');
+        Route::delete('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'destroy'])
+            ->name('time-slots.destroy');
+
+        // Per-stadium price manager (fixed slots + custom special ranges)
+        Route::get('stadiums/{stadium}/prices', [StadiumsController::class, 'prices']);
+        Route::post('stadiums/{stadium}/prices', [StadiumsController::class, 'storePrices']);
+        Route::post('stadiums/{stadium}/prices/custom', [StadiumsController::class, 'storeCustom']);
+        Route::delete('stadiums/{stadium}/prices/custom/{slot}', [StadiumsController::class, 'destroyCustom']);
 
         Route::resource('field-types', FieldTypeController::class);
 

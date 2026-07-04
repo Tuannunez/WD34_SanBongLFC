@@ -43,6 +43,10 @@
                         </select>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label">Giá gốc (VNĐ/trận)</label>
+                        <input type="text" name="price" class="form-control" value="{{ old('price') }}">
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label">Giờ mở</label>
                         <input type="time" name="open_time" class="form-control" required>
                     </div>

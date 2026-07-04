@@ -31,20 +31,13 @@
 
                         <th width="60">#</th>
 
-                        <th width="130">Hình ảnh</th>
 
                         <th>Tên sân</th>
 
-                        <th>Địa chỉ</th>
-
-                        <th>Mô tả</th>
-
-                        <th>SĐT</th>
-
-                        <th>Email</th>
-
+                        
                         <th>Giờ hoạt động</th>
 
+                        <th>Khung Giờ Đặc Biệt</th>
                         <th width="180">Thao tác</th>
 
                     </tr>
@@ -61,47 +54,15 @@
                             {{ $key + 1 }}
                         </td>
 
-                        <td class="text-center">
+                        
 
-                            <img
-                                src="{{ $stadium->image ? (str_starts_with($stadium->image, 'http') ? $stadium->image : asset('storage/' . $stadium->image)) : asset('images/logo.png') }}"
-                                width="120"
-                                height="80"
-                                style="object-fit:cover;border-radius:8px;">
-
-                        </td>
-
-                        <td>
+                        <td >
 
                             <strong>{{ $stadium->name }}</strong>
 
                         </td>
 
-                        <td>
-
-                            {{ $stadium->address }}
-
-                        </td>
-
-                        <td>
-
-                            <span title="{{ $stadium->description }}">
-                                {{ \Illuminate\Support\Str::limit($stadium->description, 50) }}
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            {{ $stadium->phone }}
-
-                        </td>
-
-                        <td>
-
-                            {{ $stadium->email }}
-
-                        </td>
+                        
 
                         <td class="text-center">
 
@@ -115,14 +76,32 @@
                        
 
                         <td class="text-center">
+                            @php
+                                $specialCount = 0;
+                                try {
+                                    if (\Illuminate\Support\Facades\Schema::hasTable('stadium_time_slot_prices')) {
+                                        $specialCount = \App\Models\StadiumTimeSlotPrice::where('stadium_id', $stadium->id)->count();
+                                    }
+                                } catch (\Throwable $e) {
+                                    $specialCount = 0;
+                                }
+                            @endphp
+
+                            <a href="{{ url('admin/stadiums/' . $stadium->id . '/prices') }}" class="btn btn-primary btn-sm mb-1">
+                                Quản lý Giá ({{ $specialCount }})
+                            </a>
+
+                        </td>
+
+                        <td class="text-center">
 
                             <a href="{{ route('admin.stadiums.show',$stadium->id) }}"
-                               class="btn btn-info btn-sm">
+                               class="btn btn-info btn-sm me-1">
                                 Chi tiết
                             </a>
 
                             <a href="{{ route('admin.stadiums.edit',$stadium->id) }}"
-                               class="btn btn-warning btn-sm">
+                               class="btn btn-warning btn-sm me-1">
                                 Sửa
                             </a>
 

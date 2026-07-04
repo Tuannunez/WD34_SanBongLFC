@@ -102,8 +102,7 @@
         ? asset('storage/' . $image)
         : asset('images/banner1.png');
 
-    $firstSlot = $timeSlots[0]['slots'][0] ?? null;
-    $defaultPrice = $firstSlot['price'] ?? 0;
+    $defaultPrice = $defaultPrice ?? $stadium->price ?? 0;
 @endphp
 
 <div class="container py-5">
@@ -488,8 +487,9 @@
                                     Ngày đặt sân <span class="text-danger">*</span>
                                 </label>
                                 <input type="date"
+                                       id="bookingDate"
                                        name="booking_date"
-                                       value="{{ old('booking_date') }}"
+                                       value="{{ old('booking_date', date('Y-m-d')) }}"
                                        min="{{ date('Y-m-d') }}"
                                        class="form-control rounded-3 @error('booking_date') is-invalid @enderror"
                                        required>
