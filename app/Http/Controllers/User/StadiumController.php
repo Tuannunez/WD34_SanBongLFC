@@ -4,6 +4,9 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Stadium;
+use App\Models\StadiumTimeSlotPrice;
+use App\Models\StadiumSpecialTimeSlot;
+use App\Models\TimeSlot;
 use Illuminate\Http\Request;
 
 class StadiumController extends Controller
@@ -42,35 +45,73 @@ class StadiumController extends Controller
 
         $averageRating = $averageRating ? round($averageRating, 1) : 0;
 
-        $timeSlots = [
-            [
-                'session' => 'Buổi sáng',
-                'slots' => [
-                    ['time' => '06:00 - 08:00', 'price' => 160000],
-                    ['time' => '08:00 - 10:00', 'price' => 160000],
-                    ['time' => '10:00 - 12:00', 'price' => 140000],
-                ]
-            ],
-            [
-                'session' => 'Buổi chiều',
-                'slots' => [
-                    ['time' => '14:00 - 16:00', 'price' => 180000],
-                    ['time' => '16:00 - 18:00', 'price' => 200000],
-                ]
-            ],
-            [
-                'session' => 'Buổi tối',
-                'slots' => [
-                    ['time' => '18:00 - 19:30', 'price' => 240000],
-                    ['time' => '19:30 - 21:00', 'price' => 260000],
-                    ['time' => '21:00 - 22:30', 'price' => 200000],
-                ]
-            ]
-        ];
+        $slotPrices = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
+            ->pluck('price', 'time_slot_id')
+            ->toArray();
 
-        return view(
-            'user.stadiums.show',
-            compact('stadium', 'timeSlots', 'fields', 'reviews', 'averageRating')
-        );
+        $fixedTimeSlots = TimeSlot::where('status', true)
+            ->orderBy('start_time')
+            ->get();
+
+        $customSlots = StadiumSpecialTimeSlot::where('stadium_id', $stadium->id)
+            ->orderBy('start_time')
+            ->get();
+
+        $timeSlots = [];
+
+        foreach ($fixedTimeSlots as $slot) {
+            $price = $slotPrices[$slot->id] ?? $stadium->price ?? 0;
+
+            $hour = \Carbon\Carbon::createFromFormat('H:i:s', $slot->start_time)->hour;
+            $session = $hour >= 12 && $hour < 18 ? 'Buổi chiều' : ($hour >= 18 ? 'Buổi tối' : 'Buổi sáng');
+
+            if (!isset($timeSlots[$session])) {
+                $timeSlots[$session] = ['session' => $session, 'slots' => []];
+            }
+
+            $timeSlots[$session]['slots'][] = [
+                'id' => $slot->id,
+                'time' => substr($slot->start_time, 0, 5) . ' - ' . substr($slot->end_time, 0, 5),
+                'price' => (float) $price,
+            ];
+        }
+
+        if ($customSlots->isNotEmpty()) {
+            $customGroup = ['session' => 'Khung giờ đặc biệt', 'slots' => []];
+
+            foreach ($customSlots as $customSlot) {
+                $customGroup['slots'][] = [
+                    'id' => 'custom-' . $customSlot->id,
+                    'time' => substr($customSlot->start_time, 0, 5) . ' - ' . substr($customSlot->end_time, 0, 5),
+                    'price' => (float) $customSlot->price,
+                ];
+            }
+
+            $timeSlots[] = $customGroup;
+        }
+
+        $timeSlots = array_values($timeSlots);
+
+        $defaultPrice = $stadium->price;
+        if (!$defaultPrice) {
+            $slotPricesForDefault = [];
+
+            foreach ($timeSlots as $group) {
+                foreach ($group['slots'] as $slot) {
+                    $slotPricesForDefault[] = $slot['price'];
+                }
+            }
+
+            $defaultPrice = $slotPricesForDefault ? min($slotPricesForDefault) : 0;
+        }
+
+        return view('user.stadiums.show', compact(
+            'stadium',
+            'timeSlots',
+            'fields',
+            'reviews',
+            'averageRating',
+            'defaultPrice'
+        ));
     }
 }

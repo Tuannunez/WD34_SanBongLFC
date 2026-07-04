@@ -7,6 +7,8 @@ use App\Models\Stadium;
 use App\Models\Field;
 use App\Models\Service;
 use App\Models\TimeSlot;
+use App\Models\StadiumTimeSlotPrice;
+use App\Models\StadiumSpecialTimeSlot;
 use App\Models\FieldType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +55,7 @@ class StadiumsController extends Controller
         $data = $request->validate([
             'name' => 'required|max:255',
             'field_type_id' => 'required|exists:field_types,id',
+            'price' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',
             'email' => 'nullable|email|max:255',
@@ -61,6 +64,10 @@ class StadiumsController extends Controller
             'close_time' => 'required',
             'description' => 'nullable|string',
         ]);
+
+        if ($request->filled('price')) {
+            $data['price'] = (float) preg_replace('/[^0-9.]/', '', (string) $request->input('price'));
+        }
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('stadiums', 'public');
@@ -122,12 +129,76 @@ class StadiumsController extends Controller
         // Chuyển về mảng indexed
         $timeSlots = array_values($timeSlots);
 
-        return view('user.stadiums.show', compact(
+        return view('admin.stadiums.show', compact(
             'stadium',
             'fields',
             'timeSlots',
             'services'
         ));
+    }
+
+    public function prices($id)
+    {
+        $stadium = Stadium::findOrFail($id);
+
+        $timeSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
+
+        $existing = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
+            ->pluck('price', 'time_slot_id')
+            ->toArray();
+
+        $customSlots = StadiumSpecialTimeSlot::where('stadium_id', $stadium->id)
+            ->orderBy('start_time')
+            ->get();
+
+        return view('admin.stadiums.prices', compact('stadium', 'timeSlots', 'existing', 'customSlots'));
+    }
+
+    public function storeCustom(Request $request, $id)
+    {
+        $stadium = Stadium::findOrFail($id);
+
+        $data = $request->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'price' => 'required',
+        ]);
+
+        StadiumSpecialTimeSlot::create([
+            'stadium_id' => $stadium->id,
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+            'price' => (float) preg_replace('/[^0-9.]/', '', (string) $data['price']),
+        ]);
+
+        return redirect(url('admin/stadiums/' . $stadium->id . '/prices'))->with('success', 'Thêm khung giờ đặc biệt thành công.');
+    }
+
+    public function destroyCustom($stadiumId, $slotId)
+    {
+        $slot = StadiumSpecialTimeSlot::where('stadium_id', $stadiumId)->where('id', $slotId)->firstOrFail();
+        $slot->delete();
+
+        return redirect(url('admin/stadiums/' . $stadiumId . '/prices'))->with('success', 'Xóa khung giờ đặc biệt thành công.');
+    }
+
+    public function storePrices(Request $request, $id)
+    {
+        $stadium = Stadium::findOrFail($id);
+
+        $prices = $request->input('prices', []);
+
+        foreach ($prices as $timeSlotId => $value) {
+            $price = (float) preg_replace('/[^0-9.]/', '', (string) $value);
+
+            StadiumTimeSlotPrice::updateOrCreate(
+                ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlotId],
+                ['price' => $price]
+            );
+        }
+
+        return redirect(url('admin/stadiums/' . $stadium->id . '/prices'))
+            ->with('success', 'Cập nhật giá theo khung giờ thành công.');
     }
 
     public function edit(Stadium $stadium)
@@ -142,6 +213,7 @@ class StadiumsController extends Controller
         $data = $request->validate([
             'name' => 'required|max:255',
             'field_type_id' => 'required|exists:field_types,id',
+            'price' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',
             'email' => 'nullable|email|max:255',
@@ -150,6 +222,10 @@ class StadiumsController extends Controller
             'close_time' => 'required',
             'description' => 'nullable|string',
         ]);
+
+        if ($request->has('price')) {
+            $data['price'] = (float) preg_replace('/[^0-9.]/', '', (string) $request->input('price'));
+        }
 
         if ($request->hasFile('image')) {
             if ($stadium->image && Storage::disk('public')->exists($stadium->image)) {
