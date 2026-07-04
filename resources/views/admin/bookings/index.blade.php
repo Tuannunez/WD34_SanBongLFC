@@ -129,22 +129,10 @@
                 <div class="col-md-3">
                     <select name="status" class="form-select rounded-3">
                         <option value="">Tất cả trạng thái</option>
-
-                        <option value="pending" @selected(request('status') === 'pending')>
-                            Chờ xác nhận
-                        </option>
-
-                        <option value="confirmed" @selected(request('status') === 'confirmed')>
-                            Đã xác nhận
-                        </option>
-
-                        <option value="completed" @selected(request('status') === 'completed')>
-                            Hoàn thành
-                        </option>
-
-                        <option value="cancelled" @selected(request('status') === 'cancelled')>
-                            Đã hủy
-                        </option>
+                        <option value="pending" @selected(request('status') === 'pending')>Chờ xác nhận</option>
+                        <option value="confirmed" @selected(request('status') === 'confirmed')>Đã xác nhận</option>
+                        <option value="completed" @selected(request('status') === 'completed')>Hoàn thành</option>
+                        <option value="cancelled" @selected(request('status') === 'cancelled')>Đã hủy</option>
                     </select>
                 </div>
 
@@ -157,10 +145,8 @@
 
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary rounded-3 w-100">
-                        <i class="bi bi-search me-1"></i>
-                        Tìm
+                        <i class="bi bi-search me-1"></i> Tìm
                     </button>
-
                     <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary rounded-3">
                         <i class="bi bi-arrow-clockwise"></i>
                     </a>
@@ -172,8 +158,7 @@
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="fw-semibold mb-0">
-                <i class="bi bi-calendar-check text-primary me-2"></i>
-                Danh sách đơn đặt sân
+                <i class="bi bi-calendar-check text-primary me-2"></i> Danh sách đơn đặt sân
             </h5>
         </div>
 
@@ -188,6 +173,7 @@
                             <th>Số điện thoại</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
+                            <th>Hình thức thanh toán</th>
                             <th>Ngày tạo</th>
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
@@ -236,77 +222,50 @@
                             <tr>
                                 <td class="ps-4 fw-semibold">
                                     #{{ $booking->id }}
-
                                     @if(!empty($booking->booking_code))
-                                        <div>
-                                            <small class="text-muted">{{ $booking->booking_code }}</small>
-                                        </div>
+                                        <div><small class="text-muted">{{ $booking->booking_code }}</small></div>
                                     @elseif(!empty($booking->code))
-                                        <div>
-                                            <small class="text-muted">{{ $booking->code }}</small>
-                                        </div>
+                                        <div><small class="text-muted">{{ $booking->code }}</small></div>
                                     @endif
                                 </td>
 
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                                             style="width: 40px; height: 40px;">
+                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
                                             <i class="bi bi-person"></i>
                                         </div>
-
                                         <div>
-                                            <div class="fw-semibold">
-                                                {{ $customerName }}
-                                            </div>
+                                            <div class="fw-semibold">{{ $customerName }}</div>
                                             <small class="text-muted">Khách đặt sân</small>
                                         </div>
                                     </div>
                                 </td>
 
+                                <td>{{ $customerEmail }}</td>
+                                <td>{{ $customerPhone }}</td>
+                                <td class="fw-bold text-success">{{ number_format((float) $totalMoney, 0, ',', '.') }}đ</td>
+                                <td><span class="badge {{ $statusClass }} px-3 py-2">{{ $statusText }}</span></td>
+                                
                                 <td>
-                                    {{ $customerEmail }}
-                                </td>
-
-                                <td>
-                                    {{ $customerPhone }}
-                                </td>
-
-                                <td class="fw-bold text-success">
-                                    {{ number_format((float) $totalMoney, 0, ',', '.') }}đ
-                                </td>
-
-                                <td>
-                                    <span class="badge {{ $statusClass }} px-3 py-2">
-                                        {{ $statusText }}
+                                    <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                                        {{ $booking->method_name ?? 'Tại sân / Chưa chọn' }}
                                     </span>
                                 </td>
 
-                                <td>
-                                    {{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}
-                                </td>
+                                <td>{{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</td>
 
                                 <td class="text-end pe-4">
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}"
-                                       class="btn btn-sm btn-outline-info rounded-3">
+                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-info rounded-3">
                                         <i class="bi bi-eye"></i>
                                     </a>
-
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}"
-                                       class="btn btn-sm btn-outline-primary rounded-3">
+                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-primary rounded-3">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-
                                     @if(($booking->status ?? '') !== 'cancelled')
-                                        <form action="{{ route('admin.bookings.destroy', $booking->id) }}"
-                                              method="POST"
-                                              class="d-inline">
+                                        <form action="{{ route('admin.bookings.destroy', $booking->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger rounded-3"
-                                                    onclick="return confirm('Bạn có chắc muốn hủy đơn đặt sân này?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" onclick="return confirm('Bạn có chắc muốn hủy đơn đặt sân này?')">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -315,7 +274,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
                                     <span class="text-muted">Chưa có đơn đặt sân nào.</span>
                                 </td>
@@ -325,45 +284,29 @@
                 </table>
             </div>
         </div>
+
         @if ($bookings instanceof \Illuminate\Pagination\LengthAwarePaginator && $bookings->hasPages())
             <div class="card-footer bg-white border-0 pt-3 pb-4">
                 <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-
-                    {{-- Nút trước --}}
                     @if ($bookings->onFirstPage())
-                        <span class="btn btn-sm btn-light text-muted disabled px-3">
-                            <i class="bi bi-chevron-left"></i>
-                        </span>
+                        <span class="btn btn-sm btn-light text-muted disabled px-3"><i class="bi bi-chevron-left"></i></span>
                     @else
-                        <a href="{{ $bookings->previousPageUrl() }}" class="btn btn-sm btn-light px-3">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
+                        <a href="{{ $bookings->previousPageUrl() }}" class="btn btn-sm btn-light px-3"><i class="bi bi-chevron-left"></i></a>
                     @endif
 
-                    {{-- Số trang --}}
                     @foreach ($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
                         @if ($page == $bookings->currentPage())
-                            <span class="btn btn-sm btn-primary px-3">
-                                {{ $page }}
-                            </span>
+                            <span class="btn btn-sm btn-primary px-3">{{ $page }}</span>
                         @else
-                            <a href="{{ $url }}" class="btn btn-sm btn-light px-3">
-                                {{ $page }}
-                            </a>
+                            <a href="{{ $url }}" class="btn btn-sm btn-light px-3">{{ $page }}</a>
                         @endif
                     @endforeach
 
-                    {{-- Nút sau --}}
                     @if ($bookings->hasMorePages())
-                        <a href="{{ $bookings->nextPageUrl() }}" class="btn btn-sm btn-light px-3">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
+                        <a href="{{ $bookings->nextPageUrl() }}" class="btn btn-sm btn-light px-3"><i class="bi bi-chevron-right"></i></a>
                     @else
-                        <span class="btn btn-sm btn-light text-muted disabled px-3">
-                            <i class="bi bi-chevron-right"></i>
-                        </span>
+                        <span class="btn btn-sm btn-light text-muted disabled px-3"><i class="bi bi-chevron-right"></i></span>
                     @endif
-
                 </div>
             </div>
         @endif

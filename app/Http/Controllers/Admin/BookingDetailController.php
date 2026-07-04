@@ -15,6 +15,8 @@ class BookingDetailController extends Controller
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
             ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
             ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
+            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->select(
                 'booking_details.*',
                 'bookings.id as booking_id',
@@ -24,7 +26,8 @@ class BookingDetailController extends Controller
                 'fields.name as field_name',
                 'fields.price_per_hour as field_price_per_hour',
                 'time_slots.start_time as slot_start_time',
-                'time_slots.end_time as slot_end_time'
+                'time_slots.end_time as slot_end_time',
+                'payment_methods.name as method_name'
             )
             ->orderByDesc('booking_details.id');
 
@@ -52,6 +55,8 @@ class BookingDetailController extends Controller
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
             ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
             ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
+            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->select(
                 'booking_details.*',
                 'bookings.id as booking_id',
@@ -61,7 +66,8 @@ class BookingDetailController extends Controller
                 'fields.name as field_name',
                 'fields.price_per_hour as field_price_per_hour',
                 'time_slots.start_time as slot_start_time',
-                'time_slots.end_time as slot_end_time'
+                'time_slots.end_time as slot_end_time',
+                'payment_methods.name as method_name'
             )
             ->where('booking_details.id', $id)
             ->first();

@@ -1,23 +1,23 @@
 <header class="admin-header d-flex align-items-center justify-content-between px-4">
-    <div class="d-flex align-items-center gap-3 flex-grow-1">
+    <div class="d-flex align-items-center gap-3">
         <button class="btn btn-outline-secondary d-lg-none" id="sidebarToggle">
             <i class="bi bi-list"></i>
         </button>
 
-        <div class="input-group admin-search" style="max-width: 460px;">
+        <div>
+            <h5 class="mb-0 fw-bold">@yield('page-title', 'Dashboard')</h5>
+            <small class="text-muted">Quản trị hệ thống đặt sân SanBongLFC</small>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <div class="input-group admin-search d-none d-md-flex" style="width: 280px;">
             <span class="input-group-text">
                 <i class="bi bi-search"></i>
             </span>
             <input type="text" class="form-control" placeholder="Tìm kiếm nhanh...">
         </div>
 
-        <div class="d-none d-xl-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border text-muted small">
-            <i class="bi bi-calendar3 text-primary"></i>
-            <span>{{ now()->format('d/m/Y') }}</span>
-        </div>
-    </div>
-
-    <div class="d-flex align-items-center gap-3 ms-3">
         <a href="{{ url('/') }}" class="btn btn-outline-success d-none d-sm-inline-flex align-items-center gap-1">
             <i class="bi bi-house-door-fill"></i>
             Về trang user
@@ -35,7 +35,6 @@
                 <span class="admin-avatar">
                     {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                 </span>
-
                 <span class="d-none d-md-inline text-start">
                     <span class="d-block fw-semibold">{{ auth()->user()->name ?? 'Admin' }}</span>
                     <small class="text-muted">Quản trị viên</small>

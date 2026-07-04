@@ -9,14 +9,18 @@ use Illuminate\Support\Facades\Schema;
 
 class BookingController extends Controller
 {
+    // 1. Lấy danh sách đơn đặt sân (Đã thêm LeftJoin lấy kiểu thanh toán)
     public function index(Request $request)
     {
         $query = DB::table('bookings')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->select(
                 'bookings.*',
                 'users.name as user_name',
-                'users.email as user_email'
+                'users.email as user_email',
+                'payment_methods.name as method_name' // Lấy tên phương thức thanh toán ra ngoài danh sách
             )
             ->orderByDesc('bookings.id');
 
@@ -24,12 +28,10 @@ class BookingController extends Controller
             $keyword = trim($request->keyword);
 
             $query->where(function ($q) use ($keyword) {
-                // Tìm theo ID đơn
                 if (is_numeric($keyword)) {
                     $q->where('bookings.id', $keyword);
                 }
 
-                // Tìm theo mã đơn
                 if (Schema::hasColumn('bookings', 'booking_code')) {
                     $q->orWhere('bookings.booking_code', 'like', "%{$keyword}%");
                 }
@@ -38,7 +40,6 @@ class BookingController extends Controller
                     $q->orWhere('bookings.code', 'like', "%{$keyword}%");
                 }
 
-                // Tìm theo khách hàng trong bảng bookings
                 if (Schema::hasColumn('bookings', 'customer_name')) {
                     $q->orWhere('bookings.customer_name', 'like', "%{$keyword}%");
                 }
@@ -51,11 +52,9 @@ class BookingController extends Controller
                     $q->orWhere('bookings.customer_phone', 'like', "%{$keyword}%");
                 }
 
-                // Tìm theo user
                 $q->orWhere('users.name', 'like', "%{$keyword}%")
-                ->orWhere('users.email', 'like', "%{$keyword}%");
+                  ->orWhere('users.email', 'like', "%{$keyword}%");
 
-                // Tìm theo trạng thái
                 if (Schema::hasColumn('bookings', 'status')) {
                     $q->orWhere('bookings.status', 'like', "%{$keyword}%");
                 }
@@ -79,14 +78,18 @@ class BookingController extends Controller
         return view('admin.bookings.index', compact('bookings'));
     }
 
+    // 2. Chi tiết đơn đặt sân (Giữ nguyên vì đã chuẩn sẵn)
     public function show($id)
     {
         $booking = DB::table('bookings')
+            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
             ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->select(
                 'bookings.*',
                 'users.name as user_name',
-                'users.email as user_email'
+                'users.email as user_email',
+                'payment_methods.name as method_name'
             )
             ->where('bookings.id', $id)
             ->first();
@@ -111,31 +114,38 @@ class BookingController extends Controller
         return view('admin.bookings.show', compact('booking', 'bookingDetails'));
     }
 
+    // 3. Cập nhật trạng thái (Đã dọn sạch cột lỗi payment_status)
     public function update(Request $request, $id)
     {
         $request->validate([
             'status' => ['required', 'string', 'max:50'],
+            'payment_status' => ['nullable', 'string', 'max:50'], // Trạng thái này để cập nhật bảng payments
         ]);
 
-        DB::table('bookings')
-            ->where('id', $id)
-            ->update([
-                'status' => $request->status,
-                'updated_at' => now(),
-            ]);
+        // Bảng bookings của bạn chỉ có cột status, bỏ hẳn payment_status khỏi đây
+        $updateData = [
+            'status' => $request->status,
+            'updated_at' => now(),
+        ];
 
-        if (Schema::hasColumn('booking_details', 'status')) {
-            DB::table('booking_details')
+        // Nếu Admin chọn cập nhật trạng thái thanh toán là 'paid' từ form
+        if ($request->filled('payment_status') && $request->payment_status === 'paid') {
+            DB::table('payments')
                 ->where('booking_id', $id)
                 ->update([
-                    'status' => $request->status,
-                    'updated_at' => now(),
+                    'status' => 'paid', // Khớp với enum('unpaid', 'paid'...) của bảng payments của bạn
+                    'paid_at' => now(), 
+                    'updated_at' => now()
                 ]);
         }
 
+        DB::table('bookings')
+            ->where('id', $id)
+            ->update($updateData);
+
         return redirect()
             ->route('admin.bookings.show', $id)
-            ->with('success', 'Cập nhật trạng thái đơn đặt sân thành công.');
+            ->with('success', 'Cập nhật trạng thái đơn hàng thành công.');
     }
 
     public function destroy($id)

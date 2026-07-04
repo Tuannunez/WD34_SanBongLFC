@@ -322,9 +322,9 @@ class BookingController extends Controller
 
             DB::commit();
 
-            return redirect()
-                ->route('user.bookings.index')
-                ->with('success', 'Đặt sân thành công. Mã đơn đặt sân: ' . $bookingCode);
+           return redirect()
+                ->route('user.payment.show', $bookingId)
+                ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng hoàn tất phương thức thanh toán.');
         } catch (\Throwable $e) {
             DB::rollBack();
 

@@ -178,6 +178,13 @@
                         </div>
                     </div>
 
+                    <p>
+                        <strong>Kiểu thanh toán:</strong> 
+                        <span class="badge bg-info text-dark">
+                            {{ $booking->method_name ?? 'Chưa xác định' }}
+                        </span>
+                    </p>
+
                     <div class="mb-3">
                         <label class="text-muted mb-1">Cập nhật lần cuối</label>
                         <div class="fw-semibold">

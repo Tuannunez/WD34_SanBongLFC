@@ -110,6 +110,7 @@
                             <th>Sân</th>
                             <th>Ngày đặt</th>
                             <th>Khung giờ</th>
+                            <th>Phương thức thanh toán</th>
                             <th>Giá</th>
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
@@ -161,7 +162,6 @@
                                     <div class="fw-semibold">
                                         {{ $detail->user_name ?? $detail->customer_name ?? 'Chưa có thông tin' }}
                                     </div>
-
                                     <small class="text-muted">
                                         {{ $detail->user_email ?? $detail->customer_email ?? '-' }}
                                     </small>
@@ -173,7 +173,6 @@
                                              style="width: 40px; height: 40px;">
                                             <i class="bi bi-dribbble"></i>
                                         </div>
-
                                         <div>
                                             <div class="fw-semibold">
                                                 {{ $detail->field_name ?? 'Không có sân' }}
@@ -184,11 +183,7 @@
                                 </td>
 
                                 <td>
-                                    @if($bookingDate)
-                                        {{ \Carbon\Carbon::parse($bookingDate)->format('d/m/Y') }}
-                                    @else
-                                        -
-                                    @endif
+                                    {{ $bookingDate ? \Carbon\Carbon::parse($bookingDate)->format('d/m/Y') : '-' }}
                                 </td>
 
                                 <td>
@@ -198,6 +193,12 @@
                                         @else
                                             -
                                         @endif
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                                        {{ $detail->method_name ?? 'Tại sân / Chưa chọn' }}
                                     </span>
                                 </td>
 
@@ -221,7 +222,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
                                     <span class="text-muted">Chưa có chi tiết đặt sân nào.</span>
                                 </td>
@@ -239,11 +240,11 @@
                     {{-- Nút trước --}}
                     @if ($bookingDetails->onFirstPage())
                         <span class="btn btn-sm btn-light text-muted disabled px-3">
-                            <i class="fa-solid fa-angle-left"></i>
+                            <i class="bi bi-chevron-left"></i>
                         </span>
                     @else
                         <a href="{{ $bookingDetails->previousPageUrl() }}" class="btn btn-sm btn-light px-3">
-                            <i class="fa-solid fa-angle-left"></i>
+                            <i class="bi bi-chevron-left"></i>
                         </a>
                     @endif
 
@@ -263,11 +264,11 @@
                     {{-- Nút sau --}}
                     @if ($bookingDetails->hasMorePages())
                         <a href="{{ $bookingDetails->nextPageUrl() }}" class="btn btn-sm btn-light px-3">
-                            <i class="fa-solid fa-angle-right"></i>
+                            <i class="bi bi-chevron-right"></i>
                         </a>
                     @else
                         <span class="btn btn-sm btn-light text-muted disabled px-3">
-                            <i class="fa-solid fa-angle-right"></i>
+                            <i class="bi bi-chevron-right"></i>
                         </span>
                     @endif
 
