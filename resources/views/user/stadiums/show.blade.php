@@ -36,9 +36,10 @@
         width: 100%;
         text-align: left;
         transition: .2s;
+        color: #111827;
     }
 
-    .slot-btn:hover {
+    .slot-btn:hover:not(:disabled) {
         border-color: #16a34a;
         background: #f0fdf4;
     }
@@ -47,6 +48,18 @@
         border-color: #16a34a;
         background: #dcfce7;
         box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
+    }
+
+    .slot-btn.is-occupied {
+        border-color: #fda4af;
+        background: #fff1f2;
+        color: #9f1239;
+        opacity: .9;
+    }
+
+    .slot-btn:disabled {
+        cursor: not-allowed;
+        opacity: .85;
     }
 
     .slot-time {
@@ -512,10 +525,29 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">
+                                    Chọn sân con <span class="text-danger">*</span>
+                                </label>
+                                <select name="field_id"
+                                        id="fieldSelect"
+                                        class="form-select rounded-3">
+                                    <option value="">-- Chọn sân --</option>
+                                    @foreach($fields as $field)
+                                        <option value="{{ $field->id }}" @selected(old('field_id') == $field->id)>
+                                            {{ $field->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
                                     Chọn khung giờ <span class="text-danger">*</span>
                                 </label>
 
                                 <div class="accordion" id="slotAccordion">
+                                    @if(empty($timeSlots))
+                                        <div class="alert alert-light rounded-3 border">Chưa có khung giờ nào được cấu hình cho sân này.</div>
+                                    @else
                                     @foreach($timeSlots as $groupIndex => $group)
                                         <div class="accordion-item border rounded-4 mb-2 overflow-hidden">
                                             <h2 class="accordion-header">
@@ -535,9 +567,11 @@
                                                         @foreach($group['slots'] as $slot)
                                                             <button type="button"
                                                                     class="slot-btn js-slot-btn"
+                                                                    data-slot-id="{{ $slot['id'] ?? '' }}"
                                                                     data-time="{{ $slot['time'] }}"
-                                                                    data-price="{{ $slot['price'] }}">
-                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    data-price="{{ $slot['price'] }}"
+                                                                    data-available="true">
+                                                                <div class="d-flex justify-content-between align-items-start gap-3">
                                                                     <div>
                                                                         <div class="slot-time">
                                                                             {{ $slot['time'] }}
@@ -545,8 +579,11 @@
                                                                         <small class="text-muted">Bấm để chọn</small>
                                                                     </div>
 
-                                                                    <div class="slot-price">
-                                                                        {{ number_format((float) $slot['price'], 0, ',', '.') }}đ
+                                                                    <div class="text-end">
+                                                                        <div class="slot-price">
+                                                                            {{ number_format((float) $slot['price'], 0, ',', '.') }}đ
+                                                                        </div>
+                                                                        <span class="slot-state badge rounded-pill mt-2 bg-success-subtle text-success">Còn trống</span>
                                                                     </div>
                                                                 </div>
                                                             </button>
@@ -556,6 +593,7 @@
                                             </div>
                                         </div>
                                     @endforeach
+                                    @endif
                                 </div>
 
                                 @error('time_slot')
@@ -623,20 +661,128 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const slotButtons = document.querySelectorAll('.js-slot-btn');
+        const slotButtons = Array.from(document.querySelectorAll('.js-slot-btn'));
         const selectedTimeSlot = document.getElementById('selectedTimeSlot');
         const selectedPrice = document.getElementById('selectedPrice');
         const summaryTime = document.getElementById('summaryTime');
         const summaryPrice = document.getElementById('summaryPrice');
         const bookingForm = document.getElementById('bookingForm');
+        const bookingDate = document.getElementById('bookingDate');
+        const fieldSelect = document.getElementById('fieldSelect');
+        const availabilityUrl = '{{ route('user.bookings.availability', $stadium->id) }}';
 
         function formatMoney(value) {
             value = Number(value || 0);
             return value.toLocaleString('vi-VN') + 'đ';
         }
 
+        function resetSelection() {
+            slotButtons.forEach(function (item) {
+                item.classList.remove('active');
+            });
+
+            if (selectedTimeSlot) {
+                selectedTimeSlot.value = '';
+            }
+
+            if (selectedPrice) {
+                selectedPrice.value = '';
+            }
+
+            if (summaryTime) {
+                summaryTime.innerText = 'Chưa chọn';
+            }
+
+            if (summaryPrice) {
+                summaryPrice.innerText = '0đ';
+            }
+        }
+
+        function updateAvailability(response) {
+            const slots = response.slots || [];
+            const slotMap = new Map(slots.map(function (slot) {
+                return [String(slot.id), slot];
+            }));
+
+            slotButtons.forEach(function (button) {
+                const slotId = String(button.dataset.slotId || '');
+                const slot = slotMap.get(slotId);
+                const state = button.querySelector('.slot-state');
+
+                if (!slot) {
+                    return;
+                }
+
+                if (slot.available) {
+                    button.disabled = false;
+                    button.dataset.available = 'true';
+                    button.classList.remove('is-occupied', 'active');
+                    button.classList.add('available');
+                    if (state) {
+                        state.className = 'slot-state badge rounded-pill mt-2 bg-success-subtle text-success';
+                        state.innerText = 'Còn trống';
+                    }
+                } else {
+                    button.disabled = true;
+                    button.dataset.available = 'false';
+                    button.classList.remove('active', 'available');
+                    button.classList.add('is-occupied');
+                    if (state) {
+                        state.className = 'slot-state badge rounded-pill mt-2 bg-danger-subtle text-danger';
+                        state.innerText = 'Đã đặt';
+                    }
+                }
+            });
+
+            if (selectedTimeSlot && selectedTimeSlot.value) {
+                const selectedButton = slotButtons.find(function (item) {
+                    return item.dataset.time === selectedTimeSlot.value;
+                });
+
+                if (selectedButton && selectedButton.disabled) {
+                    resetSelection();
+                }
+            }
+        }
+
+        function fetchAvailability() {
+            if (!bookingDate || !fieldSelect) {
+                return;
+            }
+
+            const params = new URLSearchParams({
+                field_id: fieldSelect.value,
+                booking_date: bookingDate.value
+            });
+
+            fetch(availabilityUrl + '?' + params.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                updateAvailability(data);
+            })
+            .catch(function () {
+                slotButtons.forEach(function (button) {
+                    button.disabled = false;
+                    button.dataset.available = 'true';
+                    button.classList.remove('is-occupied');
+                    button.querySelector('.slot-state').className = 'slot-state badge rounded-pill mt-2 bg-success-subtle text-success';
+                    button.querySelector('.slot-state').innerText = 'Còn trống';
+                });
+            });
+        }
+
         slotButtons.forEach(function (button) {
             button.addEventListener('click', function () {
+                if (button.disabled) {
+                    return;
+                }
+
                 slotButtons.forEach(function (item) {
                     item.classList.remove('active');
                 });
@@ -664,6 +810,14 @@
             });
         });
 
+        if (bookingDate) {
+            bookingDate.addEventListener('change', fetchAvailability);
+        }
+
+        if (fieldSelect) {
+            fieldSelect.addEventListener('change', fetchAvailability);
+        }
+
         if (bookingForm) {
             bookingForm.addEventListener('submit', function (event) {
                 if (!selectedTimeSlot || !selectedTimeSlot.value) {
@@ -671,8 +825,20 @@
                     alert('Vui lòng chọn khung giờ đặt sân.');
                     return false;
                 }
+
+                const selectedButton = slotButtons.find(function (item) {
+                    return item.dataset.time === selectedTimeSlot.value;
+                });
+
+                if (selectedButton && selectedButton.disabled) {
+                    event.preventDefault();
+                    alert('Khung giờ này vừa được người khác đặt. Vui lòng chọn khung giờ khác.');
+                    return false;
+                }
             });
         }
+
+        fetchAvailability();
     });
 </script>
 @endpush

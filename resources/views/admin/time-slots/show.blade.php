@@ -55,16 +55,22 @@
                             @foreach($timeSlots as $slot)
                                 <tr>
                                     <td class="text-center">
-                                        {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
+                                        <form action="{{ route('admin.time-slots.update', [$stadium->id, $slot->id]) }}" method="POST" class="row g-2 align-items-center">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="col-md-5">
+                                                <input type="time" name="start_time" class="form-control" value="{{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}" required>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <input type="time" name="end_time" class="form-control" value="{{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}" required>
+                                            </div>
                                     </td>
                                     <td>
-                                        <input type="text"
-                                               name="prices[{{ $slot->id }}]"
-                                               form="prices-form"
-                                               class="form-control text-end"
-                                               value="{{ number_format($existing[$slot->id] ?? 0, 0, ',', '.') }}">
+                                            <input type="text" name="price" class="form-control text-end" value="{{ isset($existing[$slot->id]) ? number_format($existing[$slot->id], 0, ',', '.') : '' }}" placeholder="Giá (VNĐ)">
                                     </td>
                                     <td class="text-center">
+                                            <button type="submit" class="btn btn-success btn-sm">Lưu</button>
+                                        </form>
                                         @if(isset($existing[$slot->id]))
                                             <form action="{{ route('admin.time-slots.destroy', [$stadium->id, $slot->id]) }}" method="POST" onsubmit="return confirm('Xác nhận xóa giá cố định cho khung giờ này?');" style="display:inline-block">
                                                 @csrf

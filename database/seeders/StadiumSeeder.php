@@ -10,6 +10,9 @@ class StadiumSeeder extends Seeder
 {
     public function run(): void
     {
+        Stadium::query()->delete();
+        Field::query()->delete();
+
         $stadium = Stadium::create([
             'name' => 'Sân bóng LFC Football Center',
             'image' => 'https://picsum.photos/900/500',
@@ -28,21 +31,29 @@ class StadiumSeeder extends Seeder
         Field::create([
             'stadium_id' => $stadium->id,
             'field_type_id' => 1,
-            'name' => 'Sân 5 - A',
+            'name' => 'Sân 9 - A',
             'price_per_hour' => 100000,
-            'description' => 'Sân 5 người chất lượng tốt',
+            'description' => 'Sân 9 người chất lượng tốt',
             'status' => true,
         ]);
 
         Field::create([
             'stadium_id' => $stadium->id,
             'field_type_id' => 1,
-            'name' => 'Sân 5 - B',
+            'name' => 'Sân 7 - A',
             'price_per_hour' => 100000,
-            'description' => 'Sân 5 người chất lượng tốt',
+            'description' => 'Sân 7 người chất lượng tốt',
             'status' => true,
         ]);
 
+        Field::create([
+            'stadium_id' => $stadium->id,
+            'field_type_id' => 2,
+            'name' => 'Sân 7 - B',
+            'price_per_hour' => 150000,
+            'description' => 'Sân 7 người cỏ nhân tạo',
+            'status' => true,
+        ]);
         Field::create([
             'stadium_id' => $stadium->id,
             'field_type_id' => 2,

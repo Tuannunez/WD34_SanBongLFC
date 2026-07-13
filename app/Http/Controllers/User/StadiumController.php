@@ -51,6 +51,7 @@ class StadiumController extends Controller
 
         $fixedTimeSlots = TimeSlot::where('status', true)
             ->orderBy('start_time')
+            ->take(10)
             ->get();
 
         $customSlots = StadiumSpecialTimeSlot::where('stadium_id', $stadium->id)

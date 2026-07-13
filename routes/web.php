@@ -49,6 +49,9 @@ Route::middleware(['web'])->group(function () {
     Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
         ->name('user.bookings.store.from-stadium');
 
+    Route::get('/stadiums/{stadium}/availability', [UserBookingController::class, 'availability'])
+        ->name('user.bookings.availability');
+
     Route::middleware(['auth'])->group(function () {
 
         Route::get('/dat-san/{stadium}', [UserBookingController::class, 'create'])
@@ -134,6 +137,8 @@ Route::middleware(['web'])->group(function () {
             ->name('time-slots.show');
         Route::post('time-slots/{stadium}', [TimeSlotsController::class, 'storeForStadium'])
             ->name('time-slots.store');
+        Route::put('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'update'])
+            ->name('time-slots.update');
         Route::post('time-slots/{stadium}/add', [TimeSlotsController::class, 'addForStadium'])
             ->name('time-slots.add');
         Route::delete('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'destroy'])
