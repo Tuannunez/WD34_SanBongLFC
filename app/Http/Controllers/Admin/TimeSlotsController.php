@@ -68,6 +68,39 @@ class TimeSlotsController extends Controller
             ->with('success', 'Lưu giá cố định theo sân thành công.');
     }
 
+    public function update(Request $request, $stadiumId, $timeSlotId)
+    {
+        $stadium = Stadium::findOrFail($stadiumId);
+        $timeSlot = TimeSlot::findOrFail($timeSlotId);
+
+        $data = $request->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'price' => 'nullable',
+        ]);
+
+        $start = $data['start_time'];
+        $end = $data['end_time'];
+        $startFull = strlen($start) === 5 ? $start . ':00' : $start;
+        $endFull = strlen($end) === 5 ? $end . ':00' : $end;
+
+        $timeSlot->update([
+            'start_time' => $startFull,
+            'end_time' => $endFull,
+            'status' => true,
+        ]);
+
+        $price = (float) preg_replace('/[^0-9.]/', '', (string) ($data['price'] ?? 0));
+
+        StadiumTimeSlotPrice::updateOrCreate(
+            ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlot->id],
+            ['price' => $price]
+        );
+
+        return redirect()->route('admin.time-slots.show', $stadium->id)
+            ->with('success', 'Đã cập nhật khung giờ và giá thành công.');
+    }
+
     public function addForStadium(Request $request, $stadiumId)
     {
         $stadium = Stadium::findOrFail($stadiumId);

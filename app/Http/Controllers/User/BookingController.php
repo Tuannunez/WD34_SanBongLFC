@@ -102,6 +102,69 @@ class BookingController extends Controller
         ]);
     }
 
+    public function availability(Request $request, $stadium)
+    {
+        $stadiumData = DB::table('stadiums')->where('id', $stadium)->first();
+
+        if (!$stadiumData) {
+            abort(404);
+        }
+
+        $fieldId = $request->input('field_id');
+        $bookingDate = $this->convertBookingDate($request->input('booking_date')) ?? now()->format('Y-m-d');
+
+        if (!$fieldId) {
+            $field = DB::table('fields')->where('stadium_id', $stadiumData->id)->orderBy('id')->first();
+            $fieldId = $field?->id;
+        }
+
+        $timeSlots = DB::table('time_slots')
+            ->where('status', true)
+            ->orderBy('start_time')
+            ->limit(10)
+            ->get();
+
+        if ($timeSlots->isEmpty() && Schema::hasTable('time_slots')) {
+            $timeSlots = collect([
+                ['start_time' => '06:00:00', 'end_time' => '07:00:00', 'status' => true],
+                ['start_time' => '07:00:00', 'end_time' => '08:00:00', 'status' => true],
+                ['start_time' => '08:00:00', 'end_time' => '09:00:00', 'status' => true],
+                ['start_time' => '09:00:00', 'end_time' => '10:00:00', 'status' => true],
+                ['start_time' => '10:00:00', 'end_time' => '11:00:00', 'status' => true],
+            ]);
+        }
+
+        $slots = [];
+
+        foreach ($timeSlots as $slot) {
+            $exists = DB::table('booking_details as bd')
+                ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+                ->where('bd.field_id', $fieldId)
+                ->where('bd.time_slot_id', $slot->id)
+                ->whereDate('bd.booking_date', $bookingDate)
+                ->where('b.status', '!=', 'cancelled')
+                ->exists();
+
+            $slotId = $slot->id ?? null;
+            $startTime = $slot->start_time ?? data_get($slot, 'start_time');
+            $endTime = $slot->end_time ?? data_get($slot, 'end_time');
+
+            $slots[] = [
+                'id' => $slotId,
+                'time' => substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5),
+                'price' => (float) ($slot->price ?? 0),
+                'available' => !$exists,
+            ];
+        }
+
+        return response()->json([
+            'stadium_id' => $stadiumData->id,
+            'field_id' => $fieldId,
+            'booking_date' => $bookingDate,
+            'slots' => $slots,
+        ]);
+    }
+
     public function storeFromStadium(Request $request, $stadium)
     {
         $request->merge([
