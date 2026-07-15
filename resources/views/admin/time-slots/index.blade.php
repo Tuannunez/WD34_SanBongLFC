@@ -22,6 +22,7 @@
                             <th>#</th>
                             <th>Tên sân</th>
                             <th>Giờ đặt sân cố định</th>
+                            <th>Giá cố định (VNĐ)</th>
                             <th>Giá khung giờ đặc biệt</th>
                             <th>Hành động</th>
                         </tr>
@@ -32,8 +33,21 @@
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>{{ $stadium->name }}</td>
                                 <td class="text-center">
-                                    @foreach($fixedSlots as $slot)
+                                    @php $stadiumSlots = $fixedSlotsMap->has($stadium->id) ? $fixedSlotsMap[$stadium->id] : collect(); @endphp
+                                    @foreach($stadiumSlots as $slot)
                                         <div>{{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}</div>
+                                    @endforeach
+                                </td>
+                                <td class="text-center">
+                                    @php
+                                        $pricesForStadium = isset($slotPrices[$stadium->id]) ? $slotPrices[$stadium->id] : collect();
+                                    @endphp
+                                    @foreach($stadiumSlots as $slot)
+                                        @php
+                                            $priceModel = $pricesForStadium->firstWhere('time_slot_id', $slot->id);
+                                            $priceValue = $priceModel ? $priceModel->price : ($stadium->price ?? null);
+                                        @endphp
+                                        <div class="mb-1">{!! $priceValue !== null ? '<span class="text-success">' . number_format($priceValue, 0, ',', '.') . 'đ</span>' : '<span class="text-muted">-</span>' !!}</div>
                                     @endforeach
                                 </td>
                                 <td>

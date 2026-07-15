@@ -88,8 +88,8 @@ class StadiumsController extends Controller
 
         $services = Service::query()->get();
 
-        // Lấy và xử lý timeSlots
-        $slots = TimeSlot::query()->where('status', true)->orderBy('start_time')->get();
+        // Lấy và xử lý timeSlots chỉ cho sân này
+        $slots = TimeSlot::query()->where('status', true)->where('stadium_id', $stadium->id)->orderBy('start_time')->get();
 
         $timeSlots = [];
         

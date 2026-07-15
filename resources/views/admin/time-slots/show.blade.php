@@ -66,20 +66,19 @@
                                             </div>
                                     </td>
                                     <td>
-                                            <input type="text" name="price" class="form-control text-end" value="{{ isset($existing[$slot->id]) ? number_format($existing[$slot->id], 0, ',', '.') : '' }}" placeholder="Giá (VNĐ)">
+                                            @php
+                                                $defaultPrice = isset($existing[$slot->id]) ? $existing[$slot->id] : ($stadium->price ?? null);
+                                            @endphp
+                                            <input type="text" name="price" class="form-control text-end" value="{{ $defaultPrice !== null ? number_format($defaultPrice, 0, ',', '.') : '' }}" placeholder="Giá (VNĐ)">
                                     </td>
                                     <td class="text-center">
                                             <button type="submit" class="btn btn-success btn-sm">Lưu</button>
                                         </form>
-                                        @if(isset($existing[$slot->id]))
                                             <form action="{{ route('admin.time-slots.destroy', [$stadium->id, $slot->id]) }}" method="POST" onsubmit="return confirm('Xác nhận xóa giá cố định cho khung giờ này?');" style="display:inline-block">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
                                             </form>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
