@@ -83,18 +83,22 @@
                         <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
                         <h5 class="text-secondary border-bottom pb-2 mb-3">Chọn phương thức thanh toán</h5>
-                        
-                        @foreach($paymentMethods as $method)
-                            <div class="card p-3 mb-2 border @if($loop->first) border-success @endif d-flex flex-row align-items-center payment-method-block" 
-                                 style="gap: 12px;">
-                                <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
-                                    id="method-{{ $method->id }}" value="{{ $method->id }}" data-code="{{ $method->code }}"
-                                    @if($loop->first) checked @endif required>
-                                <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-{{ $method->id }}" style="cursor: pointer;">
-                                    {{ $method->name }}
-                                </label>
-                            </div>
-                        @endforeach
+
+                        @if($paymentMethods->isEmpty())
+                            <div class="alert alert-warning">Hiện chưa có phương thức thanh toán khả dụng. Vui lòng thử lại sau.</div>
+                        @else
+                            @foreach($paymentMethods as $method)
+                                <div class="card p-3 mb-2 border @if($loop->first) border-success @endif d-flex flex-row align-items-center payment-method-block" 
+                                     style="gap: 12px;">
+                                    <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
+                                        id="method-{{ $method->id }}" value="{{ $method->id }}" data-code="{{ $method->code }}"
+                                        @if($loop->first) checked @endif required>
+                                    <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-{{ $method->id }}" style="cursor: pointer;">
+                                        {{ $method->name }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        @endif
 
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-success btn-lg w-100 py-2 fw-bold">XÁC NHẬN VÀ TIẾN HÀNH THANH TOÁN</button>

@@ -281,6 +281,68 @@
             <div class="card info-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="fw-bold mb-0">
+                        <i class="bi bi-grid-3x3-gap text-success me-2"></i>
+                        Danh sách sân con
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+                    @php
+                        $fieldSummary = $fields->groupBy(function ($field) {
+                            $players = $field->fieldType?->number_of_players;
+                            return $players ? 'Sân ' . $players . ' người' : 'Sân khác';
+                        })->map(function ($group, $label) {
+                            return ['label' => $label, 'count' => $group->count()];
+                        })->values();
+                    @endphp
+
+                    @if($fields->isNotEmpty())
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Tổng quan</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach($fieldSummary as $item)
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
+                                        {{ $item['count'] }} {{ $item['label'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            @foreach($fields as $field)
+                                @php
+                                    $players = $field->fieldType?->number_of_players;
+                                    $fieldLabel = $field->name ?: 'Sân ' . ($loop->iteration);
+                                @endphp
+                                <div class="col-md-6">
+                                    <div class="border rounded-4 p-3 h-100 bg-light">
+                                        <div class="d-flex justify-content-between align-items-start gap-2">
+                                            <div>
+                                                <div class="fw-bold">{{ $fieldLabel }}</div>
+                                                <div class="text-muted small">
+                                                    {{ $players ? 'Sân ' . $players . ' người' : 'Loại sân chưa xác định' }}
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-white text-dark">#{{ $loop->iteration }}</span>
+                                        </div>
+                                        @if($field->description)
+                                            <div class="text-muted small mt-2">{{ $field->description }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="alert alert-light rounded-3 border mb-0">
+                            Hiện chưa có sân con nào được cấu hình cho cơ sở này.
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card info-card mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="fw-bold mb-0">
                         <i class="bi bi-clock-history text-success me-2"></i>
                         Bảng giá theo khung giờ
                     </h4>
@@ -532,8 +594,9 @@
                                         class="form-select rounded-3">
                                     <option value="">-- Chọn sân --</option>
                                     @foreach($fields as $field)
+                                        @php $players = $field->fieldType?->number_of_players; @endphp
                                         <option value="{{ $field->id }}" @selected(old('field_id') == $field->id)>
-                                            {{ $field->name }}
+                                            {{ $field->name ?: 'Sân ' . ($loop->iteration) }}{{ $players ? ' (Sân ' . $players . ' người)' : '' }}
                                         </option>
                                     @endforeach
                                 </select>

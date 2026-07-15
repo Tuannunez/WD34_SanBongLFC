@@ -9,13 +9,50 @@ use Carbon\Carbon;
 
 class PaymentController extends Controller
 {
+    private function ensurePaymentMethods()
+    {
+        $paymentMethods = DB::table('payment_methods')->where('status', 1)->get();
+
+        if ($paymentMethods->isNotEmpty()) {
+            return $paymentMethods;
+        }
+
+        $defaults = [
+            [
+                'name' => 'Thanh toán tại sân',
+                'code' => 'PAY_AT_FIELD',
+                'status' => 1,
+            ],
+            [
+                'name' => 'Chuyển khoản / VNPay',
+                'code' => 'VNPAY_QR',
+                'status' => 1,
+            ],
+        ];
+
+        foreach ($defaults as $method) {
+            DB::table('payment_methods')->updateOrInsert(
+                ['code' => $method['code']],
+                [
+                    'name' => $method['name'],
+                    'code' => $method['code'],
+                    'status' => $method['status'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
+
+        return DB::table('payment_methods')->where('status', 1)->get();
+    }
+
     // 1. Hiển thị trang chọn phương thức thanh toán
     public function showPaymentPage($booking_id)
     {
         $booking = DB::table('bookings')->where('id', $booking_id)->first();
         if (!$booking) abort(404);
 
-        $paymentMethods = DB::table('payment_methods')->where('status', 1)->get();
+        $paymentMethods = $this->ensurePaymentMethods();
 
         return view('user.payment.index', compact('booking', 'paymentMethods'));
     }

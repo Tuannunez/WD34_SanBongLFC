@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StadiumsController;
 use App\Http\Controllers\Admin\TimeSlotsController;
+use App\Http\Controllers\Admin\FieldController;
 use App\Http\Controllers\Admin\FieldTypeController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
@@ -138,6 +139,12 @@ Route::middleware(['web'])->group(function () {
             ->name('users.toggle-status');
 
         Route::resource('stadiums', StadiumsController::class);
+        Route::post('stadiums/{stadium}/fields', [StadiumsController::class, 'storeField'])
+            ->name('stadiums.fields.store');
+        Route::put('stadiums/{stadium}/fields/{field}', [StadiumsController::class, 'updateField'])
+            ->name('stadiums.fields.update');
+        Route::delete('stadiums/{stadium}/fields/{field}', [StadiumsController::class, 'destroyField'])
+            ->name('stadiums.fields.destroy');
 
         Route::get('time-slots', [TimeSlotsController::class, 'index'])
             ->name('time-slots.index');
@@ -159,6 +166,15 @@ Route::middleware(['web'])->group(function () {
         Route::delete('stadiums/{stadium}/prices/custom/{slot}', [StadiumsController::class, 'destroyCustom']);
 
         Route::resource('field-types', FieldTypeController::class);
+
+        Route::get('fields', [FieldController::class, 'index'])->name('fields.index');
+Route::post('fields', [FieldController::class, 'store'])->name('fields.store');
+
+Route::put('fields/{field}', [FieldController::class, 'update'])
+    ->name('fields.update');
+
+Route::delete('fields/{field}', [FieldController::class, 'destroy'])
+    ->name('fields.destroy');
 
         Route::resource('services', ServiceController::class);
 
