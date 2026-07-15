@@ -33,8 +33,7 @@
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>{{ $stadium->name }}</td>
                                 <td class="text-center">
-                                    @php $stadiumSlots = $fixedSlotsMap->has($stadium->id) ? $fixedSlotsMap[$stadium->id] : collect(); @endphp
-                                    @foreach($stadiumSlots as $slot)
+                                    @foreach($fixedSlots as $slot)
                                         <div>{{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}</div>
                                     @endforeach
                                 </td>
@@ -42,7 +41,7 @@
                                     @php
                                         $pricesForStadium = isset($slotPrices[$stadium->id]) ? $slotPrices[$stadium->id] : collect();
                                     @endphp
-                                    @foreach($stadiumSlots as $slot)
+                                    @foreach($fixedSlots as $slot)
                                         @php
                                             $priceModel = $pricesForStadium->firstWhere('time_slot_id', $slot->id);
                                             $priceValue = $priceModel ? $priceModel->price : ($stadium->price ?? null);
