@@ -84,12 +84,15 @@ class StadiumsController extends Controller
     {
         $stadium = Stadium::findOrFail($id);
 
-        $fields = Field::where('stadium_id', $stadium->id)->get();
+        $fields = Field::where('stadium_id', $stadium->id)
+            ->with('fieldType')
+            ->orderBy('name')
+            ->get();
 
         $services = Service::query()->get();
 
-        // Lấy và xử lý timeSlots
-        $slots = TimeSlot::query()->where('status', true)->orderBy('start_time')->get();
+        // Lấy và xử lý timeSlots chỉ cho sân này
+        $slots = TimeSlot::query()->where('status', true)->where('stadium_id', $stadium->id)->orderBy('start_time')->get();
 
         $timeSlots = [];
         
@@ -129,12 +132,68 @@ class StadiumsController extends Controller
         // Chuyển về mảng indexed
         $timeSlots = array_values($timeSlots);
 
+        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
+
         return view('admin.stadiums.show', compact(
             'stadium',
             'fields',
             'timeSlots',
-            'services'
+            'services',
+            'fieldTypes'
         ));
+    }
+
+    public function storeField(Request $request, Stadium $stadium)
+    {
+        $data = $request->validate([
+            'name' => 'required|max:255',
+            'field_type_id' => 'required|exists:field_types,id',
+            'price_per_hour' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'nullable|boolean',
+        ]);
+
+        $data['stadium_id'] = $stadium->id;
+        $data['status'] = (bool) ($request->input('status', 1));
+
+        Field::create($data);
+
+        return redirect()->route('admin.stadiums.show', $stadium->id)
+            ->with('success', 'Thêm sân con thành công.');
+    }
+
+    public function updateField(Request $request, Stadium $stadium, Field $field)
+    {
+        if ($field->stadium_id !== $stadium->id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'name' => 'required|max:255',
+            'field_type_id' => 'required|exists:field_types,id',
+            'price_per_hour' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'nullable|boolean',
+        ]);
+
+        $data['status'] = (bool) ($request->input('status', 1));
+
+        $field->update($data);
+
+        return redirect()->route('admin.stadiums.show', $stadium->id)
+            ->with('success', 'Cập nhật sân con thành công.');
+    }
+
+    public function destroyField(Stadium $stadium, Field $field)
+    {
+        if ($field->stadium_id !== $stadium->id) {
+            abort(404);
+        }
+
+        $field->delete();
+
+        return redirect()->route('admin.stadiums.show', $stadium->id)
+            ->with('success', 'Xóa sân con thành công.');
     }
 
     public function prices($id)
