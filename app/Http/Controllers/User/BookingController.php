@@ -207,19 +207,27 @@ class BookingController extends Controller
             $totalPrice = $field->price_per_hour ?? 300000;
         }
 
-        $duplicateQuery = DB::table('booking_details')
-            ->where('field_id', $fieldId)
-            ->where('time_slot_id', $timeSlotId);
+        // =========================================================================
+        // LOGIC KHÓA SÂN TẠM THỜI 5 PHÚT - TRÁNH TRÙNG LỊCH ĐẶT SÂN
+        // =========================================================================
+        $duplicateQuery = DB::table('bookings')
+            ->join('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
+            ->where('booking_details.field_id', $fieldId)
+            ->where('booking_details.time_slot_id', $timeSlotId);
 
         if (Schema::hasColumn('booking_details', 'booking_date')) {
-            $duplicateQuery->whereDate('booking_date', $bookingDate);
+            $duplicateQuery->whereDate('booking_details.booking_date', $bookingDate);
         } elseif (Schema::hasColumn('booking_details', 'date')) {
-            $duplicateQuery->whereDate('date', $bookingDate);
+            $duplicateQuery->whereDate('booking_details.date', $bookingDate);
         }
 
-        if (Schema::hasColumn('booking_details', 'status')) {
-            $duplicateQuery->where('status', '!=', 'cancelled');
-        }
+        $duplicateQuery->where(function ($query) {
+            $query->whereIn('bookings.status', ['confirmed', 'completed'])
+                  ->orWhere(function ($q) {
+                      $q->where('bookings.status', 'pending')
+                        ->where('bookings.created_at', '>=', now()->subMinutes(5));
+                  });
+        });
 
         $existingBookingDetail = $duplicateQuery->first();
 
@@ -227,8 +235,23 @@ class BookingController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'booking_time' => 'Khung giờ này đã có người đặt. Vui lòng chọn ngày hoặc khung giờ khác.',
+                    'booking_time' => 'Khung giờ này đã có người đặt hoặc đang trong quá trình thanh toán (giữ sân 5 phút). Vui lòng chọn khung giờ khác hoặc chờ hết thời gian giữ sân!',
                 ]);
+        }
+
+        // =========================================================================
+        // CODE THÊM: DỌN DẸP CHI TIẾT ĐƠN CŨ ĐÃ HỦY ĐỂ TRÁNH LỖI DUPLICATE ENTRY UNIQUE KEY
+        // =========================================================================
+        $cancelledBookings = DB::table('bookings')
+            ->join('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
+            ->where('booking_details.field_id', $fieldId)
+            ->where('booking_details.time_slot_id', $timeSlotId)
+            ->whereDate('booking_details.booking_date', $bookingDate)
+            ->where('bookings.status', 'cancelled')
+            ->pluck('bookings.id');
+
+        if ($cancelledBookings->isNotEmpty()) {
+            DB::table('booking_details')->whereIn('booking_id', $cancelledBookings)->delete();
         }
 
         $bookingCode = 'BK' . now()->format('YmdHis') . Str::upper(Str::random(3));
@@ -240,6 +263,8 @@ class BookingController extends Controller
             ?? $request->input('phone')
             ?? $user->phone
             ?? '0000000000';
+
+        $depositAmount = $totalPrice * 0.3;
 
         try {
             DB::beginTransaction();
@@ -275,6 +300,9 @@ class BookingController extends Controller
                 'total_amount' => $totalPrice,
                 'total' => $totalPrice,
                 'amount' => $totalPrice,
+
+                'deposit_amount' => $depositAmount,
+                'is_deposit_paid' => false,
 
                 'note' => $request->input('note'),
 
@@ -322,9 +350,9 @@ class BookingController extends Controller
 
             DB::commit();
 
-           return redirect()
+            return redirect()
                 ->route('user.payment.show', $bookingId)
-                ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng hoàn tất phương thức thanh toán.');
+                ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng thanh toán cọc 30% để xác nhận đơn.');
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -459,7 +487,6 @@ class BookingController extends Controller
             return null;
         }
 
-        // 1. Ưu tiên tìm sân con thuộc cơ sở sân hiện tại
         if (Schema::hasColumn('fields', 'stadium_id')) {
             $field = DB::table('fields')
                 ->where('stadium_id', $stadiumId)
@@ -471,7 +498,6 @@ class BookingController extends Controller
             }
         }
 
-        // 2. Nếu chưa có sân con nào cho cơ sở này, tự tạo sân mặc định
         $stadium = Schema::hasTable('stadiums')
             ? DB::table('stadiums')->where('id', $stadiumId)->first()
             : null;
@@ -583,5 +609,40 @@ class BookingController extends Controller
         }
 
         return $result;
+    }
+
+    public function checkStatus($id)
+    {
+        $booking = DB::table('bookings')->where('id', $id)->first();
+        if (!$booking) {
+            return response()->json(['status' => 'not_found'], 404);
+        }
+        return response()->json(['status' => $booking->status]);
+    }
+
+    public function handleBankWebhook(Request $request)
+    {
+        $content = $request->input('content');
+
+        preg_match('/MDS(\d+)/', $content, $matches);
+        
+        if (isset($matches[1])) {
+            $bookingId = $matches[1];
+            $booking = DB::table('bookings')->where('id', $bookingId)->first();
+            
+            if ($booking && $booking->status === 'pending') {
+                DB::table('bookings')
+                    ->where('id', $bookingId)
+                    ->update([
+                        'status' => 'confirmed',
+                        'is_deposit_paid' => true,
+                        'updated_at' => now()
+                    ]);
+                
+                return response()->json(['success' => true, 'message' => 'Ngân hàng báo có tiền. Hệ thống tự động duyệt thành công!']);
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Nội dung chuyển khoản hoặc ID đơn hàng không hợp lệ.']);
     }
 }

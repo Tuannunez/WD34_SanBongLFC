@@ -235,13 +235,13 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4">Mã đơn</th>
+                                    <th class="ps-4" style="width: 25%;">Mã đơn</th>
                                     <th>Sân</th>
                                     <th>Ngày đặt</th>
                                     <th>Khung giờ</th>
                                     <th>Tổng tiền</th>
                                     <th>Trạng thái</th>
-                                    <th class="text-end pe-4">Thao tác</th>
+                                    <th class="text-end pe-4" style="width: 25%;">Thao tác</th>
                                 </tr>
                             </thead>
 
@@ -284,15 +284,40 @@
                                         $endTime = $booking->slot_end_time
                                             ?? $booking->end_time
                                             ?? null;
+
+                                        // Thiết lập biến cọc 30% đề phòng DB cũ chưa kịp có giá trị
+                                        $depositAmount = $booking->deposit_amount ?? ($totalMoneyRow * 0.3);
+                                        $isDepositPaid = $booking->is_deposit_paid ?? false;
                                     @endphp
 
                                     <tr>
+                                        {{-- 1. CỘT MÃ ĐƠN & HIỂN THỊ THÔNG TIN ĐÃ CỌC/CHƯA CỌC --}}
                                         <td class="ps-4">
-                                            <div class="fw-bold">#{{ $booking->id }}</div>
+                                            @if($status === 'pending')
+                                                <a href="{{ route('user.payment.show', $booking->id) }}" class="fw-bold text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-hash small"></i>{{ $booking->id }} 
+                                                    <span class="badge bg-warning text-dark px-1.5 py-0.5" style="font-size: 0.65rem;">Cần cọc 30%</span>
+                                                </a>
+                                            @else
+                                                <div class="fw-bold text-dark d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-hash small text-muted"></i>{{ $booking->id }}
+                                                </div>
+                                            @endif
 
                                             @if(!empty($booking->booking_code))
-                                                <small class="text-muted">
-                                                    {{ $booking->booking_code }}
+                                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-qr-code me-1"></i>{{ $booking->booking_code }}
+                                                </small>
+                                            @endif
+
+                                            {{-- HIỂN THỊ NHÃN TRẠNG THÁI TIỀN CỌC --}}
+                                            @if($isDepositPaid)
+                                                <small class="text-success d-block mt-1 fw-medium" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-shield-check me-1"></i>Đã cọc: {{ number_format((float) $depositAmount, 0, ',', '.') }}đ
+                                                </small>
+                                            @else
+                                                <small class="text-danger d-block mt-1 fw-medium" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Chưa cọc: {{ number_format((float) $depositAmount, 0, ',', '.') }}đ
                                                 </small>
                                             @endif
                                         </td>
@@ -305,24 +330,28 @@
                                                 </div>
 
                                                 <div>
-                                                    <div class="fw-semibold">
+                                                    <div class="fw-semibold text-dark">
                                                         {{ $booking->field_name ?? 'Sân chưa xác định' }}
                                                     </div>
-                                                    <small class="text-muted">Sân đã đặt</small>
+                                                    <small class="text-muted" style="font-size: 0.75rem;">Sân đã đặt</small>
                                                 </div>
                                             </div>
                                         </td>
 
                                         <td>
-                                            @if($bookingDate)
-                                                {{ \Carbon\Carbon::parse($bookingDate)->format('d/m/Y') }}
-                                            @else
-                                                -
-                                            @endif
+                                            <div class="d-flex align-items-center text-secondary">
+                                                <i class="bi bi-calendar3 me-2 text-muted"></i>
+                                                @if($bookingDate)
+                                                    {{ \Carbon\Carbon::parse($bookingDate)->format('d/m/Y') }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </div>
                                         </td>
 
                                         <td>
-                                            <span class="badge bg-light text-dark border px-3 py-2">
+                                            <span class="badge bg-light text-dark border px-3 py-2 d-inline-flex align-items-center shadow-sm rounded-3">
+                                                <i class="bi bi-clock me-1.5 text-muted"></i>
                                                 @if($startTime || $endTime)
                                                     {{ $startTime ?? '' }} - {{ $endTime ?? '' }}
                                                 @else
@@ -331,36 +360,53 @@
                                             </span>
                                         </td>
 
-                                        <td class="fw-bold text-success">
+                                        <td class="fw-bold text-success fs-6">
                                             {{ number_format((float) $totalMoneyRow, 0, ',', '.') }}đ
                                         </td>
 
                                         <td>
-                                            <span class="badge {{ $statusClass }} px-3 py-2">
+                                            <span class="badge {{ $statusClass }} px-3 py-2 rounded-pill fw-semibold">
+                                                @if($status === 'pending') <i class="bi bi-hourglass-split me-1"></i> @endif
+                                                @if($status === 'confirmed') <i class="bi bi-check-circle-fill me-1"></i> @endif
+                                                @if($status === 'completed') <i class="bi bi-patch-check-fill me-1"></i> @endif
+                                                @if($status === 'cancelled') <i class="bi bi-x-circle-fill me-1"></i> @endif
                                                 {{ $statusText }}
                                             </span>
                                         </td>
 
+                                        {{-- 2. CỘT THAO TÁC (NÚT BẤM CÓ ICON & HIỂN THỊ RÕ SỐ TIỀN CỌC) --}}
                                         <td class="text-end pe-4">
-                                            <a href="{{ route('user.bookings.show', $booking->id) }}"
-                                            class="btn btn-sm btn-outline-info rounded-3">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
+                                            <div class="d-inline-flex gap-1">
+                                                @if($status === 'pending')
+                                                    <a href="{{ route('user.payment.show', $booking->id) }}" 
+                                                       class="btn btn-sm btn-success rounded-3 d-inline-flex align-items-center gap-1 py-1.5 shadow-sm fw-medium" 
+                                                       title="Thanh toán cọc {{ number_format((float) $depositAmount, 0, ',', '.') }}đ">
+                                                        <i class="bi bi-credit-card-2-back-fill"></i> 
+                                                    </a>
+                                                @endif
 
-                                            @if(($booking->status ?? 'pending') === 'pending')
-                                                <form action="{{ route('user.bookings.destroy', $booking->id) }}"
-                                                    method="POST"
-                                                    class="d-inline"
-                                                    onsubmit="return confirm('Bạn có chắc muốn xóa đơn đặt sân này không?')">
-                                                    @csrf
-                                                    @method('DELETE')
+                                                <a href="{{ route('user.bookings.show', $booking->id) }}"
+                                                   class="btn btn-sm btn-outline-info rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
+                                                   title="Xem chi tiết đơn">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
 
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-outline-danger rounded-3">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
+                                                @if($status === 'pending')
+                                                    <form action="{{ route('user.bookings.destroy', $booking->id) }}"
+                                                          method="POST"
+                                                          class="d-inline mb-0"
+                                                          onsubmit="return confirm('Bạn có chắc muốn xóa đơn đặt sân này không?')">
+                                                        @csrf
+                                                        @method('DELETE')
+
+                                                        <button type="submit"
+                                                                class="btn btn-sm btn-outline-danger rounded-3 d-inline-flex align-items-center py-1.5"
+                                                                title="Xóa đơn">
+                                                            <i class="bi bi-trash3-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

@@ -90,13 +90,21 @@ Route::middleware(['web'])->group(function () {
         Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
             ->name('stadiums.reviews.store');
 
-        // Route hiển thị trang lựa chọn và thực hiện thanh toán
+        // =========================================================================
+        // CẤU HÌNH CÁC TUYẾN ĐƯỜNG THANH TOÁN VNPAY CHO USER
+        // =========================================================================
+        
+        // 1. Hiển thị trang lựa chọn phương thức thanh toán
         Route::get('/thanh-toan/{booking_id}', [PaymentController::class, 'showPaymentPage'])
             ->name('user.payment.show');
 
-        // Route xử lý dữ liệu Form khi người dùng bấm xác nhận thanh toán
+        // 2. Xử lý biểu mẫu khi người dùng bấm xác nhận thanh toán (Tạo link chuyển tiếp sang VNPay)
         Route::post('/thanh-toan/process', [PaymentController::class, 'processPayment'])
             ->name('user.payment.process');
+
+        // 3. Đường dẫn tiếp nhận phản hồi kết quả giao dịch từ cổng VNPay trả về
+        Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])
+            ->name('vnpay.return');
     });
 
     Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {

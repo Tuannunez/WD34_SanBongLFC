@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(App\Http\Middleware\CheckUserStatus::class);
+        $middleware->validateCsrfTokens(except: [
+            'api/bank-webhook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
