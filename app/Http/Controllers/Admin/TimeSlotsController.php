@@ -14,11 +14,7 @@ class TimeSlotsController extends Controller
     public function index()
     {
         $stadiums = Stadium::orderBy('name')->get();
-        $fixedSlotsMap = TimeSlot::whereIn('stadium_id', $stadiums->pluck('id'))
-            ->where('status', true)
-            ->orderBy('start_time')
-            ->get()
-            ->groupBy('stadium_id');
+        $fixedSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
 
         $slotPrices = StadiumTimeSlotPrice::whereIn('stadium_id', $stadiums->pluck('id'))
             ->get()
@@ -32,7 +28,7 @@ class TimeSlotsController extends Controller
 
         return view('admin.time-slots.index', compact(
             'stadiums',
-            'fixedSlotsMap',
+            'fixedSlots',
             'slotPrices',
             'specialSlots'
         ));
@@ -41,7 +37,7 @@ class TimeSlotsController extends Controller
     public function show($stadiumId)
     {
         $stadium = Stadium::findOrFail($stadiumId);
-        $timeSlots = TimeSlot::where('status', true)->where('stadium_id', $stadium->id)->orderBy('start_time')->get();
+        $timeSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
 
         $existing = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
             ->pluck('price', 'time_slot_id')
@@ -60,7 +56,8 @@ class TimeSlotsController extends Controller
         ]);
 
         foreach ($data['prices'] as $timeSlotId => $value) {
-           $price = (float) preg_replace('/[^0-9]/', '', (string) $value);
+            $price = (float) preg_replace('/[^0-9.]/', '', (string) $value);
+
             StadiumTimeSlotPrice::updateOrCreate(
                 ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlotId],
                 ['price' => $price]
@@ -93,7 +90,7 @@ class TimeSlotsController extends Controller
             'status' => true,
         ]);
 
-        $price = (float) preg_replace('/[^0-9]/', '', (string) ($data['price'] ?? 0));
+        $price = (float) preg_replace('/[^0-9.]/', '', (string) ($data['price'] ?? 0));
 
         StadiumTimeSlotPrice::updateOrCreate(
             ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlot->id],
@@ -121,20 +118,18 @@ class TimeSlotsController extends Controller
         $startFull = strlen($start) === 5 ? $start . ':00' : $start;
         $endFull = strlen($end) === 5 ? $end . ':00' : $end;
 
-        // Try find existing time slot by full or short times for this stadium
-        $timeSlot = TimeSlot::where('stadium_id', $stadium->id)
-            ->where(function ($q) use ($startFull, $start) {
-                $q->where('start_time', $startFull)->orWhere('start_time', $start);
-            })->where(function ($q) use ($endFull, $end) {
-                $q->where('end_time', $endFull)->orWhere('end_time', $end);
-            })->first();
+        // Try find existing time slot by full or short times
+        $timeSlot = TimeSlot::where(function ($q) use ($startFull, $start) {
+            $q->where('start_time', $startFull)->orWhere('start_time', $start);
+        })->where(function ($q) use ($endFull, $end) {
+            $q->where('end_time', $endFull)->orWhere('end_time', $end);
+        })->first();
 
         if (!$timeSlot) {
             $timeSlotId = \Illuminate\Support\Facades\DB::table('time_slots')->insertGetId([
                 'start_time' => $startFull,
                 'end_time' => $endFull,
                 'status' => 1,
-                'stadium_id' => $stadium->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -142,7 +137,8 @@ class TimeSlotsController extends Controller
             $timeSlot = TimeSlot::find($timeSlotId);
         }
 
-        $price = (float) preg_replace('/[^0-9]/', '', (string) $data['price']);
+        $price = (float) preg_replace('/[^0-9.]/', '', (string) $data['price']);
+
         StadiumTimeSlotPrice::updateOrCreate(
             ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlot->id],
             ['price' => $price]
