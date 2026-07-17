@@ -118,10 +118,20 @@ class BookingController extends Controller
             $fieldId = $field?->id;
         }
 
+        $field = DB::table('fields')
+            ->leftJoin('field_types', 'fields.field_type_id', '=', 'field_types.id')
+            ->where('fields.id', $fieldId)
+            ->where('fields.stadium_id', $stadiumData->id)
+            ->select('fields.*', 'field_types.name as field_type_name', 'field_types.number_of_players')
+            ->first();
+
+        if (!$field) {
+            return response()->json(['message' => 'Sân không hợp lệ.'], 422);
+        }
+
         $timeSlots = DB::table('time_slots')
             ->where('status', true)
             ->orderBy('start_time')
-            ->limit(10)
             ->get();
 
         if ($timeSlots->isEmpty() && Schema::hasTable('time_slots')) {
@@ -152,7 +162,7 @@ class BookingController extends Controller
             $slots[] = [
                 'id' => $slotId,
                 'time' => substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5),
-                'price' => (float) ($slot->price ?? 0),
+                'price' => $this->calculateSlotPrice($field, $startTime),
                 'available' => !$exists,
             ];
         }
@@ -263,12 +273,25 @@ class BookingController extends Controller
             }
         }
 
-        $totalPrice = $this->parseMoney($request->input('total_price'));
+        $field = DB::table('fields')
+            ->leftJoin('field_types', 'fields.field_type_id', '=', 'field_types.id')
+            ->where('fields.id', $fieldId)
+            ->where('fields.stadium_id', $stadiumId)
+            ->select('fields.*', 'field_types.name as field_type_name', 'field_types.number_of_players')
+            ->first();
 
-        if ($totalPrice <= 0) {
-            $field = DB::table('fields')->where('id', $fieldId)->first();
-            $totalPrice = $field->price_per_hour ?? 300000;
+        $timeSlot = $timeSlotId
+            ? DB::table('time_slots')->where('id', $timeSlotId)->where('status', true)->first()
+            : null;
+
+        if (!$field || !$timeSlot) {
+            return back()->withInput()->withErrors([
+                'booking_time' => 'Sân hoặc khung giờ không hợp lệ.',
+            ]);
         }
+
+        // Không lấy total_price do trình duyệt gửi lên để tránh sai giá hoặc bị sửa giá.
+        $totalPrice = $this->calculateSlotPrice($field, $timeSlot->start_time);
 
         // =========================================================================
         // LOGIC KHÓA SÂN TẠM THỜI 5 PHÚT - TRÁNH TRÙNG LỊCH ĐẶT SÂN
@@ -655,6 +678,36 @@ class BookingController extends Controller
         }
 
         return 300000;
+    }
+
+    /**
+     * Giá cho một ca 90 phút. Các ca bắt đầu từ 18:00 được tính là buổi tối.
+     */
+    private function calculateSlotPrice(object $field, ?string $startTime): float
+    {
+        $players = $this->resolveFieldPlayers($field);
+
+        $basePrice = [
+            7 => 350000,
+            9 => 400000,
+            11 => 500000,
+        ][$players] ?? (float) ($field->price_per_hour ?? 0);
+
+        $startHour = (int) substr((string) $startTime, 0, 2);
+
+        return $basePrice + ($startHour >= 18 ? 100000 : 0);
+    }
+
+    private function resolveFieldPlayers(object $field): ?int
+    {
+        // Ưu tiên tên sân vì dữ liệu cũ có thể gán nhầm field_type_id.
+        foreach ([$field->name ?? '', $field->field_type_name ?? ''] as $label) {
+            if (preg_match('/(?<!\d)(7|9|11)(?!\d)/u', (string) $label, $matches)) {
+                return (int) $matches[1];
+            }
+        }
+
+        return isset($field->number_of_players) ? (int) $field->number_of_players : null;
     }
 
     private function filterColumns(string $table, array $data): array

@@ -38,12 +38,18 @@ class TimeSlotsController extends Controller
     {
         $stadium = Stadium::findOrFail($stadiumId);
         $timeSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
+        $fields = $stadium->fields()->where('status', true)->with('fieldType')->get();
 
-        $existing = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
-            ->pluck('price', 'time_slot_id')
-            ->toArray();
+        $priceTable = $timeSlots->map(function ($slot) use ($fields) {
+            return [
+                'slot' => $slot,
+                'prices' => $fields->mapWithKeys(fn ($field) => [
+                    $field->id => $this->calculateSlotPrice($field, $slot->start_time),
+                ])->all(),
+            ];
+        });
 
-        return view('admin.time-slots.show', compact('stadium', 'timeSlots', 'existing'));
+        return view('admin.time-slots.show', compact('stadium', 'timeSlots', 'fields', 'priceTable'));
     }
 
     public function storeForStadium(Request $request, $stadiumId)
@@ -76,7 +82,6 @@ class TimeSlotsController extends Controller
         $data = $request->validate([
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'price' => 'nullable',
         ]);
 
         $start = $data['start_time'];
@@ -90,15 +95,8 @@ class TimeSlotsController extends Controller
             'status' => true,
         ]);
 
-        $price = (float) preg_replace('/[^0-9.]/', '', (string) ($data['price'] ?? 0));
-
-        StadiumTimeSlotPrice::updateOrCreate(
-            ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlot->id],
-            ['price' => $price]
-        );
-
         return redirect()->route('admin.time-slots.show', $stadium->id)
-            ->with('success', 'Đã cập nhật khung giờ và giá thành công.');
+            ->with('success', 'Đã cập nhật khung giờ thành công.');
     }
 
     public function addForStadium(Request $request, $stadiumId)
@@ -108,7 +106,6 @@ class TimeSlotsController extends Controller
         $data = $request->validate([
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'price' => 'required',
         ]);
 
         $start = $data['start_time'];
@@ -137,15 +134,8 @@ class TimeSlotsController extends Controller
             $timeSlot = TimeSlot::find($timeSlotId);
         }
 
-        $price = (float) preg_replace('/[^0-9.]/', '', (string) $data['price']);
-
-        StadiumTimeSlotPrice::updateOrCreate(
-            ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlot->id],
-            ['price' => $price]
-        );
-
         return redirect()->route('admin.time-slots.show', $stadium->id)
-            ->with('success', 'Đã thêm giá cố định cho khung giờ.');
+            ->with('success', 'Đã thêm khung giờ thành công.');
     }
 
     public function destroy($stadiumId, $timeSlotId)
@@ -197,5 +187,25 @@ class TimeSlotsController extends Controller
         }
 
         return redirect()->route('admin.time-slots.index')->with('success', 'Lưu giá mặc định thành công.');
+    }
+
+    /** Giá cho một ca 90 phút; ca bắt đầu từ 18:00 được cộng 100.000đ. */
+    private function calculateSlotPrice($field, ?string $startTime): float
+    {
+        $players = null;
+
+        foreach ([$field->name ?? '', $field->fieldType?->name ?? ''] as $label) {
+            if (preg_match('/(?<!\d)(7|9|11)(?!\d)/u', (string) $label, $matches)) {
+                $players = (int) $matches[1];
+                break;
+            }
+        }
+
+        $players ??= $field->fieldType?->number_of_players ?? null;
+
+        $basePrice = [7 => 350000, 9 => 400000, 11 => 500000][$players]
+            ?? (float) ($field->price_per_hour ?? 0);
+
+        return $basePrice + ((int) substr((string) $startTime, 0, 2) >= 18 ? 100000 : 0);
     }
 }

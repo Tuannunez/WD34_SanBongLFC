@@ -31,6 +31,7 @@
 
                         <th width="60">#</th>
 
+                        <th width="120">Hình ảnh</th>
 
                         <th>Tên sân</th>
 
@@ -52,6 +53,19 @@
 
                         <td class="text-center">
                             {{ $key + 1 }}
+                        </td>
+
+                        <td class="text-center">
+                            @php
+                                $imageUrl = $stadium->image
+                                    ? (str_starts_with($stadium->image, 'http') ? $stadium->image : asset('storage/' . $stadium->image))
+                                    : asset('images/logo.png');
+                            @endphp
+                            <img src="{{ $imageUrl }}"
+                                 alt="{{ $stadium->name }}"
+                                 class="rounded border"
+                                 style="width: 96px; height: 64px; object-fit: cover;"
+                                 onerror="this.onerror=null;this.src='{{ asset('images/logo.png') }}';">
                         </td>
 
                         
