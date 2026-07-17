@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Stadium;
+use App\Models\Booking;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
 use App\Models\TimeSlot;
@@ -130,6 +131,22 @@ class StadiumController extends Controller
             ? $fieldBasePrices->min()
             : (float) ($stadium->price ?? 0);
 
+        $eligibleBookings = collect();
+
+        if (auth()->check()) {
+            $eligibleBookings = Booking::query()
+                ->where('user_id', auth()->id())
+                ->where('status', 'completed')
+                ->whereDoesntHave('review')
+                ->whereHas('bookingDetails.field', fn ($query) => $query->where('stadium_id', $stadium->id))
+                ->with(['bookingDetails' => function ($query) use ($stadium) {
+                    $query->whereHas('field', fn ($fieldQuery) => $fieldQuery->where('stadium_id', $stadium->id))
+                        ->with('field');
+                }])
+                ->latest()
+                ->get();
+        }
+
         return view('user.stadiums.show', compact(
             'stadium',
             'timeSlots',
@@ -137,7 +154,8 @@ class StadiumController extends Controller
             'fields',
             'reviews',
             'averageRating',
-            'defaultPrice'
+            'defaultPrice',
+            'eligibleBookings'
         ));
     }
 

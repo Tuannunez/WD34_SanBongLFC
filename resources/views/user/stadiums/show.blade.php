@@ -400,21 +400,25 @@
 
                 <div class="card-body p-4">
                     @auth
+                        @if($eligibleBookings->isNotEmpty())
                         <form action="{{ route('stadiums.reviews.store', $stadium->id) }}" method="POST" class="mb-4">
                             @csrf
 
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Chọn sân</label>
-                                    <select name="field_id" class="form-select rounded-3 @error('field_id') is-invalid @enderror" required>
-                                        <option value="">-- Chọn sân --</option>
-                                        @foreach($fields as $field)
-                                            <option value="{{ $field->id }}" @selected(old('field_id') == $field->id)>
-                                                {{ $field->name }}
+                                    <select name="booking_id" class="form-select rounded-3 @error('booking_id') is-invalid @enderror" required>
+                                        <option value="">-- Chọn lần đặt đã hoàn thành --</option>
+                                        @foreach($eligibleBookings as $booking)
+                                            @php
+                                                $detail = $booking->bookingDetails->first();
+                                            @endphp
+                                            <option value="{{ $booking->id }}" @selected(old('booking_id') == $booking->id)>
+                                                Đơn #{{ $booking->id }} - {{ $detail?->field?->name ?? 'Sân' }} ({{ $detail?->booking_date }})
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('field_id')
+                                    @error('booking_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -446,6 +450,11 @@
                                 Gửi đánh giá
                             </button>
                         </form>
+                        @else
+                            <div class="alert alert-info rounded-3 mb-4">
+                                Bạn chỉ có thể đánh giá sau khi sử dụng sân xong. Hiện chưa có lần đặt sân hoàn thành nào chưa đánh giá tại cơ sở này.
+                            </div>
+                        @endif
                     @else
                         <div class="alert alert-warning rounded-4">
                             <strong>Đăng nhập</strong> để gửi đánh giá cho cơ sở này.
