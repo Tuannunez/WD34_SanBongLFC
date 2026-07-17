@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Field;
+use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,33 +13,51 @@ class ReviewController extends Controller
     public function store(Request $request, $stadium)
     {
         $request->validate([
-            'field_id' => 'required|exists:fields,id',
+            'booking_id' => 'required|exists:bookings,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
-        ], [
-            'field_id.required' => 'Vui lòng chọn sân để đánh giá.',
-            'field_id.exists' => 'Sân đánh giá không hợp lệ.',
-            'rating.required' => 'Vui lòng chọn điểm đánh giá.',
-            'rating.integer' => 'Điểm đánh giá phải là số nguyên.',
-            'rating.min' => 'Điểm đánh giá tối thiểu là 1.',
-            'rating.max' => 'Điểm đánh giá tối đa là 5.',
         ]);
 
-        $field = Field::findOrFail($request->field_id);
+        $booking = Booking::with(['bookingDetails.field', 'review'])
+            ->whereKey($request->booking_id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'completed')
+            ->first();
 
-        if ($field->stadium_id != $stadium) {
+        if (!$booking) {
             return back()->withInput()->withErrors([
-                'field_id' => 'Sân không thuộc cơ sở này.',
+                'booking_id' => 'Chỉ có thể đánh giá đơn đặt sân của bạn sau khi đã hoàn thành.',
             ]);
         }
 
-        Review::create([
+        $bookingDetail = $booking->bookingDetails
+            ->first(fn ($detail) => $detail->field?->stadium_id == $stadium);
+
+        if (!$bookingDetail) {
+            return back()->withInput()->withErrors([
+                'booking_id' => 'Lần đặt sân không thuộc cơ sở này.',
+            ]);
+        }
+
+        if ($booking->review) {
+            return back()->withErrors([
+                'booking_id' => 'Lần đặt sân này đã được đánh giá.',
+            ]);
+        }
+
+        $review = Review::firstOrCreate(['booking_id' => $booking->id], [
             'user_id' => Auth::id(),
-            'field_id' => $field->id,
+            'field_id' => $bookingDetail->field_id,
             'rating' => $request->rating,
             'comment' => $request->comment,
             'status' => true,
         ]);
+
+        if (!$review->wasRecentlyCreated) {
+            return back()->withErrors([
+                'booking_id' => 'Lần đặt sân này đã được đánh giá.',
+            ]);
+        }
 
         return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
     }

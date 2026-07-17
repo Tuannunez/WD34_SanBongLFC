@@ -8,6 +8,7 @@ class Review extends Model
 {
     protected $fillable = [
         'user_id',
+        'booking_id',
         'field_id',
         'rating',
         'comment',
@@ -22,5 +23,10 @@ class Review extends Model
     public function field()
     {
         return $this->belongsTo(Field::class);
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Booking extends Model
 {
@@ -35,5 +36,10 @@ class Booking extends Model
     public function services(): HasMany
     {
         return $this->bookingServices();
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
     }
 }
