@@ -45,16 +45,13 @@ class StadiumsController extends Controller
 
     public function create()
     {
-        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
-
-        return view('admin.stadiums.create', compact('fieldTypes'));
+        return view('admin.stadiums.create');
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|max:255',
-            'field_type_id' => 'required|exists:field_types,id',
             'price' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',
@@ -91,8 +88,11 @@ class StadiumsController extends Controller
 
         $services = Service::query()->get();
 
-        // Lấy và xử lý timeSlots chỉ cho sân này
-        $slots = TimeSlot::query()->where('status', true)->where('stadium_id', $stadium->id)->orderBy('start_time')->get();
+        // Khung giờ được dùng chung cho toàn hệ thống; bảng time_slots không có stadium_id.
+        $slots = TimeSlot::query()
+            ->where('status', true)
+            ->orderBy('start_time')
+            ->get();
 
         $timeSlots = [];
         
@@ -262,16 +262,13 @@ class StadiumsController extends Controller
 
     public function edit(Stadium $stadium)
     {
-        $fieldTypes = FieldType::where('status', true)->orderBy('name')->get();
-
-        return view('admin.stadiums.edit', compact('stadium', 'fieldTypes'));
+        return view('admin.stadiums.edit', compact('stadium'));
     }
 
     public function update(Request $request, Stadium $stadium)
     {
         $data = $request->validate([
             'name' => 'required|max:255',
-            'field_type_id' => 'required|exists:field_types,id',
             'price' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|max:20',

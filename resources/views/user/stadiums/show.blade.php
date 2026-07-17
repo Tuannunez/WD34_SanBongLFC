@@ -349,35 +349,44 @@
                 </div>
 
                 <div class="card-body p-4">
-                    @foreach($timeSlots as $group)
+                    @forelse($priceTable as $group)
                         <div class="mb-4">
                             <h5 class="fw-bold mb-3">
                                 {{ $group['session'] }}
                             </h5>
 
-                            <div class="row g-3">
+                            <div class="table-responsive border rounded-4">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Khung giờ</th>
+                                            @foreach($fields as $field)
+                                                <th class="text-end">
+                                                    {{ $field->name ?: 'Sân #' . $field->id }}
+                                                </th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                 @foreach($group['slots'] as $slot)
-                                    <div class="col-md-6">
-                                        <div class="border rounded-4 p-3 h-100 bg-light">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <div class="fw-bold">
-                                                        <i class="bi bi-clock me-1 text-primary"></i>
-                                                        {{ $slot['time'] }}
-                                                    </div>
-                                                    <small class="text-muted">Khung giờ đặt sân</small>
-                                                </div>
-
-                                                <div class="fw-bold text-success">
-                                                    {{ number_format((float) $slot['price'], 0, ',', '.') }}đ
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                        <tr>
+                                            <td class="ps-3 fw-semibold text-nowrap">
+                                                <i class="bi bi-clock me-1 text-primary"></i>{{ $slot['time'] }}
+                                            </td>
+                                            @foreach($fields as $field)
+                                                <td class="text-end text-success fw-bold text-nowrap">
+                                                    {{ number_format((float) ($slot['prices'][$field->id] ?? 0), 0, ',', '.') }}đ
+                                                </td>
+                                            @endforeach
+                                        </tr>
                                 @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="alert alert-light rounded-3 border mb-0">Chưa có khung giờ nào được cấu hình.</div>
+                    @endforelse
                 </div>
             </div>
 
@@ -776,6 +785,12 @@
                     return;
                 }
 
+                button.dataset.price = slot.price;
+                const priceElement = button.querySelector('.slot-price');
+                if (priceElement) {
+                    priceElement.innerText = formatMoney(slot.price);
+                }
+
                 if (slot.available) {
                     button.disabled = false;
                     button.dataset.available = 'true';
@@ -794,6 +809,11 @@
                         state.className = 'slot-state badge rounded-pill mt-2 bg-danger-subtle text-danger';
                         state.innerText = 'Đã đặt';
                     }
+                }
+
+                if (button.classList.contains('active')) {
+                    selectedPrice.value = slot.price;
+                    summaryPrice.innerText = formatMoney(slot.price);
                 }
             });
 
