@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Field;
+use App\Models\FieldImage;
 use App\Models\FieldType;
 use App\Models\Stadium;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ class FieldController extends Controller
 {
     public function index()
     {
-        $fields = Field::with(['stadium', 'fieldType'])
+        $fields = Field::with(['stadium', 'fieldType', 'images'])
             ->orderBy('stadium_id')
             ->orderBy('name')
             ->get();
@@ -32,11 +33,14 @@ class FieldController extends Controller
             'price_per_hour' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'nullable|boolean',
+            'image' => 'nullable|image|max:5120',
         ]);
 
         $data['status'] = (bool) ($request->input('status', 1));
+        unset($data['image']);
 
-        Field::create($data);
+        $field = Field::create($data);
+        $this->storeMainImage($request, $field);
 
         return redirect()->route('admin.fields.index')
             ->with('success', 'Thêm sân con thành công.');
@@ -51,11 +55,14 @@ class FieldController extends Controller
             'price_per_hour' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'nullable|boolean',
+            'image' => 'nullable|image|max:5120',
         ]);
 
         $data['status'] = (bool) $request->input('status', 1);
+        unset($data['image']);
 
         $field->update($data);
+        $this->storeMainImage($request, $field);
 
         return redirect()->route('admin.fields.index')
             ->with('success', 'Cập nhật sân con thành công.');
@@ -67,5 +74,20 @@ class FieldController extends Controller
 
         return redirect()->route('admin.fields.index')
             ->with('success', 'Xóa sân con thành công.');
+    }
+
+    private function storeMainImage(Request $request, Field $field): void
+    {
+        if (!$request->hasFile('image')) {
+            return;
+        }
+
+        FieldImage::where('field_id', $field->id)->update(['is_main' => false]);
+
+        FieldImage::create([
+            'field_id' => $field->id,
+            'image_path' => $request->file('image')->store('fields', 'public'),
+            'is_main' => true,
+        ]);
     }
 }

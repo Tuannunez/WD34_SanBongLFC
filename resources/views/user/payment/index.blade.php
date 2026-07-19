@@ -25,6 +25,14 @@
                                     <span class="text-muted small d-block">Mã đơn hàng:</span>
                                     <strong class="text-dark">{{ $booking->booking_code }}</strong>
                                 </div>
+
+                                @if(!empty($booking->promotion_code) && (float) ($booking->discount_amount ?? 0) > 0)
+                                    <div class="mb-2">
+                                        <span class="text-muted small d-block">Ma khuyen mai:</span>
+                                        <strong class="text-success">{{ $booking->promotion_code }}</strong>
+                                        <small class="text-danger ms-1">-{{ number_format($booking->discount_amount, 0, ',', '.') }} VN�</small>
+                                    </div>
+                                @endif
                                 
                                 <div class="mb-2">
                                     <span class="text-muted small d-block">Sân bóng đặt:</span>

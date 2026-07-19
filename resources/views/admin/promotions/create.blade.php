@@ -100,6 +100,20 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label fw-semibold">Giá trị giảm tối đa</label>
+                        <input type="number"
+                               name="max_discount_amount"
+                               class="form-control rounded-3 @error('max_discount_amount') is-invalid @enderror"
+                               value="{{ old('max_discount_amount') }}"
+                               min="0"
+                               step="0.01"
+                               placeholder="Để trống nếu không giới hạn">
+                        @error('max_discount_amount')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold">Số tiền tối thiểu để áp dụng</label>
 
                         <input type="number"

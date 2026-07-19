@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -293,6 +294,43 @@ class BookingController extends Controller
         // Không lấy total_price do trình duyệt gửi lên để tránh sai giá hoặc bị sửa giá.
         $totalPrice = $this->calculateSlotPrice($field, $timeSlot->start_time);
 
+        $promotion = null;
+        $discountAmount = 0;
+        $promotionCode = Str::upper(trim((string) $request->input('promotion_code')));
+
+        if ($promotionCode !== '') {
+            $promotion = Promotion::query()
+                ->whereRaw('UPPER(code) = ?', [$promotionCode])
+                ->where('status', true)
+                ->where(fn ($query) => $query->whereNull('start_date')->orWhereDate('start_date', '<=', today()))
+                ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', today()))
+                ->first();
+
+            if (!$promotion) {
+                return back()->withInput()->withErrors(['promotion_code' => 'Mã giảm giá không tồn tại, chưa có hiệu lực hoặc đã hết hạn.']);
+            }
+
+            if ($totalPrice < (float) $promotion->min_order_amount) {
+                return back()->withInput()->withErrors(['promotion_code' => 'Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này.']);
+            }
+
+            if ($promotion->quantity !== null && $promotion->bookings()->where('status', '!=', 'cancelled')->count() >= $promotion->quantity) {
+                return back()->withInput()->withErrors(['promotion_code' => 'Mã giảm giá đã hết lượt sử dụng.']);
+            }
+
+            $discountAmount = $promotion->discount_type === 'percent'
+                ? $totalPrice * ((float) $promotion->discount_value / 100)
+                : (float) $promotion->discount_value;
+
+            if ($promotion->max_discount_amount !== null) {
+                $discountAmount = min($discountAmount, (float) $promotion->max_discount_amount);
+            }
+
+            $discountAmount = min($discountAmount, $totalPrice);
+        }
+
+        $finalAmount = $totalPrice - $discountAmount;
+
         // =========================================================================
         // LOGIC KHÓA SÂN TẠM THỜI 5 PHÚT - TRÁNH TRÙNG LỊCH ĐẶT SÂN
         // =========================================================================
@@ -350,7 +388,7 @@ class BookingController extends Controller
             ?? $user->phone
             ?? '0000000000';
 
-        $depositAmount = $totalPrice * 0.3;
+        $depositAmount = $finalAmount * 0.3;
 
         try {
             DB::beginTransaction();
@@ -382,10 +420,13 @@ class BookingController extends Controller
                 'payment_status' => 'unpaid',
 
                 'price' => $totalPrice,
-                'total_price' => $totalPrice,
-                'total_amount' => $totalPrice,
-                'total' => $totalPrice,
-                'amount' => $totalPrice,
+                'total_price' => $finalAmount,
+                'total_amount' => $finalAmount,
+                'discount_amount' => $discountAmount,
+                'final_amount' => $finalAmount,
+                'promotion_id' => $promotion?->id,
+                'total' => $finalAmount,
+                'amount' => $finalAmount,
 
                 'deposit_amount' => $depositAmount,
                 'is_deposit_paid' => false,
