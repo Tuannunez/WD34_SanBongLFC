@@ -49,7 +49,11 @@ class PaymentController extends Controller
     // 1. Hiển thị trang chọn phương thức thanh toán
     public function showPaymentPage($booking_id)
     {
-        $booking = DB::table('bookings')->where('id', $booking_id)->first();
+        $booking = DB::table('bookings')
+            ->leftJoin('promotions', 'bookings.promotion_id', '=', 'promotions.id')
+            ->where('bookings.id', $booking_id)
+            ->select('bookings.*', 'promotions.code as promotion_code', 'promotions.name as promotion_name')
+            ->first();
         if (!$booking) abort(404);
 
         $paymentMethods = $this->ensurePaymentMethods();
@@ -61,7 +65,11 @@ class PaymentController extends Controller
     public function processPayment(Request $request)
     {
         $bookingId = $request->input('booking_id');
-        $booking = DB::table('bookings')->where('id', $bookingId)->first();
+        $booking = DB::table('bookings')
+            ->leftJoin('promotions', 'bookings.promotion_id', '=', 'promotions.id')
+            ->where('bookings.id', $bookingId)
+            ->select('bookings.*', 'promotions.code as promotion_code', 'promotions.name as promotion_name')
+            ->first();
         
         if (!$booking) {
             return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
@@ -103,6 +111,10 @@ class PaymentController extends Controller
         } else {
             $amountToPay = $totalPrice;
             $vnp_OrderInfo = "Thanh toan 100 phan tram don dat san " . $booking->booking_code;
+        }
+
+        if (!empty($booking->promotion_code) && (float) ($booking->discount_amount ?? 0) > 0) {
+            $vnp_OrderInfo .= " ma KM " . $booking->promotion_code . " giam " . number_format((float) $booking->discount_amount, 0, '.', '');
         }
 
         // TÍCH HỢP VNPAY (Sử dụng cấu hình của Nhật)

@@ -20,7 +20,7 @@
             @endif
 
             {{-- FORM THÊM --}}
-            <form action="{{ route('admin.fields.store') }}" method="POST" class="row g-3 mb-4">
+            <form action="{{ route('admin.fields.store') }}" method="POST" enctype="multipart/form-data" class="row g-3 mb-4">
                 @csrf
 
                 <div class="col-md-3">
@@ -75,6 +75,11 @@
 
                 </div>
 
+                <div class="col-md-3">
+                    <label class="form-label">Ảnh sân con</label>
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                </div>
+
                 <div class="col-md-12">
                     <label class="form-label">Mô tả</label>
 
@@ -104,6 +109,7 @@
                     <tr>
                         <th width="60">#</th>
                         <th>Tên sân con</th>
+                        <th>Ảnh sân con</th>
                         <th>Cơ sở</th>
                         <th>Loại sân</th>
                         <th>Trạng thái</th>
@@ -121,6 +127,7 @@
                             <form
                                 action="{{ route('admin.fields.update',$field->id) }}"
                                 method="POST"
+                                enctype="multipart/form-data"
                             >
 
                                 @csrf
@@ -140,6 +147,16 @@
                                         required
                                     >
 
+                                </td>
+
+                                <td>
+                                    @php
+                                        $mainImage = $field->images->sortByDesc('is_main')->first();
+                                    @endphp
+                                    @if($mainImage)
+                                        <img src="{{ asset('storage/' . $mainImage->image_path) }}" alt="{{ $field->name }}" class="rounded mb-1" width="72" height="48" style="object-fit: cover">
+                                    @endif
+                                    <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
                                 </td>
 
                                 <td>
@@ -244,7 +261,7 @@
 
                         <tr>
 
-                            <td colspan="6" class="text-center">
+                            <td colspan="7" class="text-center">
                                 Chưa có sân con nào.
                             </td>
 

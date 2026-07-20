@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Field;
 use App\Models\Stadium;
 use App\Models\Booking;
 use App\Models\StadiumTimeSlotPrice;
@@ -17,22 +18,41 @@ class StadiumController extends Controller
     {
         $keyword = $request->keyword;
 
-        $stadiums = Stadium::query()
+        $fields = Field::query()
+            ->with([
+                'stadium',
+                'fieldType',
+                'images' => fn ($query) => $query->orderByDesc('is_main')->orderBy('id'),
+            ])
+            ->where('status', true)
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where('name', 'like', "%{$keyword}%");
+                $query->where(function ($query) use ($keyword) {
+                    $query->where('name', 'like', "%{$keyword}%")
+                        ->orWhereHas('stadium', function ($stadiumQuery) use ($keyword) {
+                            $stadiumQuery->where('name', 'like', "%{$keyword}%");
+                        });
+                });
             })
             ->latest()
             ->get();
 
-        return view('user.stadiums.index', compact('stadiums'));
+        $fields->each(function (Field $field) {
+            $field->setAttribute(
+                'display_price',
+                $this->calculateSlotPrice($field, '06:00:00')
+            );
+        });
+
+        return view('user.stadiums.index', compact('fields'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $stadium = Stadium::findOrFail($id);
 
         $fields = $stadium->fields()->where('status', true)->with('fieldType')->get();
-        $selectedField = $fields->first();
+        $selectedField = $fields->firstWhere('id', $request->integer('field'))
+            ?? $fields->first();
 
         $reviews = $stadium->reviews()
             ->where('reviews.status', true)
@@ -152,6 +172,7 @@ class StadiumController extends Controller
             'timeSlots',
             'priceTable',
             'fields',
+            'selectedField',
             'reviews',
             'averageRating',
             'defaultPrice',

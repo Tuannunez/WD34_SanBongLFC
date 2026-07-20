@@ -11,6 +11,7 @@ class Promotion extends Model
         'name',
         'discount_type',
         'discount_value',
+        'max_discount_amount',
         'min_order_amount',
         'quantity',
         'start_date',
@@ -20,6 +21,7 @@ class Promotion extends Model
 
     protected $casts = [
         'discount_value' => 'decimal:2',
+        'max_discount_amount' => 'decimal:2',
         'min_order_amount' => 'decimal:2',
         'start_date' => 'date',
         'end_date' => 'date',

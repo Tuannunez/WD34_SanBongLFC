@@ -26,16 +26,18 @@
         @endif
 
         <div class="row g-4">
-            @forelse($stadiums as $stadium)
+            @forelse($fields as $field)
                 @php
+                    $stadium = $field->stadium;
                     $stadiumId = data_get($stadium, 'id');
-                    $stadiumName = data_get($stadium, 'name', 'Sân bóng');
+                    $fieldName = $field->name ?: 'Sân bóng';
                     $address = data_get($stadium, 'address', 'Đang cập nhật địa chỉ');
                     $phone = data_get($stadium, 'phone', 'Đang cập nhật');
                     $openTime = data_get($stadium, 'open_time', '07:00');
                     $closeTime = data_get($stadium, 'close_time', '22:00');
 
-                    $image = data_get($stadium, 'image')
+                    $image = $field->images->first()?->image_path
+                        ?? data_get($stadium, 'image')
                         ?? data_get($stadium, 'thumbnail')
                         ?? data_get($stadium, 'image_url');
 
@@ -43,21 +45,18 @@
                         ? asset('storage/' . $image)
                         : asset('images/banner1.png');
 
-                    $price = data_get($stadium, 'starting_price')
-                        ?? data_get($stadium, 'price_per_hour')
-                        ?? data_get($stadium, 'price')
-                        ?? 300000;
+                    $price = $field->display_price;
                 @endphp
 
                 <div class="col-lg-4 col-md-6">
                     <div class="card stadium-card">
                         <img src="{{ $imageUrl }}"
                              class="card-img-top stadium-img"
-                             alt="{{ $stadiumName }}">
+                             alt="{{ $fieldName }}">
 
                         <div class="card-body">
                             <h5 class="fw-bold mb-2">
-                                {{ $stadiumName }}
+                                {{ $fieldName }}
                             </h5>
 
                             <p class="text-muted mb-2">
@@ -83,15 +82,9 @@
                                     <small class="text-muted">Giá tham khảo</small>
                                 </div>
 
-                                <div class="d-flex gap-2">
-                                    <a href="{{ route('stadiums.show', $stadiumId) }}"
-                                       class="btn btn-outline-primary rounded-3">
-                                        <i class="bi bi-eye me-1"></i>
-                                        Chi tiết
-                                    </a>
-
+                                <div>
                                     @auth
-                                        <a href="{{ route('stadiums.show', $stadiumId) }}"
+                                        <a href="{{ route('stadiums.show', ['id' => $stadiumId, 'field' => $field->id]) }}"
                                            class="btn btn-success rounded-3">
                                             <i class="bi bi-calendar-check me-1"></i>
                                             Đặt
@@ -122,9 +115,9 @@
             @endforelse
         </div>
 
-        @if(method_exists($stadiums, 'links'))
+        @if(method_exists($fields, 'links'))
             <div class="mt-4">
-                {{ $stadiums->links() }}
+                {{ $fields->links() }}
             </div>
         @endif
     </div>

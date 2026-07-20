@@ -91,6 +91,19 @@
                             </select>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="promotionCode">Ma giam gia</label>
+                            <input type="text"
+                                   id="promotionCode"
+                                   name="promotion_code"
+                                   value="{{ old('promotion_code') }}"
+                                   class="form-control rounded-3 @error('promotion_code') is-invalid @enderror"
+                                   placeholder="Nhap ma giam gia neu co"
+                                   style="text-transform: uppercase">
+                            @error('promotion_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                         <div>
                             <label class="form-label fw-semibold">Ghi chú</label>
                             <textarea name="note"
