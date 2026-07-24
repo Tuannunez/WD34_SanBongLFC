@@ -49,7 +49,8 @@
             color: #15803d;
         }
 
-        .hero-section {
+        .hero-section,
+        .about-banner {
             position: relative;
             min-height: 520px;
             background:
@@ -59,7 +60,12 @@
             overflow: hidden;
         }
 
-        .hero-section::after {
+        .about-banner {
+            min-height: 380px;
+        }
+
+        .hero-section::after,
+        .about-banner::after {
             content: "";
             position: absolute;
             width: 420px;
@@ -202,11 +208,11 @@
 
         <div class="collapse navbar-collapse" id="userNavbar">
             <ul class="navbar-nav header-menu align-items-lg-center me-lg-3">
-                <li class="nav-item"><a class="nav-link active" href="{{ route('home') }}">Trang chủ</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#about">Giới thiệu</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#news">Tin tức</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#services">Dịch vụ</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#contact">Liên hệ</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Trang chủ</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">Giới thiệu</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#news">Tin tức</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#services">Dịch vụ</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#contact">Liên hệ</a></li>
             </ul>
 
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
@@ -292,6 +298,17 @@
                         Xem sân ngay
                     </a>
                 </div>
+            </div>
+        </div>
+    </section>
+@elseif(request()->routeIs('about'))
+    <section class="hero-section about-hero">
+        <div class="container hero-content text-center">
+            <div class="hero-text-wrap mx-auto" style="max-width: 780px;">
+                <h1 class="hero-title mb-3">Giới thiệu cơ sở sân bóng LFC</h1>
+                <p class="lead mb-4">
+                    Tìm hiểu về LFC, dịch vụ đặt sân chuyên nghiệp và tiện ích tại cơ sở sân bóng của chúng tôi ở Hoài Đức, Hà Nội.
+                </p>
             </div>
         </div>
     </section>
