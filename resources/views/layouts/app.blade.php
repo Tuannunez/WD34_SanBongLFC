@@ -32,6 +32,23 @@
             font-weight: 700;
         }
 
+        .header-menu {
+            gap: 0.25rem;
+        }
+
+        .header-menu .nav-link {
+            color: #0f172a;
+            font-weight: 600;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+        }
+
+        .header-menu .nav-link:hover,
+        .header-menu .nav-link.active {
+            background: #ecfdf5;
+            color: #15803d;
+        }
+
         .hero-section {
             position: relative;
             min-height: 520px;
@@ -57,6 +74,19 @@
             position: relative;
             z-index: 2;
             padding: 90px 0 70px;
+        }
+
+        .hero-text-wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .hero-title {
@@ -171,13 +201,13 @@
         </button>
 
         <div class="collapse navbar-collapse" id="userNavbar">
-            <form action="{{ route('home') }}" method="GET" class="d-flex mx-lg-auto my-3 my-lg-0" style="max-width: 420px; width: 100%;">
-                <input type="text"
-                       name="keyword"
-                       value="{{ request('keyword') }}"
-                       class="form-control rounded-3"
-                       placeholder="Tìm kiếm sân theo tên, địa điểm...">
-            </form>
+            <ul class="navbar-nav header-menu align-items-lg-center me-lg-3">
+                <li class="nav-item"><a class="nav-link active" href="{{ route('home') }}">Trang chủ</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#about">Giới thiệu</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#news">Tin tức</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#services">Dịch vụ</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('home') }}#contact">Liên hệ</a></li>
+            </ul>
 
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 @auth
@@ -247,82 +277,20 @@
 @if(request()->routeIs('home'))
     <section class="hero-section">
         <div class="container hero-content">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-7">
-                    <h1 class="hero-title mb-3">
-                        Đặt sân bóng <span>nhanh chóng</span> & dễ dàng
-                    </h1>
+            <div class="hero-text-wrap">
+                <h1 class="hero-title mb-3">
+                    Đặt sân bóng <span>chuyên nghiệp</span> trong vài phút
+                </h1>
 
-                    <p class="lead mb-4">
-                        Tìm sân, chọn giờ và gửi đơn đặt sân chỉ trong vài phút.
-                        Trải nghiệm đặt sân tiện lợi cùng SanBongLFC.
-                    </p>
+                <p class="lead mb-4">
+                    Từ sân 5, sân 7 đến sân 11 chất lượng, SanBongLFC mang đến trải nghiệm đặt sân nhanh, an toàn và tiện lợi cho mọi nhu cầu của bạn.
+                </p>
 
-                    <div class="hero-search-card">
-                        <form action="{{ route('home') }}" method="GET">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Tỉnh/Thành phố</label>
-                                    <select name="city" class="form-select rounded-3">
-                                        <option value="">Tất cả thành phố</option>
-                                        <option value="ha-noi" @selected(request('city') === 'ha-noi')>Hà Nội</option>
-                                        <option value="tp-hcm" @selected(request('city') === 'tp-hcm')>TP.HCM</option>
-                                        <option value="da-nang" @selected(request('city') === 'da-nang')>Đà Nẵng</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Loại sân</label>
-                                    <select name="field_type" class="form-select rounded-3">
-                                        <option value="">Tất cả loại sân</option>
-                                        <option value="5" @selected(request('field_type') === '5')>Sân 5</option>
-                                        <option value="7" @selected(request('field_type') === '7')>Sân 7</option>
-                                        <option value="11" @selected(request('field_type') === '11')>Sân 11</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Ngày đặt</label>
-                                    <input type="date"
-                                           name="booking_date"
-                                           value="{{ request('booking_date') }}"
-                                           class="form-control rounded-3">
-                                </div>
-
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-success rounded-3 w-100 py-2 fw-bold">
-                                        <i class="bi bi-search me-1"></i>
-                                        Tìm sân ngay
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="col-lg-5">
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="hero-stat-card">
-                                <h3>500+</h3>
-                                <div>Sân bóng</div>
-                            </div>
-                        </div>
-
-                        <div class="col-6">
-                            <div class="hero-stat-card">
-                                <h3>10K+</h3>
-                                <div>Lượt đặt</div>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="hero-stat-card">
-                                <h3>63</h3>
-                                <div>Tỉnh thành hỗ trợ</div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="hero-actions">
+                    <a href="{{ route('home') }}#stadiums" class="btn btn-success rounded-3 px-4 py-2 fw-bold">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        Xem sân ngay
+                    </a>
                 </div>
             </div>
         </div>
