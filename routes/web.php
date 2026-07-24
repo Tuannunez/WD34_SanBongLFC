@@ -32,6 +32,9 @@ Route::middleware(['web'])->group(function () {
     Route::get('/', [StadiumController::class, 'index'])
         ->name('home');
 
+    Route::view('/gioi-thieu', 'user.about')
+        ->name('about');
+
     Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
         ->name('stadiums.show');
 

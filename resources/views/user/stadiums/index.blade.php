@@ -116,16 +116,47 @@
         </div>
 
         <div class="row g-4 mt-2" id="about">
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <span class="badge text-bg-dark rounded-pill mb-3">Giới thiệu</span>
-                        <h5 class="fw-bold">Nền tảng đặt sân bóng hiện đại</h5>
-                        <p class="text-muted mb-0">SanBongLFC giúp bạn dễ dàng tìm kiếm sân bóng, đặt chỗ nhanh và quản lý lịch đá một cách thuận tiện.</p>
+                        <h5 class="fw-bold">Cơ sở sân bóng LFC – Chất lượng từ khung giờ đến trải nghiệm</h5>
+                        <p class="text-muted mb-3">
+                            SanBongLFC là cơ sở sân bóng chuyên nghiệp tại Hoài Đức, Hà Nội, hiện đang quản lý hệ thống sân 5, sân 7 và sân 11 đạt chuẩn. Chúng tôi mang đến sân cỏ nhân tạo chất lượng cao, hệ thống chiếu sáng đầy đủ, phòng thay đồ sạch sẽ và đội ngũ hỗ trợ luôn sẵn sàng.
+                        </p>
+                        <p class="text-muted mb-0">
+                            Với nền tảng đặt sân trực tuyến, bạn có thể tìm sân phù hợp, chọn khung giờ và hoàn tất đơn chỉ trong vài phút. LFC cam kết mang đến trải nghiệm đặt sân nhanh chóng, an toàn và tiện lợi cho cả nhóm bạn và đội bóng của bạn.
+                        </p>
                     </div>
                 </div>
             </div>
 
+            <div class="col-lg-6">
+                <div class="row g-4 h-100">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card-body">
+                                <span class="badge text-bg-success rounded-pill mb-3">Tiện ích</span>
+                                <h5 class="fw-bold">Tiện nghi đầy đủ cho cầu thủ</h5>
+                                <p class="text-muted mb-0">Khu vực nghỉ ngơi, nước uống, phòng thay đồ an toàn và bãi đỗ xe rộng rãi giúp bạn tập trung vào trận đấu và thư giãn sau khi đá xong.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card-body">
+                                <span class="badge text-bg-primary rounded-pill mb-3">Đặt sân</span>
+                                <h5 class="fw-bold">Đặt sân nhanh chóng & linh hoạt</h5>
+                                <p class="text-muted mb-0">Chọn sân, khung giờ và dịch vụ kèm theo dễ dàng trên SanBongLFC. Thanh toán online, xác nhận tức thì và thông tin đơn được cập nhật đầy đủ.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-3">
             <div class="col-lg-4" id="news">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
