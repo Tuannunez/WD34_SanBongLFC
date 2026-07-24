@@ -3,7 +3,7 @@
 @section('title', 'Trang chủ')
 
 @section('content')
-<section class="py-5">
+<section class="py-5" id="stadiums">
     <div class="container">
 
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -113,6 +113,48 @@
                     </div>
                 </div>
             @endforelse
+        </div>
+
+        <div class="row g-4 mt-2" id="about">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <span class="badge text-bg-dark rounded-pill mb-3">Giới thiệu</span>
+                        <h5 class="fw-bold">Nền tảng đặt sân bóng hiện đại</h5>
+                        <p class="text-muted mb-0">SanBongLFC giúp bạn dễ dàng tìm kiếm sân bóng, đặt chỗ nhanh và quản lý lịch đá một cách thuận tiện.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4" id="news">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <span class="badge text-bg-success rounded-pill mb-3">Tin tức</span>
+                        <h5 class="fw-bold">Lịch đặt sân tối ưu cho cuối tuần</h5>
+                        <p class="text-muted mb-0">Khám phá khung giờ đẹp, sân mới và ưu đãi đặt trước để tối ưu trải nghiệm thể thao của bạn.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4" id="services">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <span class="badge text-bg-primary rounded-pill mb-3">Dịch vụ</span>
+                        <h5 class="fw-bold">Dịch vụ hỗ trợ đặt sân trọn gói</h5>
+                        <p class="text-muted mb-0">Gồm đặt sân trực tuyến, quản lý đơn, thanh toán linh hoạt và đội ngũ hỗ trợ nhanh chóng mọi lúc.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4" id="contact">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <span class="badge text-bg-warning rounded-pill mb-3">Liên hệ</span>
+                        <h5 class="fw-bold">Đội ngũ hỗ trợ 24/7</h5>
+                        <p class="text-muted mb-0">Bạn cần tư vấn giờ mở, sân phù hợp hay thanh toán? Hãy liên hệ với SanBongLFC để được hỗ trợ nhanh chóng.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if(method_exists($fields, 'links'))
