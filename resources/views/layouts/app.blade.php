@@ -50,7 +50,8 @@
         }
 
         .hero-section,
-        .about-banner {
+        .about-banner,
+        .news-hero {
             position: relative;
             min-height: 520px;
             background:
@@ -64,8 +65,15 @@
             min-height: 380px;
         }
 
+        .news-hero {
+            min-height: 420px;
+            padding-top: 100px;
+            padding-bottom: 90px;
+        }
+
         .hero-section::after,
-        .about-banner::after {
+        .about-banner::after,
+        .news-hero::after {
             content: "";
             position: absolute;
             width: 420px;
@@ -74,6 +82,140 @@
             background: rgba(255, 255, 255, .08);
             top: -100px;
             right: -80px;
+        }
+
+        .news-hero .hero-text-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .news-hero h1,
+        .news-hero p {
+            text-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+        }
+
+        .news-banner-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, .12);
+            border-radius: 999px;
+            color: #d1fae5;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-bottom: 24px;
+        }
+
+        .news-card {
+            border: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 24px 50px rgba(15, 23, 42, .12);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 28px 60px rgba(15, 23, 42, .16);
+        }
+
+        .news-card img {
+            height: 240px;
+            object-fit: cover;
+        }
+
+        .news-list-item {
+            display: grid;
+            grid-template-columns: minmax(200px, 280px) 1fr;
+            gap: 0;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .news-list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, .12);
+        }
+
+        .news-list-image {
+            min-width: 200px;
+            max-width: 280px;
+            overflow: hidden;
+        }
+
+        .news-list-image img {
+            width: 100%;
+            height: 100%;
+            min-height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .news-list-content {
+            padding: 24px;
+        }
+
+        .news-detail-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .news-detail-header {
+            overflow: hidden;
+            border-radius: 28px;
+        }
+
+        .news-detail-header .card-body {
+            padding: 24px;
+        }
+
+        .news-card-body {
+            padding: 24px;
+        }
+
+        .news-card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .news-card-meta {
+            color: #6b7280;
+            font-size: .94rem;
+            margin-bottom: 14px;
+        }
+
+        .news-card-text {
+            color: #374151;
+            margin-bottom: 20px;
+        }
+
+        .news-article {
+            line-height: 1.85;
+            color: #1f2937;
+        }
+
+        .news-article h2,
+        .news-article h3,
+        .news-article h4 {
+            margin-top: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .news-article p {
+            margin-bottom: 1rem;
+        }
+
+        .news-article img {
+            max-width: 100%;
+            border-radius: 16px;
+            margin: 30px 0;
         }
 
         .hero-content {
@@ -308,6 +450,18 @@
                 <h1 class="hero-title mb-3">Giới thiệu cơ sở sân bóng LFC</h1>
                 <p class="lead mb-4">
                     Tìm hiểu về LFC, dịch vụ đặt sân chuyên nghiệp và tiện ích tại cơ sở sân bóng của chúng tôi ở Hoài Đức, Hà Nội.
+                </p>
+            </div>
+        </div>
+    </section>
+@elseif(request()->routeIs('news.*'))
+    <section class="news-hero">
+        <div class="container">
+            <div class="hero-text-wrap">
+                <div class="news-banner-label">Tin tức bóng đá</div>
+                <h1 class="hero-title mb-3">Cập nhật nhanh nhất mọi tin tức bóng đá LFC</h1>
+                <p class="lead mb-4">
+                    Tin tức mới nhất, nhận định chuyên sâu và các sự kiện nóng hổi từ sân cỏ LFC. Theo dõi ngay để không bỏ lỡ mọi trận đấu và bản tin đáng chú ý.
                 </p>
             </div>
         </div>
