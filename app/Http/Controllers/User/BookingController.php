@@ -91,9 +91,28 @@ class BookingController extends Controller
             ->where('stadium_id', $stadiumData->id)
             ->get();
 
-        $timeSlots = DB::table('time_slots')->get();
+        $timeSlots = DB::table('time_slots')
+            ->where('status', true)
+            ->orderBy('start_time')
+            ->get();
 
-        $services = DB::table('services')->get();
+        // Include all active services (admin-added services will appear here)
+        $services = DB::table('services')
+            ->where('status', true)
+            ->orderBy('name')
+            ->get();
+
+        if ($services->isEmpty()) {
+            $fallbackServices = [
+                ['name' => 'Nước uống', 'description' => 'Nước suối, nước ngọt', 'price' => 10000, 'unit' => 'chai'],
+                ['name' => 'Thuê bóng', 'description' => 'Bóng thi đấu chất lượng', 'price' => 50000, 'unit' => 'trận'],
+                ['name' => 'Áo bib', 'description' => 'Áo phân đội', 'price' => 20000, 'unit' => 'bộ'],
+                ['name' => 'Thuê găng tay', 'description' => 'Găng tay thủ môn', 'price' => 30000, 'unit' => 'cặp'],
+                ['name' => 'Bãi gửi xe', 'description' => 'Gửi xe cho khách', 'price' => 5000, 'unit' => 'xe'],
+            ];
+
+            $services = collect($fallbackServices)->map(fn ($item) => (object) $item);
+        }
 
         return view('user.bookings.create', [
             'stadium' => $stadiumData,
@@ -292,7 +311,42 @@ class BookingController extends Controller
         }
 
         // Không lấy total_price do trình duyệt gửi lên để tránh sai giá hoặc bị sửa giá.
-        $totalPrice = $this->calculateSlotPrice($field, $timeSlot->start_time);
+        $slotPrice = $this->calculateSlotPrice($field, $timeSlot->start_time);
+
+        $serviceTotal = 0;
+        $serviceInputs = collect($request->input('services', []));
+        $selectedServices = [];
+
+        foreach ($serviceInputs as $item) {
+            $serviceId = isset($item['id']) ? intval($item['id']) : null;
+            $quantity = isset($item['quantity']) ? intval($item['quantity']) : 0;
+
+            if (!$serviceId || $quantity <= 0) {
+                continue;
+            }
+
+            $service = DB::table('services')
+                ->where('id', $serviceId)
+                ->where('status', true)
+                ->first();
+
+            if (!$service) {
+                continue;
+            }
+
+            $price = (float) $service->price;
+            $total = $price * $quantity;
+
+            $serviceTotal += $total;
+            $selectedServices[] = [
+                'service_id' => $serviceId,
+                'quantity' => $quantity,
+                'price' => $price,
+                'total' => $total,
+            ];
+        }
+
+        $subTotal = $slotPrice + $serviceTotal;
 
         $promotion = null;
         $discountAmount = 0;
@@ -310,7 +364,8 @@ class BookingController extends Controller
                 return back()->withInput()->withErrors(['promotion_code' => 'Mã giảm giá không tồn tại, chưa có hiệu lực hoặc đã hết hạn.']);
             }
 
-            if ($totalPrice < (float) $promotion->min_order_amount) {
+            // promotion min/order and discount should be based on subtotal (slot + services)
+            if ($subTotal < (float) $promotion->min_order_amount) {
                 return back()->withInput()->withErrors(['promotion_code' => 'Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này.']);
             }
 
@@ -319,17 +374,17 @@ class BookingController extends Controller
             }
 
             $discountAmount = $promotion->discount_type === 'percent'
-                ? $totalPrice * ((float) $promotion->discount_value / 100)
+                ? $subTotal * ((float) $promotion->discount_value / 100)
                 : (float) $promotion->discount_value;
 
             if ($promotion->max_discount_amount !== null) {
                 $discountAmount = min($discountAmount, (float) $promotion->max_discount_amount);
             }
 
-            $discountAmount = min($discountAmount, $totalPrice);
+            $discountAmount = min($discountAmount, $subTotal);
         }
 
-        $finalAmount = $totalPrice - $discountAmount;
+        $finalAmount = $subTotal - $discountAmount;
 
         // =========================================================================
         // LOGIC KHÓA SÂN TẠM THỜI 5 PHÚT - TRÁNH TRÙNG LỊCH ĐẶT SÂN
@@ -419,7 +474,8 @@ class BookingController extends Controller
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
 
-                'price' => $totalPrice,
+                'price' => $slotPrice,
+                'service_total' => $serviceTotal,
                 'total_price' => $finalAmount,
                 'total_amount' => $finalAmount,
                 'discount_amount' => $discountAmount,
@@ -459,11 +515,12 @@ class BookingController extends Controller
                 'start_time' => $startTime,
                 'end_time' => $endTime,
 
-                'price' => $totalPrice,
-                'field_price' => $totalPrice,
-                'total_price' => $totalPrice,
-                'total' => $totalPrice,
-                'amount' => $totalPrice,
+                // booking_details should store the slot/field price (service totals are separate)
+                'price' => $slotPrice,
+                'field_price' => $slotPrice,
+                'total_price' => $slotPrice,
+                'total' => $slotPrice,
+                'amount' => $slotPrice,
 
                 'status' => 'pending',
 
@@ -473,6 +530,24 @@ class BookingController extends Controller
 
             if (!empty($bookingDetailData)) {
                 DB::table('booking_details')->insert($bookingDetailData);
+            }
+
+            if (!empty($selectedServices)) {
+                foreach ($selectedServices as $serviceRow) {
+                    $serviceRow = $this->filterColumns('booking_services', [
+                        'booking_id' => $bookingId,
+                        'service_id' => $serviceRow['service_id'],
+                        'quantity' => $serviceRow['quantity'],
+                        'price' => $serviceRow['price'],
+                        'total' => $serviceRow['total'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    if (!empty($serviceRow)) {
+                        DB::table('booking_services')->insert($serviceRow);
+                    }
+                }
             }
 
             DB::commit();

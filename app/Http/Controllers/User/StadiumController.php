@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Field;
 use App\Models\Stadium;
 use App\Models\Booking;
+use App\Models\Service;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
 use App\Models\TimeSlot;
@@ -43,7 +44,25 @@ class StadiumController extends Controller
             );
         });
 
-        return view('user.stadiums.index', compact('fields'));
+        $services = Service::query()
+            ->where('status', true)
+            ->whereNotIn('name', ['Thuê sân bóng', 'Phòng tắm'])
+            ->orderBy('name')
+            ->get();
+
+        if ($services->isEmpty()) {
+            $fallbackServices = [
+                ['name' => 'Nước uống', 'description' => 'Nước suối, nước ngọt', 'price' => 10000, 'unit' => 'chai'],
+                ['name' => 'Thuê bóng', 'description' => 'Bóng thi đấu chất lượng', 'price' => 50000, 'unit' => 'trận'],
+                ['name' => 'Áo bib', 'description' => 'Áo phân đội', 'price' => 20000, 'unit' => 'bộ'],
+                ['name' => 'Thuê găng tay', 'description' => 'Găng tay thủ môn', 'price' => 30000, 'unit' => 'cặp'],
+                ['name' => 'Bãi gửi xe', 'description' => 'Gửi xe cho khách', 'price' => 5000, 'unit' => 'xe'],
+            ];
+
+            $services = collect($fallbackServices)->map(fn ($item) => (object) $item);
+        }
+
+        return view('user.stadiums.index', compact('fields', 'services'));
     }
 
     public function show(Request $request, $id)
@@ -151,6 +170,11 @@ class StadiumController extends Controller
             ? $fieldBasePrices->min()
             : (float) ($stadium->price ?? 0);
 
+        $services = Service::query()
+            ->where('status', true)
+            ->orderBy('name')
+            ->get();
+
         $eligibleBookings = collect();
 
         if (auth()->check()) {
@@ -176,7 +200,8 @@ class StadiumController extends Controller
             'reviews',
             'averageRating',
             'defaultPrice',
-            'eligibleBookings'
+            'eligibleBookings',
+            'services'
         ));
     }
 

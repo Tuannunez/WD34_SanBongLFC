@@ -135,9 +135,13 @@
 
                                 <tbody>
                                     @forelse($services as $index => $service)
-                                        <tr>
+                                        <tr data-service-index="{{ $index }}" class="service-row">
                                             <td class="ps-4">
-                                                <div class="d-flex align-items-center">
+                                                <input class="form-check-input service-select" type="checkbox"
+                                                       id="serviceCheck{{ $index }}" data-index="{{ $index }}">
+                                                <input type="hidden" name="services[{{ $index }}][id]" value="{{ $service->id ?? '' }}">
+
+                                                <label for="serviceCheck{{ $index }}" class="d-flex align-items-center w-100 mb-0" style="cursor: pointer;">
                                                     <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-3"
                                                          style="width: 40px; height: 40px;">
                                                         <i class="bi bi-cup-straw"></i>
@@ -149,21 +153,25 @@
                                                             {{ $service->description ?? 'Dịch vụ đi kèm khi đặt sân' }}
                                                         </small>
                                                     </div>
-                                                </div>
+                                                </label>
 
-                                                <input type="hidden" name="services[{{ $index }}][id]" value="{{ $service->id }}">
+                                                <div class="form-check mt-2">
+                                                    <label class="form-check-label small ms-2" for="serviceCheck{{ $index }}">Chọn</label>
+                                                </div>
                                             </td>
 
                                             <td class="fw-bold text-success">
-                                                {{ number_format($service->price ?? 0, 0, ',', '.') }}đ
+                                                {{ number_format($service->price ?? 0, 0, ',', '.') }}đ / {{ $service->unit ?? 'lượt' }}
                                             </td>
 
                                             <td>
-                                                <input type="number"
-                                                       name="services[{{ $index }}][quantity]"
-                                                       value="0"
-                                                       min="0"
-                                                       class="form-control rounded-3">
+                                                      <input type="number"
+                                                          name="services[{{ $index }}][quantity]"
+                                                          value="0"
+                                                          min="0"
+                                                          class="form-control rounded-3 service-qty"
+                                                          data-index="{{ $index }}"
+                                                          disabled>
                                             </td>
                                         </tr>
                                     @empty
@@ -210,4 +218,49 @@
         </div>
     </form>
 </div>
+<style>
+    .service-row { cursor: pointer; }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Booking services script loaded');
+        function toggleQty(index, checked) {
+            const qty = document.querySelector('.service-qty[data-index="' + index + '"]');
+            if (!qty) return;
+            qty.disabled = !checked;
+            if (!checked) qty.value = 0;
+            else if (checked && (!qty.value || qty.value == 0)) qty.value = 1;
+            const row = document.querySelector('.service-row[data-service-index="' + index + '"]');
+            if (row) {
+                row.classList.toggle('table-primary', checked);
+            }
+        }
+
+        document.querySelectorAll('.service-select').forEach(function (cb) {
+            cb.addEventListener('change', function (e) {
+                const idx = e.target.getAttribute('data-index');
+                console.log('service checkbox changed', idx, e.target.checked);
+                toggleQty(idx, e.target.checked);
+            });
+            // initialize state
+            toggleQty(cb.getAttribute('data-index'), cb.checked);
+        });
+
+        // allow clicking on the row to toggle checkbox
+        document.querySelectorAll('.service-row').forEach(function (row) {
+            row.addEventListener('click', function (e) {
+                console.log('service-row clicked', row.getAttribute('data-service-index'), e.target.tagName);
+                // if the click was directly on an actionable control, let it behave normally
+                const tag = e.target.tagName;
+                if (['INPUT', 'BUTTON', 'A'].includes(tag)) return;
+                const idx = row.getAttribute('data-service-index');
+                const cb = document.getElementById('serviceCheck' + idx);
+                if (!cb) return;
+                cb.checked = !cb.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+    });
+</script>
+
 @endsection

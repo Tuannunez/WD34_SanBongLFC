@@ -17,6 +17,8 @@
             </a>
         </div>
 
+        
+
         @if(request()->filled('keyword') || request()->filled('city') || request()->filled('field_type') || request()->filled('booking_date'))
             <div class="alert alert-info rounded-4 border-0 shadow-sm">
                 <i class="bi bi-search me-1"></i>
@@ -167,15 +169,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-4" id="services">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body">
-                        <span class="badge text-bg-primary rounded-pill mb-3">Dịch vụ</span>
-                        <h5 class="fw-bold">Dịch vụ hỗ trợ đặt sân trọn gói</h5>
-                        <p class="text-muted mb-0">Gồm đặt sân trực tuyến, quản lý đơn, thanh toán linh hoạt và đội ngũ hỗ trợ nhanh chóng mọi lúc.</p>
-                    </div>
-                </div>
-            </div>
+            <!-- services column removed; replaced by full-width services section below -->
 
             <div class="col-lg-4" id="contact">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -193,6 +187,39 @@
                 {{ $fields->links() }}
             </div>
         @endif
+        <!-- Full-width services section (moved to page bottom) -->
+        <div class="container-fluid bg-light py-4 mt-4" id="services-full">
+            <div class="container">
+                <div class="mb-3">
+                    <span class="badge text-bg-primary rounded-pill mb-1">Dịch vụ</span>
+                    <h4 class="fw-bold mb-0">Dịch vụ hỗ trợ đặt sân trọn gói</h4>
+                    <p class="text-muted mb-0">Các dịch vụ kèm theo, giá cả và đơn vị tính.</p>
+                </div>
+
+                @if(!empty($services) && $services->isNotEmpty())
+                    <div class="row g-3">
+                        @foreach($services as $service)
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-white rounded-3 h-100 border">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-semibold">{{ $service->name }}</div>
+                                            <div class="text-muted small">{{ \Illuminate\Support\Str::limit($service->description ?? '-', 80) }}</div>
+                                        </div>
+                                        <div class="text-end ms-2">
+                                            <div class="text-success fw-bold">{{ number_format((float) $service->price, 0, ',', '.') }}đ</div>
+                                            <small class="text-muted">/{{ $service->unit ?? 'lượt' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="alert alert-light">Chưa có dịch vụ nào.</div>
+                @endif
+            </div>
+        </div>
     </div>
 </section>
 @endsection
