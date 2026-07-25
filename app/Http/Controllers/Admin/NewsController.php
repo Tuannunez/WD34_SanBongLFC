@@ -60,6 +60,11 @@ class NewsController extends Controller
         return view('admin.news.edit', compact('news'));
     }
 
+    public function show(News $news)
+    {
+        return view('admin.news.show', compact('news'));
+    }
+
     public function update(Request $request, News $news)
     {
         $data = $request->validate([
