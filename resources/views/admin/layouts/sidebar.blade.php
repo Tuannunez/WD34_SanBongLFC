@@ -105,6 +105,14 @@
             <span>Khuyến mãi</span>
         </a>
 
+        @if(Auth::check() && Auth::user()->role === 'admin')
+            <a href="{{ url('/admin/news') }}"
+               class="sidebar-link {{ request()->is('admin/news*') ? 'active' : '' }}">
+                <i class="bi bi-newspaper"></i>
+                <span>Tin tức</span>
+            </a>
+        @endif
+
         <a href="{{ url('/admin/reviews') }}"
            class="sidebar-link {{ request()->is('admin/reviews*') ? 'active' : '' }}">
             <i class="bi bi-star"></i>
