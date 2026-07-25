@@ -4,27 +4,32 @@
 
 @section('content')
 <div class="container py-5">
-    <h2 class="mb-4">Tin tức</h2>
-
-    <div class="row g-4">
+    <div class="row gy-4">
         @foreach($news as $item)
-            <div class="col-md-6">
-                <div class="card h-100">
+            <div class="col-12">
+                <article class="news-list-item shadow-sm rounded-4 overflow-hidden bg-white">
                     @if($item->image)
-                        <img src="{{ $item->image }}" class="card-img-top" alt="">
+                        <div class="news-list-image">
+                            <img src="{{ $item->image }}" alt="{{ $item->title }}">
+                        </div>
                     @endif
-                    <div class="card-body">
-                        <h5 class="card-title">{{ $item->title }}</h5>
-                        <p class="text-muted">{{ $item->published_at?->format('Y-m-d') }}</p>
-                        <p class="card-text">{{ $item->excerpt }}</p>
-                        <a href="{{ route('news.show', $item->id) }}" class="stretched-link">Xem chi tiết</a>
+                    <div class="news-list-content p-4 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <span class="badge bg-success">Tin tức</span>
+                                <small class="text-muted">{{ $item->published_at?->format('d/m/Y') }}</small>
+                            </div>
+                            <h2 class="h4 fw-bold mb-2">{{ $item->title }}</h2>
+                            <p class="mb-3 text-secondary">{{ $item->excerpt }}</p>
+                        </div>
+                        <a href="{{ route('news.show', $item->id) }}" class="text-success fw-semibold">Xem thêm →</a>
                     </div>
-                </div>
+                </article>
             </div>
         @endforeach
     </div>
 
-    <div class="mt-4">
+    <div class="mt-5 d-flex justify-content-center">
         {{ $news->links() }}
     </div>
 </div>
