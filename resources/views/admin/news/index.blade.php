@@ -28,7 +28,9 @@
                     </div>
 
                     <div>
-                        <a href="{{ route('news.show', $item->id) }}" class="btn btn-outline-primary btn-sm me-2">Xem</a>
+                        <a href="{{ route('admin.news.show', $item->id) }}" class="btn btn-outline-primary btn-sm me-2" title="Xem">
+                            <i class="bi bi-eye"></i>
+                        </a>
                         <a href="{{ route('admin.news.edit', $item->id) }}" class="btn btn-primary btn-sm me-2">Sửa</a>
                         <form action="{{ route('admin.news.destroy', $item->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Xóa bài viết?')">
                             @csrf
