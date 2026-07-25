@@ -41,6 +41,9 @@ Route::middleware(['web'])->group(function () {
     Route::get('/tin-tuc/{news}', [App\Http\Controllers\User\NewsController::class, 'show'])
         ->name('news.show');
 
+    Route::get('/stadiums', [StadiumController::class, 'list'])
+        ->name('stadiums.index');
+
     Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
         ->name('stadiums.show');
 

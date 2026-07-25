@@ -213,6 +213,32 @@
         </div>
     </div>
 
+    @if($fields->isNotEmpty())
+        <div class="row g-3 mb-4">
+            @foreach($fields as $field)
+                <div class="col-md-6">
+                    <div class="card info-card h-100 border-0 shadow-sm">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="text-muted small mb-1">Sân bóng</div>
+                                <h5 class="fw-bold mb-1">{{ $field->name ?: 'Sân ' . $field->id }}</h5>
+                                <div class="text-muted small mb-2">{{ $field->fieldType?->name ?? 'Loại sân' }}</div>
+                                <div class="fw-semibold text-success mb-3">
+                                    {{ number_format((float) ($field->display_price ?? $stadium->price ?? 0), 0, ',', '.') }}đ
+                                </div>
+                            </div>
+                            <a href="{{ route('stadiums.show', ['id' => $stadium->id, 'field' => $field->id]) }}"
+                               class="btn btn-success rounded-3">
+                                <i class="bi bi-calendar-check me-1"></i>
+                                Đặt sân ngay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <div class="row g-4">
 
         <div class="col-lg-8">

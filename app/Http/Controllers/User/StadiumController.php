@@ -10,12 +10,28 @@ use App\Models\Service;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
 use App\Models\TimeSlot;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StadiumController extends Controller
 {
     // Trang chủ
     public function index(Request $request)
+    {
+        $data = $this->loadFieldsWithSchedule($request);
+
+        return view('user.stadiums.index', $data);
+    }
+
+    public function list(Request $request)
+    {
+        $data = $this->loadFieldsWithSchedule($request);
+
+        return view('user.stadiums.list', $data);
+    }
+
+    private function loadFieldsWithSchedule(Request $request): array
     {
         $keyword = $request->keyword;
 
@@ -37,11 +53,69 @@ class StadiumController extends Controller
             ->latest()
             ->get();
 
-        $fields->each(function (Field $field) {
+        $timeSlots = TimeSlot::where('status', true)
+            ->orderBy('start_time')
+            ->get();
+
+        $dates = collect(range(0, 6))->map(fn ($offset) => Carbon::today()->addDays($offset));
+
+        $bookingMap = DB::table('booking_details as bd')
+            ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+            ->whereBetween('bd.booking_date', [$dates->first()->toDateString(), $dates->last()->toDateString()])
+            ->where('b.status', '!=', 'cancelled')
+            ->select('bd.field_id', 'bd.time_slot_id', 'bd.booking_date', 'b.status')
+            ->get()
+            ->groupBy(fn ($item) => $item->field_id . '-' . $item->booking_date . '-' . $item->time_slot_id);
+
+        $fields->each(function (Field $field) use ($timeSlots, $bookingMap, $dates) {
             $field->setAttribute(
                 'display_price',
                 $this->calculateSlotPrice($field, '06:00:00')
             );
+
+            $field->setAttribute('scheduleDates', $dates->map(function (Carbon $date) use ($field, $timeSlots, $bookingMap) {
+                $dayLabel = $date->format('d/m');
+                $weekday = match ($date->dayOfWeek) {
+                    0 => 'CN',
+                    1 => 'Thứ 2',
+                    2 => 'Thứ 3',
+                    3 => 'Thứ 4',
+                    4 => 'Thứ 5',
+                    5 => 'Thứ 6',
+                    6 => 'Thứ 7',
+                };
+
+                $slots = $timeSlots->map(function ($slot) use ($field, $date, $bookingMap) {
+                    $key = $field->id . '-' . $date->toDateString() . '-' . $slot->id;
+                    $booking = $bookingMap[$key][0] ?? null;
+                    $startTime = is_string($slot->start_time) ? $slot->start_time : data_get($slot, 'start_time');
+                    $slotDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->toDateString() . ' ' . substr($startTime, 0, 8));
+                    $isPast = $slotDateTime->isPast();
+
+                    if ($booking) {
+                        $status = $isPast ? 'played' : 'booked';
+                        $label = $isPast ? 'Đã chơi' : 'Đã đặt';
+                    } elseif ($isPast) {
+                        $status = 'locked';
+                        $label = 'Đã khóa';
+                    } else {
+                        $status = 'available';
+                        $label = 'Trống';
+                    }
+
+                    return [
+                        'status' => $status,
+                        'label' => $label,
+                        'time' => substr($startTime, 0, 5),
+                    ];
+                })->toArray();
+
+                return [
+                    'dayLabel' => $dayLabel,
+                    'weekday' => $weekday,
+                    'slots' => $slots,
+                ];
+            })->toArray());
         });
 
         $services = Service::query()
@@ -62,7 +136,7 @@ class StadiumController extends Controller
             $services = collect($fallbackServices)->map(fn ($item) => (object) $item);
         }
 
-        return view('user.stadiums.index', compact('fields', 'services'));
+        return compact('fields', 'services');
     }
 
     public function show(Request $request, $id)
@@ -162,8 +236,12 @@ class StadiumController extends Controller
         $priceTable = array_values($priceTable);
 
         // "Giá từ" phải lấy từ sân con, không dùng giá chung cũ của cơ sở.
+        $fields->each(function ($field) {
+            $field->setAttribute('display_price', $this->calculateSlotPrice($field, '06:00:00'));
+        });
+
         $fieldBasePrices = $fields
-            ->map(fn ($field) => $this->calculateSlotPrice($field, '06:00:00'))
+            ->map(fn ($field) => $field->display_price)
             ->filter(fn ($price) => $price > 0);
 
         $defaultPrice = $fieldBasePrices->isNotEmpty()
