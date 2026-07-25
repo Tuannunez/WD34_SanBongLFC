@@ -30,7 +30,7 @@ class NewsController extends Controller
             'content' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
-            'is_published' => 'sometimes|boolean',
+            'is_published' => 'nullable|in:0,1,true,false',
             'published_at' => 'nullable|date',
         ]);
 
@@ -39,7 +39,12 @@ class NewsController extends Controller
             $data['image'] = Storage::url($path);
         }
 
-        $data['is_published'] = $request->has('is_published');
+        // remove temporary upload key before saving to DB
+        if (array_key_exists('image_file', $data)) {
+            unset($data['image_file']);
+        }
+
+        $data['is_published'] = $request->boolean('is_published');
         if ($data['is_published'] && empty($data['published_at'])) {
             $data['published_at'] = now();
         }
@@ -63,7 +68,7 @@ class NewsController extends Controller
             'content' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
-            'is_published' => 'sometimes|boolean',
+            'is_published' => 'nullable|in:0,1,true,false',
             'published_at' => 'nullable|date',
         ]);
 
@@ -78,7 +83,12 @@ class NewsController extends Controller
             $data['image'] = Storage::url($path);
         }
 
-        $data['is_published'] = $request->has('is_published');
+        // remove temporary upload key before updating DB
+        if (array_key_exists('image_file', $data)) {
+            unset($data['image_file']);
+        }
+
+        $data['is_published'] = $request->boolean('is_published');
         if ($data['is_published'] && empty($data['published_at'])) {
             $data['published_at'] = now();
         }

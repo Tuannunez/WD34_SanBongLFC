@@ -38,7 +38,8 @@
         </div>
 
         <div class="mb-3 form-check">
-            <input type="checkbox" name="is_published" class="form-check-input" id="published" {{ $news->is_published ? 'checked' : '' }}>
+            <input type="hidden" name="is_published" value="0">
+            <input type="checkbox" name="is_published" value="1" class="form-check-input" id="published" {{ old('is_published', $news->is_published) ? 'checked' : '' }}>
             <label class="form-check-label" for="published">Đăng bài</label>
         </div>
 

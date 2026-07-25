@@ -5,6 +5,19 @@
 @section('content')
 <div class="container py-4">
     <h3>Thêm bài viết</h3>
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <form method="POST" action="{{ route('admin.news.store') }}" enctype="multipart/form-data">
         @csrf
@@ -31,7 +44,8 @@
         </div>
 
         <div class="mb-3 form-check">
-            <input type="checkbox" name="is_published" class="form-check-input" id="published" checked>
+            <input type="hidden" name="is_published" value="0">
+            <input type="checkbox" name="is_published" value="1" class="form-check-input" id="published" {{ old('is_published', true) ? 'checked' : '' }}>
             <label class="form-check-label" for="published">Đăng bài</label>
         </div>
 
