@@ -35,6 +35,12 @@ Route::middleware(['web'])->group(function () {
     Route::view('/gioi-thieu', 'user.about')
         ->name('about');
 
+    // Public news listing and detail
+    Route::get('/tin-tuc', [App\Http\Controllers\User\NewsController::class, 'index'])
+        ->name('news.index');
+    Route::get('/tin-tuc/{news}', [App\Http\Controllers\User\NewsController::class, 'show'])
+        ->name('news.show');
+
     Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
         ->name('stadiums.show');
 
@@ -187,6 +193,7 @@ Route::delete('fields/{field}', [FieldController::class, 'destroy'])
             ->only(['index', 'show', 'update', 'destroy']);
 
         Route::resource('promotions', PromotionController::class);
+        Route::resource('news', App\Http\Controllers\Admin\NewsController::class);
         Route::resource('reviews', AdminReviewController::class)->only(['index', 'destroy']);
 
         Route::get('booking-details', [BookingDetailController::class, 'index'])

@@ -210,7 +210,7 @@
             <ul class="navbar-nav header-menu align-items-lg-center me-lg-3">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Trang chủ</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">Giới thiệu</a></li>
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#news">Tin tức</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('news.*') ? 'active' : '' }}" href="{{ route('news.index') }}">Tin tức</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#services">Dịch vụ</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#contact">Liên hệ</a></li>
             </ul>
