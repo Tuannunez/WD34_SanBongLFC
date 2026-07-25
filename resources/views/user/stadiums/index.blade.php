@@ -2,22 +2,119 @@
 
 @section('title', 'Trang chủ')
 
+@section('hero-bottom')
+    @if($fields->isNotEmpty())
+        <section class="hero-schedule-section py-4">
+            <div class="container">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                            <div>
+                                <h5 class="mb-1">Lịch đặt sân trong 7 ngày</h5>
+                                <p class="text-muted mb-0">Xem nhanh trạng thái giờ trống, đã đặt, đã đá và đã khóa của các sân.</p>
+                            </div>
+                        </div>
+
+                        <div class="hero-day-tabs d-flex flex-wrap gap-2 mb-4">
+                            @foreach($fields->first()->scheduleDates as $dayIndex => $day)
+                                <button type="button" class="btn btn-outline-secondary hero-day-tab @if($dayIndex === 0) active @endif"
+                                        data-day-index="{{ $dayIndex }}">
+                                    <div class="small text-muted">{{ $day['weekday'] }}</div>
+                                    <div class="fw-semibold">{{ $day['dayLabel'] }}</div>
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <div class="hero-schedule-fields">
+                            @foreach($fields as $field)
+                                <div class="card field-schedule-card mb-3 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $field->name ?: 'Sân bóng' }}</h6>
+                                                <div class="text-muted small">{{ $field->stadium?->name }}</div>
+                                            </div>
+                                            <div class="text-md-end">
+                                                <div class="text-muted small">Giá tham khảo</div>
+                                                <div class="fw-semibold">{{ number_format((float) $field->display_price, 0, ',', '.') }}đ</div>
+                                            </div>
+                                        </div>
+
+                                        @foreach($field->scheduleDates as $dayIndex => $day)
+                                            <div class="field-schedule-day @if($dayIndex !== 0) d-none @endif" data-day-index="{{ $dayIndex }}">
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach($day['slots'] as $slot)
+                                                        <div class="schedule-slot {{ $slot['status'] }}" title="{{ $slot['time'] }} - {{ $slot['label'] }}">
+                                                            <span class="slot-time">{{ $slot['time'] }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-3 align-items-center mt-3 hero-status-legend">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="legend-dot legend-available"></span>
+                                <span class="small text-muted">Trống</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="legend-dot legend-booked"></span>
+                                <span class="small text-muted">Đã đặt</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="legend-dot legend-played"></span>
+                                <span class="small text-muted">Đã đá</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="legend-dot legend-locked"></span>
+                                <span class="small text-muted">Đã khóa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const tabs = document.querySelectorAll('.hero-day-tab');
+                const dayBlocks = document.querySelectorAll('.field-schedule-day');
+
+                function setActiveDay(index) {
+                    tabs.forEach(tab => {
+                        tab.classList.toggle('active', tab.dataset.dayIndex === index.toString());
+                    });
+                    dayBlocks.forEach(block => {
+                        block.classList.toggle('d-none', block.dataset.dayIndex !== index.toString());
+                    });
+                }
+
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', function () {
+                        setActiveDay(parseInt(this.dataset.dayIndex, 10));
+                    });
+                });
+            });
+        </script>
+    @endif
+@endsection
+
 @section('content')
 <section class="py-5" id="stadiums">
     <div class="container">
-
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="section-title mb-1">Sân nổi bật</h2>
-                <p class="text-muted mb-0">Danh sách các sân bóng đang có trên hệ thống</p>
+                <h2 class="section-title mb-1">Lịch đặt sân</h2>
+                <p class="text-muted mb-0">Xem nhanh khung giờ trống và trạng thái đặt sân trong tuần.</p>
             </div>
-
-            <a href="{{ route('home') }}" class="btn btn-outline-success rounded-3">
-                Xem tất cả
+            <a href="{{ route('stadiums.index') }}" class="btn btn-outline-success rounded-3">
+                Xem tất cả sân
             </a>
         </div>
-
-        
 
         @if(request()->filled('keyword') || request()->filled('city') || request()->filled('field_type') || request()->filled('booking_date'))
             <div class="alert alert-info rounded-4 border-0 shadow-sm">
@@ -26,96 +123,6 @@
                 <a href="{{ route('home') }}" class="alert-link">Xóa bộ lọc</a>
             </div>
         @endif
-
-        <div class="row g-4">
-            @forelse($fields as $field)
-                @php
-                    $stadium = $field->stadium;
-                    $stadiumId = data_get($stadium, 'id');
-                    $fieldName = $field->name ?: 'Sân bóng';
-                    $address = data_get($stadium, 'address', 'Đang cập nhật địa chỉ');
-                    $phone = data_get($stadium, 'phone', 'Đang cập nhật');
-                    $openTime = data_get($stadium, 'open_time', '07:00');
-                    $closeTime = data_get($stadium, 'close_time', '22:00');
-
-                    $image = $field->images->first()?->image_path
-                        ?? data_get($stadium, 'image')
-                        ?? data_get($stadium, 'thumbnail')
-                        ?? data_get($stadium, 'image_url');
-
-                    $imageUrl = $image
-                        ? asset('storage/' . $image)
-                        : asset('images/banner1.png');
-
-                    $price = $field->display_price;
-                @endphp
-
-                <div class="col-lg-4 col-md-6">
-                    <div class="card stadium-card">
-                        <img src="{{ $imageUrl }}"
-                             class="card-img-top stadium-img"
-                             alt="{{ $fieldName }}">
-
-                        <div class="card-body">
-                            <h5 class="fw-bold mb-2">
-                                {{ $fieldName }}
-                            </h5>
-
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-geo-alt text-danger me-1"></i>
-                                {{ $address }}
-                            </p>
-
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-clock text-primary me-1"></i>
-                                {{ $openTime }} - {{ $closeTime }}
-                            </p>
-
-                            <p class="text-muted mb-3">
-                                <i class="bi bi-telephone text-success me-1"></i>
-                                {{ $phone }}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="price-text">
-                                        {{ number_format((float) $price, 0, ',', '.') }}đ
-                                    </div>
-                                    <small class="text-muted">Giá tham khảo</small>
-                                </div>
-
-                                <div>
-                                    @auth
-                                        <a href="{{ route('stadiums.show', ['id' => $stadiumId, 'field' => $field->id]) }}"
-                                           class="btn btn-success rounded-3">
-                                            <i class="bi bi-calendar-check me-1"></i>
-                                            Đặt
-                                        </a>
-                                    @else
-                                        <a href="{{ route('login') }}"
-                                           class="btn btn-success rounded-3">
-                                            Đặt
-                                        </a>
-                                    @endauth
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-body text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                            <h5 class="fw-bold">Chưa có sân bóng nào</h5>
-                            <p class="text-muted mb-0">
-                                Hiện chưa có sân phù hợp với bộ lọc của bạn.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @endforelse
-        </div>
 
         <div class="row g-4 mt-2" id="about">
             <div class="col-lg-6">
@@ -169,8 +176,6 @@
                 </div>
             </div>
 
-            <!-- services column removed; replaced by full-width services section below -->
-
             <div class="col-lg-4" id="contact">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
@@ -187,7 +192,6 @@
                 {{ $fields->links() }}
             </div>
         @endif
-        <!-- Full-width services section (moved to page bottom) -->
         <div class="container-fluid bg-light py-4 mt-4" id="services-full">
             <div class="container">
                 <div class="mb-3">

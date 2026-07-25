@@ -118,6 +118,125 @@
             transition: transform .25s ease, box-shadow .25s ease;
         }
 
+        .hero-schedule-section {
+            margin-top: -70px;
+            z-index: 5;
+            position: relative;
+        }
+
+        .hero-schedule-section .card {
+            border-radius: 28px;
+            overflow: hidden;
+        }
+
+        .hero-schedule-table {
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .hero-schedule-table th,
+        .hero-schedule-table td {
+            vertical-align: middle;
+            min-width: 110px;
+            border-color: #e5e7eb;
+        }
+
+        .hero-schedule-table td {
+            padding: 0.85rem !important;
+            white-space: nowrap;
+        }
+
+        .hero-status-dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin: 2px;
+        }
+
+        .hero-day-tabs .hero-day-tab {
+            min-width: 90px;
+            border-radius: 14px;
+            padding: 10px 12px;
+            text-align: center;
+            background: #f8fafc;
+            border-color: #e5e7eb;
+            color: #0f172a;
+            font-size: 12px;
+        }
+
+        .hero-day-tabs .hero-day-tab.active {
+            background: #16a34a;
+            color: #ffffff;
+            border-color: #16a34a;
+        }
+
+        .field-schedule-card {
+            border-radius: 20px;
+        }
+
+        .field-schedule-day {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .schedule-slot {
+            border-radius: 12px;
+            padding: 8px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            border: 1px solid transparent;
+            min-width: 70px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .schedule-slot.available {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+
+        .schedule-slot.booked {
+            background: #fee2e2;
+            border-color: #dc2626;
+        }
+
+        .schedule-slot.played {
+            background: #fef3c7;
+            border-color: #d97706;
+        }
+
+        .schedule-slot.locked {
+            background: #e2e8f0;
+            border-color: #475569;
+            color: #475569;
+        }
+
+        .schedule-slot .slot-time {
+            display: block;
+        }
+
+        .hero-status-legend {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 16px;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+        }
+
+        .legend-available { background: #d1fae5; border-color: #10b981; }
+        .legend-booked { background: #fee2e2; border-color: #dc2626; }
+        .legend-played { background: #fef3c7; border-color: #d97706; }
+        .legend-locked { background: #e2e8f0; border-color: #475569; }
+
         .news-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 28px 60px rgba(15, 23, 42, .16);
@@ -395,6 +514,7 @@
             <ul class="navbar-nav header-menu align-items-lg-center me-lg-3">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Trang chủ</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">Giới thiệu</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('stadiums.index') ? 'active' : '' }}" href="{{ route('stadiums.index') }}">Sân bóng</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('news.*') ? 'active' : '' }}" href="{{ route('news.index') }}">Tin tức</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#services">Dịch vụ</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#contact">Liên hệ</a></li>
@@ -486,6 +606,8 @@
             </div>
         </div>
     </section>
+
+    @yield('hero-bottom')
 @elseif(request()->routeIs('about'))
     <section class="hero-section about-hero">
         <div class="container hero-content text-center">
