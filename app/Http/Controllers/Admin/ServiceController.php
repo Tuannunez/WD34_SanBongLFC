@@ -10,6 +10,56 @@ class ServiceController extends Controller
 {
     public function index()
     {
+        if (Service::count() === 0) {
+            Service::insertOrIgnore([
+                [
+                    'name' => 'Nước uống',
+                    'price' => 10000,
+                    'unit' => 'chai',
+                    'description' => 'Nước suối, nước ngọt',
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'name' => 'Thuê bóng',
+                    'price' => 50000,
+                    'unit' => 'trận',
+                    'description' => 'Bóng thi đấu chất lượng',
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'name' => 'Áo bib',
+                    'price' => 20000,
+                    'unit' => 'bộ',
+                    'description' => 'Áo phân đội',
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'name' => 'Thuê găng tay',
+                    'price' => 30000,
+                    'unit' => 'cặp',
+                    'description' => 'Găng tay thủ môn',
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'name' => 'Bãi gửi xe',
+                    'price' => 5000,
+                    'unit' => 'xe',
+                    'description' => 'Gửi xe cho khách',
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        }
+
         $services = Service::orderBy('id', 'desc')->paginate(10);
 
         return view('admin.services.index', compact('services'));

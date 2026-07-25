@@ -278,6 +278,8 @@
                 </div>
             </div>
 
+            <!-- Dịch vụ đi kèm: intentionally removed from stadium detail per request -->
+
             <div class="card info-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="fw-bold mb-0">
@@ -632,6 +634,31 @@
                                           placeholder="Nhập ghi chú nếu có">{{ old('note') }}</textarea>
                             </div>
 
+                            @if($services->isNotEmpty())
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Dịch vụ đi kèm</label>
+                                    <div class="list-group list-group-flush">
+                                        @foreach($services as $sIndex => $service)
+                                            <div class="d-flex align-items-center justify-content-between py-2">
+                                                <div class="d-flex align-items-center">
+                                                    <input class="form-check-input me-2 service-select-panel" type="checkbox"
+                                                           id="stadiumServiceCheck{{ $sIndex }}" data-index="{{ $sIndex }}">
+                                                    <label for="stadiumServiceCheck{{ $sIndex }}" class="mb-0">
+                                                        <div class="fw-semibold">{{ $service->name }}</div>
+                                                        <small class="text-muted">{{ $service->unit ?? 'lượt' }} - {{ number_format((float)$service->price,0,',','.') }}đ</small>
+                                                    </label>
+                                                    <input type="hidden" name="services[{{ $sIndex }}][id]" value="{{ $service->id }}">
+                                                </div>
+
+                                                <div style="width:90px">
+                                                    <input type="number" name="services[{{ $sIndex }}][quantity]" value="0" min="0" class="form-control form-control-sm service-qty-panel" data-index="{{ $sIndex }}" disabled>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="bg-light rounded-4 p-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="text-muted">Khung giờ</span>
@@ -863,6 +890,25 @@
         }
 
         fetchAvailability();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // service toggle in stadium booking panel
+        function togglePanelQty(index, checked) {
+            const qty = document.querySelector('.service-qty-panel[data-index="' + index + '"]');
+            if (!qty) return;
+            qty.disabled = !checked;
+            if (!checked) qty.value = 0; else if (!qty.value || qty.value == 0) qty.value = 1;
+        }
+
+        document.querySelectorAll('.service-select-panel').forEach(function (cb) {
+            cb.addEventListener('change', function (e) {
+                const idx = e.target.getAttribute('data-index');
+                togglePanelQty(idx, e.target.checked);
+            });
+            togglePanelQty(cb.getAttribute('data-index'), cb.checked);
+        });
     });
 </script>
 @endpush
