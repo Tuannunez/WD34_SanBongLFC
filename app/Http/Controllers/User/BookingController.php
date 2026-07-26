@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Promotion;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -178,12 +179,22 @@ class BookingController extends Controller
             $slotId = $slot->id ?? null;
             $startTime = $slot->start_time ?? data_get($slot, 'start_time');
             $endTime = $slot->end_time ?? data_get($slot, 'end_time');
+            $slotDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $bookingDate . ' ' . substr($startTime, 0, 8));
+            $isPast = $slotDateTime->isPast();
+
+            $status = 'available';
+            if ($exists) {
+                $status = 'booked';
+            } elseif ($isPast) {
+                $status = 'locked';
+            }
 
             $slots[] = [
                 'id' => $slotId,
                 'time' => substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5),
                 'price' => $this->calculateSlotPrice($field, $startTime),
-                'available' => !$exists,
+                'available' => $status === 'available',
+                'status' => $status,
             ];
         }
 
