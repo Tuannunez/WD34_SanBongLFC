@@ -7,19 +7,33 @@
         <section class="hero-schedule-section py-4">
             <div class="container">
                 <div class="card shadow-sm rounded-4 border-0">
-                    <div class="card-body">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
-                            <div>
-                                <h5 class="mb-1">Lịch đặt sân trong 7 ngày</h5>
-                                <p class="text-muted mb-0">Xem nhanh trạng thái giờ trống, đã đặt, đã đá và đã khóa của các sân.</p>
+                    <div class="card-body py-3 px-3 px-lg-4">
+                        <div class="hero-schedule-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                            <div class="hero-schedule-controls d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill hero-schedule-prev">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <div class="hero-schedule-range px-3 py-2 rounded-pill bg-white border">
+                                    {{ $fields->first()->scheduleDates[0]['dayLabel'] ?? '' }} - {{ $fields->first()->scheduleDates[count($fields->first()->scheduleDates) - 1]['dayLabel'] ?? '' }}
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill hero-schedule-next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+
+                            <div class="hero-schedule-legend d-flex flex-wrap gap-2 align-items-center">
+                                <div class="legend-item"><span class="legend-dot legend-available"></span>Trống</div>
+                                <div class="legend-item"><span class="legend-dot legend-locked"></span>Đã khóa</div>
+                                <div class="legend-item"><span class="legend-dot legend-booked"></span>Đã đặt</div>
+                                <div class="legend-item"><span class="legend-dot legend-played"></span>Đã đá</div>
                             </div>
                         </div>
 
-                        <div class="hero-day-tabs d-flex flex-wrap gap-2 mb-4">
+                        <div class="hero-day-tabs d-flex flex-wrap gap-2 mb-3">
                             @foreach($fields->first()->scheduleDates as $dayIndex => $day)
                                 <button type="button" class="btn btn-outline-secondary hero-day-tab @if($dayIndex === 0) active @endif"
                                         data-day-index="{{ $dayIndex }}">
-                                    <div class="small text-muted">{{ $day['weekday'] }}</div>
+                                    <div class="small text-muted mb-1">{{ $day['weekday'] }}</div>
                                     <div class="fw-semibold">{{ $day['dayLabel'] }}</div>
                                 </button>
                             @endforeach
@@ -27,28 +41,24 @@
 
                         <div class="hero-schedule-fields">
                             @foreach($fields as $field)
-                                <div class="card field-schedule-card mb-3 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
-                                            <div>
-                                                <h6 class="mb-1">{{ $field->name ?: 'Sân bóng' }}</h6>
-                                                <div class="text-muted small">{{ $field->stadium?->name }}</div>
-                                            </div>
-                                            <div class="text-md-end">
-                                                <div class="text-muted small">Giá tham khảo</div>
-                                                <div class="fw-semibold">{{ number_format((float) $field->display_price, 0, ',', '.') }}đ</div>
-                                            </div>
+                                <div class="field-schedule-row mb-2 shadow-sm rounded-3 border">
+                                    <div class="field-schedule-label d-flex align-items-center gap-2 px-3 py-2">
+                                        <span class="field-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-white border text-secondary">
+                                            <i class="bi bi-grid-1x2-fill"></i>
+                                        </span>
+                                        <div>
+                                            <div class="fw-semibold mb-0">{{ $field->name ?: 'Sân bóng' }}</div>
+                                            <div class="text-muted small">{{ $field->stadium?->name }}</div>
                                         </div>
-
+                                    </div>
+                                    <div class="field-schedule-day-wrapper px-2 py-2">
                                         @foreach($field->scheduleDates as $dayIndex => $day)
                                             <div class="field-schedule-day @if($dayIndex !== 0) d-none @endif" data-day-index="{{ $dayIndex }}">
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    @foreach($day['slots'] as $slot)
-                                                        <div class="schedule-slot {{ $slot['status'] }}" title="{{ $slot['time'] }} - {{ $slot['label'] }}">
-                                                            <span class="slot-time">{{ $slot['time'] }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
+                                                @foreach($day['slots'] as $slot)
+                                                    <div class="schedule-slot {{ $slot['status'] }}" title="{{ $slot['time'] }} - {{ $slot['label'] }}">
+                                                        <span class="slot-time">{{ $slot['time'] }}</span>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         @endforeach
                                     </div>
@@ -56,24 +66,6 @@
                             @endforeach
                         </div>
 
-                        <div class="d-flex flex-wrap gap-3 align-items-center mt-3 hero-status-legend">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="legend-dot legend-available"></span>
-                                <span class="small text-muted">Trống</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="legend-dot legend-booked"></span>
-                                <span class="small text-muted">Đã đặt</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="legend-dot legend-played"></span>
-                                <span class="small text-muted">Đã đá</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="legend-dot legend-locked"></span>
-                                <span class="small text-muted">Đã khóa</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -81,23 +73,57 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                const tabs = document.querySelectorAll('.hero-day-tab');
-                const dayBlocks = document.querySelectorAll('.field-schedule-day');
+                const tabs = Array.from(document.querySelectorAll('.hero-day-tab'));
+                const dayBlocks = Array.from(document.querySelectorAll('.field-schedule-day'));
+                const prevButton = document.querySelector('.hero-schedule-prev');
+                const nextButton = document.querySelector('.hero-schedule-next');
+                const rangeDisplay = document.querySelector('.hero-schedule-range');
+
+                const days = tabs.map(tab => ({
+                    index: parseInt(tab.dataset.dayIndex, 10),
+                    weekday: tab.querySelector('.small').textContent.trim(),
+                    label: tab.querySelector('.fw-semibold').textContent.trim(),
+                }));
 
                 function setActiveDay(index) {
                     tabs.forEach(tab => {
-                        tab.classList.toggle('active', tab.dataset.dayIndex === index.toString());
+                        tab.classList.toggle('active', parseInt(tab.dataset.dayIndex, 10) === index);
                     });
                     dayBlocks.forEach(block => {
-                        block.classList.toggle('d-none', block.dataset.dayIndex !== index.toString());
+                        block.classList.toggle('d-none', parseInt(block.dataset.dayIndex, 10) !== index);
                     });
+
+                    const day = days.find(d => d.index === index);
+                    if (day && rangeDisplay) {
+                        rangeDisplay.textContent = `${day.weekday} ${day.label}`;
+                    }
+                }
+
+                function getActiveIndex() {
+                    const activeTab = tabs.find(tab => tab.classList.contains('active'));
+                    return activeTab ? parseInt(activeTab.dataset.dayIndex, 10) : 0;
                 }
 
                 tabs.forEach(tab => {
                     tab.addEventListener('click', function () {
-                        setActiveDay(parseInt(this.dataset.dayIndex, 10));
+                        const index = parseInt(this.dataset.dayIndex, 10);
+                        setActiveDay(index);
                     });
                 });
+
+                prevButton?.addEventListener('click', function () {
+                    const currentIndex = getActiveIndex();
+                    const nextIndex = Math.max(0, currentIndex - 1);
+                    setActiveDay(nextIndex);
+                });
+
+                nextButton?.addEventListener('click', function () {
+                    const currentIndex = getActiveIndex();
+                    const nextIndex = Math.min(days.length - 1, currentIndex + 1);
+                    setActiveDay(nextIndex);
+                });
+
+                setActiveDay(0);
             });
         </script>
     @endif

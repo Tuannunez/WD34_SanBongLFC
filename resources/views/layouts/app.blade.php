@@ -119,13 +119,13 @@
         }
 
         .hero-schedule-section {
-            margin-top: -70px;
+            margin-top: -45px;
             z-index: 5;
             position: relative;
         }
 
         .hero-schedule-section .card {
-            border-radius: 28px;
+            border-radius: 22px;
             overflow: hidden;
         }
 
@@ -156,14 +156,15 @@
         }
 
         .hero-day-tabs .hero-day-tab {
-            min-width: 90px;
-            border-radius: 14px;
-            padding: 10px 12px;
+            min-width: 80px;
+            border-radius: 12px;
+            padding: 8px 10px;
             text-align: center;
             background: #f8fafc;
             border-color: #e5e7eb;
             color: #0f172a;
-            font-size: 12px;
+            font-size: 11px;
+            line-height: 1.1;
         }
 
         .hero-day-tabs .hero-day-tab.active {
@@ -172,26 +173,100 @@
             border-color: #16a34a;
         }
 
-        .field-schedule-card {
-            border-radius: 20px;
+        .field-schedule-row {
+            display: grid;
+            grid-template-columns: minmax(220px, 280px) 1fr;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.4rem;
+        }
+
+        .field-schedule-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0.75rem 0.75rem 1rem;
+            background: #ffffff;
+        }
+
+        .field-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .field-schedule-day-wrapper {
+            overflow-x: auto;
+            padding: 0.75rem 0.75rem 0.75rem 0;
         }
 
         .field-schedule-day {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-            gap: 0.5rem;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(50px, 1fr);
+            gap: 0.35rem;
+            align-items: center;
         }
 
         .schedule-slot {
-            border-radius: 12px;
-            padding: 8px 6px;
-            font-size: 11px;
+            border-radius: 10px;
+            padding: 6px 4px;
+            font-size: 10px;
             font-weight: 700;
             color: #0f172a;
             border: 1px solid transparent;
-            min-width: 70px;
+            min-width: 50px;
             text-align: center;
-            line-height: 1.2;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .schedule-slot .slot-time {
+            display: block;
+        }
+
+        .hero-schedule-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .hero-schedule-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-schedule-range {
+            font-weight: 700;
+        }
+
+        .hero-schedule-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #475569;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            display: inline-block;
+        }
+
+        .hero-status-legend {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+            margin-top: 10px;
         }
 
         .schedule-slot.available {
