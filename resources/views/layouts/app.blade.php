@@ -247,6 +247,29 @@
             object-fit: cover;
         }
 
+        .news-featured-card {
+            overflow: hidden;
+            border-radius: 28px;
+        }
+
+        .news-featured-image {
+            width: 100%;
+            height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .news-sidebar-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+
+        .news-card.small-card img {
+            height: 180px;
+        }
+
         .news-list-item {
             display: grid;
             grid-template-columns: minmax(200px, 280px) 1fr;
