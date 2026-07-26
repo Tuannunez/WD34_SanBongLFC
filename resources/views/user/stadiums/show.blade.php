@@ -213,32 +213,6 @@
         </div>
     </div>
 
-    @if($fields->isNotEmpty())
-        <div class="row g-3 mb-4">
-            @foreach($fields as $field)
-                <div class="col-md-6">
-                    <div class="card info-card h-100 border-0 shadow-sm">
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <div class="text-muted small mb-1">Sân bóng</div>
-                                <h5 class="fw-bold mb-1">{{ $field->name ?: 'Sân ' . $field->id }}</h5>
-                                <div class="text-muted small mb-2">{{ $field->fieldType?->name ?? 'Loại sân' }}</div>
-                                <div class="fw-semibold text-success mb-3">
-                                    {{ number_format((float) ($field->display_price ?? $stadium->price ?? 0), 0, ',', '.') }}đ
-                                </div>
-                            </div>
-                            <a href="{{ route('stadiums.show', ['id' => $stadium->id, 'field' => $field->id]) }}"
-                               class="btn btn-success rounded-3">
-                                <i class="bi bi-calendar-check me-1"></i>
-                                Đặt sân ngay
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
     <div class="row g-4">
 
         <div class="col-lg-8">
@@ -309,56 +283,6 @@
             <div class="card info-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="fw-bold mb-0">
-                        <i class="bi bi-clock-history text-success me-2"></i>
-                        Bảng giá theo khung giờ
-                    </h4>
-                </div>
-
-                <div class="card-body p-4">
-                    @forelse($priceTable as $group)
-                        <div class="mb-4">
-                            <h5 class="fw-bold mb-3">
-                                {{ $group['session'] }}
-                            </h5>
-
-                            <div class="table-responsive border rounded-4">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="ps-3">Khung giờ</th>
-                                            @foreach($fields as $field)
-                                                <th class="text-end">
-                                                    {{ $field->name ?: 'Sân #' . $field->id }}
-                                                </th>
-                                            @endforeach
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                @foreach($group['slots'] as $slot)
-                                        <tr>
-                                            <td class="ps-3 fw-semibold text-nowrap">
-                                                <i class="bi bi-clock me-1 text-primary"></i>{{ $slot['time'] }}
-                                            </td>
-                                            @foreach($fields as $field)
-                                                <td class="text-end text-success fw-bold text-nowrap">
-                                                    {{ number_format((float) ($slot['prices'][$field->id] ?? 0), 0, ',', '.') }}đ
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="alert alert-light rounded-3 border mb-0">Chưa có khung giờ nào được cấu hình.</div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="card info-card mb-4">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="fw-bold mb-0">
                         <i class="bi bi-chat-left-text text-info me-2"></i>
                         Đánh giá khách hàng
                     </h4>
@@ -370,37 +294,35 @@
                         <form action="{{ route('stadiums.reviews.store', $stadium->id) }}" method="POST" class="mb-4">
                             @csrf
 
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Chọn sân</label>
-                                    <select name="booking_id" class="form-select rounded-3 @error('booking_id') is-invalid @enderror" required>
-                                        <option value="">-- Chọn lần đặt đã hoàn thành --</option>
-                                        @foreach($eligibleBookings as $booking)
-                                            @php
-                                                $detail = $booking->bookingDetails->first();
-                                            @endphp
-                                            <option value="{{ $booking->id }}" @selected(old('booking_id') == $booking->id)>
-                                                Đơn #{{ $booking->id }} - {{ $detail?->field?->name ?? 'Sân' }} ({{ $detail?->booking_date }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('booking_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Chọn sân</label>
+                                <select name="booking_id" class="form-select rounded-3 @error('booking_id') is-invalid @enderror" required>
+                                    <option value="">-- Chọn lần đặt đã hoàn thành --</option>
+                                    @foreach($eligibleBookings as $booking)
+                                        @php
+                                            $detail = $booking->bookingDetails->first();
+                                        @endphp
+                                        <option value="{{ $booking->id }}" @selected(old('booking_id') == $booking->id)>
+                                            Đơn #{{ $booking->id }} - {{ $detail?->field?->name ?? 'Sân' }} ({{ $detail?->booking_date }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('booking_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Điểm đánh giá</label>
-                                    <select name="rating" class="form-select rounded-3 @error('rating') is-invalid @enderror" required>
-                                        <option value="">-- Chọn điểm --</option>
-                                        @for($i = 5; $i >= 1; $i--)
-                                            <option value="{{ $i }}" @selected(old('rating') == $i)>{{ $i }} sao</option>
-                                        @endfor
-                                    </select>
-                                    @error('rating')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Điểm đánh giá</label>
+                                <select name="rating" class="form-select rounded-3 @error('rating') is-invalid @enderror" required>
+                                    <option value="">-- Chọn điểm --</option>
+                                    @for($i = 5; $i >= 1; $i--)
+                                        <option value="{{ $i }}" @selected(old('rating') == $i)>{{ $i }} sao</option>
+                                    @endfor
+                                </select>
+                                @error('rating')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="mb-3">
@@ -789,10 +711,10 @@
                     priceElement.innerText = formatMoney(slot.price);
                 }
 
-                if (slot.available) {
+                if (slot.status === 'available') {
                     button.disabled = false;
                     button.dataset.available = 'true';
-                    button.classList.remove('is-occupied', 'active');
+                    button.classList.remove('is-occupied', 'locked', 'active');
                     button.classList.add('available');
                     if (state) {
                         state.className = 'slot-state badge rounded-pill mt-2 bg-success-subtle text-success';
@@ -802,10 +724,16 @@
                     button.disabled = true;
                     button.dataset.available = 'false';
                     button.classList.remove('active', 'available');
-                    button.classList.add('is-occupied');
+                    const statusClass = slot.status === 'locked' ? 'locked' : 'is-occupied';
+                    button.classList.add(statusClass);
                     if (state) {
-                        state.className = 'slot-state badge rounded-pill mt-2 bg-danger-subtle text-danger';
-                        state.innerText = 'Đã đặt';
+                        if (slot.status === 'locked') {
+                            state.className = 'slot-state badge rounded-pill mt-2 bg-secondary-subtle text-secondary';
+                            state.innerText = 'Đã khóa';
+                        } else {
+                            state.className = 'slot-state badge rounded-pill mt-2 bg-danger-subtle text-danger';
+                            state.innerText = 'Đã đặt';
+                        }
                     }
                 }
 
