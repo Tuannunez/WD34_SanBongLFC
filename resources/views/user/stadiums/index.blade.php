@@ -170,8 +170,18 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <span class="badge text-bg-success rounded-pill mb-3">Tin tức</span>
-                        <h5 class="fw-bold">Lịch đặt sân tối ưu cho cuối tuần</h5>
-                        <p class="text-muted mb-0">Khám phá khung giờ đẹp, sân mới và ưu đãi đặt trước để tối ưu trải nghiệm thể thao của bạn.</p>
+                        @if(!empty($news) && $news->isNotEmpty())
+                            @foreach($news as $item)
+                                <div class="mb-3">
+                                    <h6 class="fw-semibold mb-1">{{ $item->title }}</h6>
+                                    <p class="text-muted small mb-1">{{ $item->published_at?->format('d/m/Y') }}</p>
+                                    <p class="text-muted mb-0">{{ \Illuminate\Support\Str::limit($item->excerpt ?: $item->content, 80) }}</p>
+                                </div>
+                            @endforeach
+                            <a href="{{ route('news.index') }}" class="text-success fw-semibold">Xem tất cả tin tức →</a>
+                        @else
+                            <p class="text-muted mb-0">Hiện chưa có tin tức nào. Vui lòng quay lại sau.</p>
+                        @endif
                     </div>
                 </div>
             </div>

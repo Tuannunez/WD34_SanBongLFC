@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
 use App\Models\TimeSlot;
+use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -136,7 +137,12 @@ class StadiumController extends Controller
             $services = collect($fallbackServices)->map(fn ($item) => (object) $item);
         }
 
-        return compact('fields', 'services');
+        $news = News::where('is_published', true)
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get();
+
+        return compact('fields', 'services', 'news');
     }
 
     public function show(Request $request, $id)
@@ -251,6 +257,11 @@ class StadiumController extends Controller
         $services = Service::query()
             ->where('status', true)
             ->orderBy('name')
+            ->get();
+
+        $news = News::where('is_published', true)
+            ->orderByDesc('published_at')
+            ->take(3)
             ->get();
 
         $eligibleBookings = collect();
