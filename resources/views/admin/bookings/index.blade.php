@@ -3,48 +3,16 @@
 @section('content')
 
 <style>
-    .custom-pagination {
-        padding: 4px 0;
-    }
-
+    .custom-pagination { padding: 4px 0; }
     .custom-pagination .page-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        background: #ffffff;
-        color: #374151;
-        font-weight: 700;
-        font-size: 14px;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all .2s ease;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+        width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e5e7eb;
+        background: #ffffff; color: #374151; font-weight: 700; font-size: 14px;
+        text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+        transition: all .2s ease; box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
     }
-
-    .custom-pagination .page-btn:hover {
-        background: #ecfdf5;
-        border-color: #16a34a;
-        color: #15803d;
-        transform: translateY(-1px);
-    }
-
-    .custom-pagination .page-btn.active {
-        background: #16a34a;
-        border-color: #16a34a;
-        color: #ffffff;
-        box-shadow: 0 8px 18px rgba(22, 163, 74, .25);
-    }
-
-    .custom-pagination .page-btn.disabled {
-        background: #f1f5f9;
-        color: #94a3b8;
-        border-color: #e5e7eb;
-        box-shadow: none;
-        cursor: not-allowed;
-    }
+    .custom-pagination .page-btn:hover { background: #ecfdf5; border-color: #16a34a; color: #15803d; transform: translateY(-1px); }
+    .custom-pagination .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; box-shadow: 0 8px 18px rgba(22, 163, 74, .25); }
+    .custom-pagination .page-btn.disabled { background: #f1f5f9; color: #94a3b8; border-color: #e5e7eb; box-shadow: none; cursor: not-allowed; }
 </style>
 
 <div class="container-fluid py-4">
@@ -58,58 +26,53 @@
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-            <i class="bi bi-check-circle me-1"></i>
-            {{ session('success') }}
+            <i class="bi bi-check-circle me-1"></i> {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @php
-        $bookingCollection = method_exists($bookings, 'getCollection')
-            ? $bookings->getCollection()
-            : collect($bookings);
-
-        $totalMoneyOnPage = $bookingCollection->sum(function ($booking) {
-            return $booking->total_price
-                ?? $booking->total_amount
-                ?? $booking->total
-                ?? $booking->amount
-                ?? 0;
+        $bookingCollection = method_exists($bookings, 'getCollection') ? $bookings->getCollection() : collect($bookings);
+        $totalMoneyOnPage = $bookingCollection->sum(function ($b) {
+            return $b->total_price ?? $b->total_amount ?? $b->total ?? $b->amount ?? 0;
         });
-
         $pendingCount = $bookingCollection->where('status', 'pending')->count();
+        $refundPendingCount = $bookingCollection->where('status', 'cancelled')->where('refund_status', 'pending')->count();
     @endphp
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <p class="text-muted mb-1">Tổng đơn đặt sân</p>
-                    <h4 class="fw-bold mb-0">
-                        {{ method_exists($bookings, 'total') ? $bookings->total() : count($bookings) }}
-                    </h4>
+                    <h4 class="fw-bold mb-0">{{ method_exists($bookings, 'total') ? $bookings->total() : count($bookings) }}</h4>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <p class="text-muted mb-1">Đơn chờ xác nhận</p>
-                    <h4 class="fw-bold mb-0 text-warning">
-                        {{ $pendingCount }}
-                    </h4>
+                    <h4 class="fw-bold mb-0 text-warning">{{ $pendingCount }}</h4>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Yêu cầu hoàn tiền</p>
+                    <h4 class="fw-bold mb-0 text-danger">{{ $refundPendingCount }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <p class="text-muted mb-1">Tổng tiền hiển thị</p>
-                    <h4 class="fw-bold mb-0 text-success">
-                        {{ number_format((float) $totalMoneyOnPage, 0, ',', '.') }}đ
-                    </h4>
+                    <h4 class="fw-bold mb-0 text-success">{{ number_format((float) $totalMoneyOnPage, 0, ',', '.') }}đ</h4>
                 </div>
             </div>
         </div>
@@ -119,13 +82,8 @@
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <input type="text"
-                           name="keyword"
-                           value="{{ request('keyword') }}"
-                           class="form-control rounded-3"
-                           placeholder="Tìm mã đơn, tên khách, email, số điện thoại...">
+                    <input type="text" name="keyword" value="{{ request('keyword') }}" class="form-control rounded-3" placeholder="Tìm mã đơn, tên khách, email, số điện thoại...">
                 </div>
-
                 <div class="col-md-3">
                     <select name="status" class="form-select rounded-3">
                         <option value="">Tất cả trạng thái</option>
@@ -135,21 +93,12 @@
                         <option value="cancelled" @selected(request('status') === 'cancelled')>Đã hủy</option>
                     </select>
                 </div>
-
                 <div class="col-md-3">
-                    <input type="date"
-                           name="booking_date"
-                           value="{{ request('booking_date') }}"
-                           class="form-control rounded-3">
+                    <input type="date" name="booking_date" value="{{ request('booking_date') }}" class="form-control rounded-3">
                 </div>
-
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary rounded-3 w-100">
-                        <i class="bi bi-search me-1"></i> Tìm
-                    </button>
-                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary rounded-3">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </a>
+                    <button type="submit" class="btn btn-primary rounded-3 w-100"><i class="bi bi-search me-1"></i> Tìm</button>
+                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary rounded-3"><i class="bi bi-arrow-clockwise"></i></a>
                 </div>
             </div>
         </div>
@@ -157,9 +106,7 @@
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white border-0 py-3">
-            <h5 class="fw-semibold mb-0">
-                <i class="bi bi-calendar-check text-primary me-2"></i> Danh sách đơn đặt sân
-            </h5>
+            <h5 class="fw-semibold mb-0"><i class="bi bi-calendar-check text-primary me-2"></i> Danh sách đơn đặt sân</h5>
         </div>
 
         <div class="card-body p-0">
@@ -178,45 +125,27 @@
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         @forelse($bookings as $booking)
                             @php
                                 $status = $booking->status ?? 'pending';
-
                                 $statusText = match ($status) {
                                     'confirmed' => 'Đã xác nhận',
                                     'completed' => 'Hoàn thành',
                                     'cancelled' => 'Đã hủy',
                                     default => 'Chờ xác nhận',
                                 };
-
                                 $statusClass = match ($status) {
                                     'confirmed' => 'bg-success-subtle text-success',
                                     'completed' => 'bg-primary-subtle text-primary',
                                     'cancelled' => 'bg-danger-subtle text-danger',
                                     default => 'bg-warning-subtle text-warning',
                                 };
-
-                                $totalMoney = $booking->total_price
-                                    ?? $booking->total_amount
-                                    ?? $booking->total
-                                    ?? $booking->amount
-                                    ?? 0;
-
-                                $customerName = $booking->user_name
-                                    ?? $booking->customer_name
-                                    ?? $booking->name
-                                    ?? 'Chưa có thông tin';
-
-                                $customerEmail = $booking->user_email
-                                    ?? $booking->customer_email
-                                    ?? $booking->email
-                                    ?? '-';
-
-                                $customerPhone = $booking->customer_phone
-                                    ?? $booking->phone
-                                    ?? '-';
+                                $totalMoney = $booking->total_price ?? $booking->total_amount ?? $booking->total ?? $booking->amount ?? 0;
+                                $customerName = $booking->user_name ?? $booking->customer_name ?? $booking->name ?? 'Chưa có thông tin';
+                                $customerEmail = $booking->user_email ?? $booking->customer_email ?? $booking->email ?? '-';
+                                $customerPhone = $booking->customer_phone ?? $booking->phone ?? '-';
+                                $rfStatus = $booking->refund_status ?? 'none';
                             @endphp
 
                             <tr>
@@ -224,11 +153,8 @@
                                     #{{ $booking->id }}
                                     @if(!empty($booking->booking_code))
                                         <div><small class="text-muted">{{ $booking->booking_code }}</small></div>
-                                    @elseif(!empty($booking->code))
-                                        <div><small class="text-muted">{{ $booking->code }}</small></div>
                                     @endif
                                 </td>
-
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
@@ -240,36 +166,34 @@
                                         </div>
                                     </div>
                                 </td>
-
                                 <td>{{ $customerEmail }}</td>
                                 <td>{{ $customerPhone }}</td>
                                 <td class="fw-bold text-success">{{ number_format((float) $totalMoney, 0, ',', '.') }}đ</td>
-                                <td><span class="badge {{ $statusClass }} px-3 py-2">{{ $statusText }}</span></td>
-                                
+                                <td>
+                                    <span class="badge {{ $statusClass }} px-3 py-2">{{ $statusText }}</span>
+                                    
+                                    @if($status === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
+                                        @if($rfStatus === 'pending')
+                                            <div class="mt-1"><span class="badge bg-danger text-white"><i class="bi bi-exclamation-circle me-1"></i> Cần CK: {{ number_format($booking->refund_amount, 0, ',', '.') }}đ</span></div>
+                                        @elseif($rfStatus === 'completed')
+                                            <div class="mt-1"><span class="badge bg-success text-white"><i class="bi bi-check2-all me-1"></i> Đã gửi bill CK</span></div>
+                                        @elseif($rfStatus === 'disputed')
+                                            <div class="mt-1"><span class="badge bg-danger text-white"><i class="bi bi-lightning-fill me-1"></i> Khách báo lỗi!</span></div>
+                                        @elseif($rfStatus === 'confirmed_by_user')
+                                            <div class="mt-1"><span class="badge bg-primary text-white"><i class="bi bi-patch-check-fill me-1"></i> Khách đã nhận</span></div>
+                                        @endif
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
                                         {{ $booking->method_name ?? 'Tại sân / Chưa chọn' }}
                                     </span>
                                 </td>
-
                                 <td>{{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</td>
-
                                 <td class="text-end pe-4">
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-info rounded-3">
+                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-info rounded-3" title="Xem chi tiết & Upload Bill">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-primary rounded-3">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
-                                    @if(($booking->status ?? '') !== 'cancelled')
-                                        <form action="{{ route('admin.bookings.destroy', $booking->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" onclick="return confirm('Bạn có chắc muốn hủy đơn đặt sân này?')">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -284,32 +208,6 @@
                 </table>
             </div>
         </div>
-
-        @if ($bookings instanceof \Illuminate\Pagination\LengthAwarePaginator && $bookings->hasPages())
-            <div class="card-footer bg-white border-0 pt-3 pb-4">
-                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                    @if ($bookings->onFirstPage())
-                        <span class="btn btn-sm btn-light text-muted disabled px-3"><i class="bi bi-chevron-left"></i></span>
-                    @else
-                        <a href="{{ $bookings->previousPageUrl() }}" class="btn btn-sm btn-light px-3"><i class="bi bi-chevron-left"></i></a>
-                    @endif
-
-                    @foreach ($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
-                        @if ($page == $bookings->currentPage())
-                            <span class="btn btn-sm btn-primary px-3">{{ $page }}</span>
-                        @else
-                            <a href="{{ $url }}" class="btn btn-sm btn-light px-3">{{ $page }}</a>
-                        @endif
-                    @endforeach
-
-                    @if ($bookings->hasMorePages())
-                        <a href="{{ $bookings->nextPageUrl() }}" class="btn btn-sm btn-light px-3"><i class="bi bi-chevron-right"></i></a>
-                    @else
-                        <span class="btn btn-sm btn-light text-muted disabled px-3"><i class="bi bi-chevron-right"></i></span>
-                    @endif
-                </div>
-            </div>
-        @endif
     </div>
 </div>
 @endsection

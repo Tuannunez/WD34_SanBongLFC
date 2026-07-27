@@ -20,12 +20,11 @@ use App\Http\Controllers\Admin\FieldController;
 use App\Http\Controllers\Admin\FieldTypeController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\BookingServiceController;
-use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
-
 
 Route::middleware(['web'])->group(function () {
 
@@ -73,9 +72,6 @@ Route::middleware(['web'])->group(function () {
         Route::post('/dat-san', [UserBookingController::class, 'store'])
             ->name('user.bookings.store');
 
-        Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
-            ->name('user.bookings.store.from-stadium');
-
         Route::get('/don-dat-san-cua-toi', [UserBookingController::class, 'index'])
             ->name('user.bookings.index');
 
@@ -85,6 +81,15 @@ Route::middleware(['web'])->group(function () {
         Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
             ->name('user.bookings.destroy');
 
+        // =========================================================================
+        // TUYẾN ĐƯỜNG PHẢN HỒI HOÀN TIỀN DÀNH CHO USER
+        // =========================================================================
+        Route::post('/don-dat-san-cua-toi/{booking}/confirm-refund', [UserBookingController::class, 'confirmRefund'])
+            ->name('user.bookings.confirmRefund');
+
+        Route::post('/don-dat-san-cua-toi/{booking}/dispute-refund', [UserBookingController::class, 'disputeRefund'])
+            ->name('user.bookings.disputeRefund');
+
         Route::get('/ho-so-ca-nhan', [ProfileController::class, 'index'])
             ->name('user.profile.index');
 
@@ -93,7 +98,6 @@ Route::middleware(['web'])->group(function () {
 
         Route::put('/ho-so-ca-nhan/mat-khau', [ProfileController::class, 'updatePassword'])
             ->name('user.profile.password');
-
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();
@@ -180,20 +184,22 @@ Route::middleware(['web'])->group(function () {
         Route::resource('field-types', FieldTypeController::class);
 
         Route::get('fields', [FieldController::class, 'index'])->name('fields.index');
-Route::post('fields', [FieldController::class, 'store'])->name('fields.store');
-
-Route::put('fields/{field}', [FieldController::class, 'update'])
-    ->name('fields.update');
-
-Route::delete('fields/{field}', [FieldController::class, 'destroy'])
-    ->name('fields.destroy');
+        Route::post('fields', [FieldController::class, 'store'])->name('fields.store');
+        Route::put('fields/{field}', [FieldController::class, 'update'])->name('fields.update');
+        Route::delete('fields/{field}', [FieldController::class, 'destroy'])->name('fields.destroy');
 
         Route::resource('services', ServiceController::class);
 
         Route::resource('booking-services', BookingServiceController::class);
 
-        Route::resource('bookings', BookingController::class)
+        Route::resource('bookings', AdminBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
+
+        // =========================================================================
+        // TUYẾN ĐƯỜNG UPLOAD BILL CHUYỂN KHOẢN CHO ADMIN
+        // =========================================================================
+        Route::post('bookings/{id}/process-refund', [AdminBookingController::class, 'processRefund'])
+            ->name('bookings.processRefund');
 
         Route::resource('promotions', PromotionController::class);
         Route::resource('news', App\Http\Controllers\Admin\NewsController::class);

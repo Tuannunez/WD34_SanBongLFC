@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Schema;
 
 class BookingController extends Controller
 {
-    // 1. Lấy danh sách đơn đặt sân (Đã thêm LeftJoin lấy kiểu thanh toán)
     public function index(Request $request)
     {
         $query = DB::table('bookings')
@@ -20,7 +19,7 @@ class BookingController extends Controller
                 'bookings.*',
                 'users.name as user_name',
                 'users.email as user_email',
-                'payment_methods.name as method_name' // Lấy tên phương thức thanh toán ra ngoài danh sách
+                'payment_methods.name as method_name'
             )
             ->orderByDesc('bookings.id');
 
@@ -78,7 +77,6 @@ class BookingController extends Controller
         return view('admin.bookings.index', compact('bookings'));
     }
 
-    // 2. Chi tiết đơn đặt sân (Giữ nguyên vì đã chuẩn sẵn)
     public function show($id)
     {
         $booking = DB::table('bookings')
@@ -114,26 +112,64 @@ class BookingController extends Controller
         return view('admin.bookings.show', compact('booking', 'bookingDetails'));
     }
 
-    // 3. Cập nhật trạng thái (Đã dọn sạch cột lỗi payment_status)
+    public function processRefund(Request $request, $id)
+    {
+        $request->validate([
+            'refund_proof_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'refund_proof_note' => 'nullable|string|max:255',
+        ], [
+            'refund_proof_image.required' => 'Vui lòng chọn ảnh bill chuyển khoản.',
+            'refund_proof_image.image' => 'File tải lên phải là hình ảnh hợp lệ.',
+        ]);
+
+        $booking = DB::table('bookings')->where('id', $id)->first();
+
+        if (!$booking) {
+            return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('refund_proof_image')) {
+            $file = $request->file('refund_proof_image');
+            $filename = 'bill_' . $id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            
+            if (!file_exists(public_path('uploads/refunds'))) {
+                mkdir(public_path('uploads/refunds'), 0777, true);
+            }
+            
+            $file->move(public_path('uploads/refunds'), $filename);
+            $imagePath = 'uploads/refunds/' . $filename;
+        }
+
+        DB::table('bookings')->where('id', $id)->update([
+            'refund_status' => 'completed',
+            'refund_proof_image' => $imagePath,
+            'refund_proof_note' => $request->input('refund_proof_note'),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.bookings.show', $id)
+            ->with('success', 'Đã tải bill chuyển khoản thành công! Khách hàng đã có thể xem được ảnh bill.');
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([
             'status' => ['required', 'string', 'max:50'],
-            'payment_status' => ['nullable', 'string', 'max:50'], // Trạng thái này để cập nhật bảng payments
+            'payment_status' => ['nullable', 'string', 'max:50'],
         ]);
 
-        // Bảng bookings của bạn chỉ có cột status, bỏ hẳn payment_status khỏi đây
         $updateData = [
             'status' => $request->status,
             'updated_at' => now(),
         ];
 
-        // Nếu Admin chọn cập nhật trạng thái thanh toán là 'paid' từ form
         if ($request->filled('payment_status') && $request->payment_status === 'paid') {
             DB::table('payments')
                 ->where('booking_id', $id)
                 ->update([
-                    'status' => 'paid', // Khớp với enum('unpaid', 'paid'...) của bảng payments của bạn
+                    'status' => 'paid',
                     'paid_at' => now(), 
                     'updated_at' => now()
                 ]);
