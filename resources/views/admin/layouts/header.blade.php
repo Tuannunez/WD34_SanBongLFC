@@ -23,12 +23,60 @@
             Về trang user
         </a>
 
-        <button type="button" class="btn btn-light position-relative">
+        @php
+            $adminNotifications = \Illuminate\Support\Facades\DB::table('notifications')
+                ->orderByDesc('created_at')
+                ->limit(3)
+                ->get();
+            $adminUnreadCount = \Illuminate\Support\Facades\DB::table('notifications')
+                ->where('is_read', false)
+                ->count();
+        @endphp
+
+        <div class="dropdown">
+            <button class="btn btn-light position-relative me-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                @if($adminUnreadCount > 0)
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ $adminUnreadCount }}
+                    </span>
+                @endif
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2" style="min-width: 320px;">
+                <li class="dropdown-header">Thông báo mới</li>
+                @if($adminNotifications->isEmpty())
+                    <li>
+                        <span class="dropdown-item-text text-muted small">Không có thông báo mới.</span>
+                    </li>
+                @else
+                    @foreach($adminNotifications as $notification)
+                        <li>
+                            <a class="dropdown-item" href="{{ route('admin.notifications.index') }}">
+                                <div class="d-flex align-items-start gap-2">
+                                    <span class="badge rounded-pill bg-success text-white">{{ strtoupper(substr($notification->type ?? 'S', 0, 1)) }}</span>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">{{ $notification->title }}</div>
+                                        <div class="small text-muted">{{ Str::limit($notification->content, 60) }}</div>
+                                        <div class="small text-muted mt-1">{{ date('d/m H:i', strtotime($notification->created_at)) }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    @endforeach
+                @endif
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-center" href="{{ route('admin.notifications.index') }}">
+                        Xem toàn bộ thông báo
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <a href="{{ route('admin.notifications.index') }}" class="btn btn-light rounded-3">
             <i class="bi bi-bell"></i>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                3
-            </span>
-        </button>
+            Thông báo
+        </a>
 
         <div class="dropdown">
             <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
