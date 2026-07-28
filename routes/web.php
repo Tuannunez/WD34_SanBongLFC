@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 
 Route::middleware(['web'])->group(function () {
@@ -145,6 +146,9 @@ Route::middleware(['web'])->group(function () {
 
             return view('admin.dashboard');
         })->name('dashboard');
+
+        Route::get('/notifications', [NotificationController::class, 'index'])
+            ->name('notifications.index');
 
         Route::resource('roles', RoleController::class);
 

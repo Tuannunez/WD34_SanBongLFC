@@ -548,6 +548,16 @@ class BookingController extends Controller
 
             DB::commit();
 
+            DB::table('notifications')->insert([
+                'user_id' => $user->id,
+                'title' => 'Đơn đặt sân mới',
+                'content' => 'Khách hàng ' . $customerName . ' đã tạo đơn đặt sân mã ' . $bookingCode . '. Vui lòng kiểm tra và xử lý.',
+                'type' => 'booking',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             return redirect()
                 ->route('user.payment.show', $bookingId)
                 ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng thanh toán để xác nhận đơn.');
@@ -699,6 +709,16 @@ class BookingController extends Controller
 
             DB::commit();
 
+            DB::table('notifications')->insert([
+                'user_id' => $bookingData->user_id,
+                'title' => 'Hủy đơn đặt sân',
+                'content' => 'Khách hàng ' . ($bookingData->customer_name ?? 'Khách hàng') . ' đã hủy đơn đặt sân mã ' . ($bookingData->booking_code ?? $bookingData->code ?? $booking) . '. ' . ($refundAmount > 0 ? 'Yêu cầu hoàn lại ' . number_format($refundAmount, 0, ',', '.') . 'đ.' : $refundNote),
+                'type' => 'booking',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             $msg = 'Hủy đơn đặt sân thành công.';
             if ($refundAmount > 0) {
                 $msg .= ' Yêu cầu hoàn lại ' . number_format($refundAmount, 0, ',', '.') . 'đ đã được gửi đến Admin kèm thông tin tài khoản ngân hàng của bạn!';
@@ -729,6 +749,17 @@ class BookingController extends Controller
                 'updated_at' => now(),
             ]);
 
+        $booking = DB::table('bookings')->where('id', $id)->first();
+        DB::table('notifications')->insert([
+            'user_id' => $booking?->user_id,
+            'title' => 'Xác nhận đã nhận tiền',
+            'content' => 'Khách hàng ' . ($booking?->customer_name ?? 'Khách hàng') . ' đã xác nhận đã nhận tiền hoàn cho đơn ' . ($booking?->booking_code ?? $booking?->code ?? $id) . '.',
+            'type' => 'payment',
+            'is_read' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         return back()->with('success', 'Cảm ơn bạn đã xác nhận! Giao dịch hủy sân và hoàn tiền đã hoàn tất.');
     }
 
@@ -748,6 +779,17 @@ class BookingController extends Controller
                 'user_dispute_reason' => $request->input('dispute_reason'),
                 'updated_at' => now(),
             ]);
+
+        $booking = DB::table('bookings')->where('id', $id)->first();
+        DB::table('notifications')->insert([
+            'user_id' => $booking?->user_id,
+            'title' => 'Khiếu nại hoàn tiền',
+            'content' => 'Khách hàng ' . ($booking?->customer_name ?? 'Khách hàng') . ' đã gửi yêu cầu khiếu nại hoàn tiền cho đơn ' . ($booking?->booking_code ?? $booking?->code ?? $id) . '.',
+            'type' => 'payment',
+            'is_read' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         return back()->with('success', 'Đã gửi báo cáo tới Admin. Ban quản lý sẽ kiểm tra lại bill giao dịch và hỗ trợ bạn sớm nhất!');
     }

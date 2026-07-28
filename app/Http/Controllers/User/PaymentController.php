@@ -236,6 +236,16 @@ class PaymentController extends Controller
                             'updated_at' => now()
                         ]);
 
+                        DB::table('notifications')->insert([
+                            'user_id' => $booking->user_id,
+                            'title' => 'Đã cọc 30%',
+                            'content' => 'Khách hàng ' . ($booking->customer_name ?? 'Khách hàng') . ' đã thanh toán cọc 30% cho đơn ' . $bookingCode . '.',
+                            'type' => 'payment',
+                            'is_read' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
                         return redirect()->route('user.bookings.index')
                             ->with('success', 'Tuyệt vời! Bạn đã thanh toán thành công 30% tiền cọc. Đơn đặt sân đã được xác nhận!');
                     } else {
@@ -243,6 +253,16 @@ class PaymentController extends Controller
                             'status' => 'confirmed',
                             'is_deposit_paid' => true,
                             'updated_at' => now()
+                        ]);
+
+                        DB::table('notifications')->insert([
+                            'user_id' => $booking->user_id,
+                            'title' => 'Đã thanh toán 100%',
+                            'content' => 'Khách hàng ' . ($booking->customer_name ?? 'Khách hàng') . ' đã thanh toán trọn 100% cho đơn ' . $bookingCode . '.',
+                            'type' => 'payment',
+                            'is_read' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ]);
 
                         return redirect()->route('user.bookings.index')
