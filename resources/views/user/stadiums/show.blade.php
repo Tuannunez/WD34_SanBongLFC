@@ -84,11 +84,11 @@
         font-size: 20px;
     }
 
-    @media (max-width: 991px) {
-        .booking-panel {
-            position: static;
-        }
+    .booking-panel {
+        position: static;
+    }
 
+    @media (max-width: 991px) {
         .stadium-main-img {
             height: 280px;
         }
@@ -118,7 +118,7 @@
     $defaultPrice = $defaultPrice ?? $stadium->price ?? 0;
 @endphp
 
-<div class="container py-5">
+<div class="container-fluid py-5">
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
@@ -213,9 +213,9 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4 justify-content-center">
 
-        <div class="col-lg-8">
+        <div class="col-12 col-xl-11 mx-auto" style="max-width: 1400px;">
 
             <div class="card info-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
@@ -280,71 +280,7 @@
 
             <!-- Dịch vụ đi kèm: intentionally removed from stadium detail per request -->
 
-            <div class="card info-card">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="fw-bold mb-0">
-                        <i class="bi bi-shield-check text-warning me-2"></i>
-                        Quy định đặt sân
-                    </h4>
-                </div>
-
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-4 h-100">
-                                <div class="fw-bold mb-1">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Đặt sân trước
-                                </div>
-                                <div class="text-muted">
-                                    Khách hàng nên đặt sân trước để giữ lịch thi đấu.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-4 h-100">
-                                <div class="fw-bold mb-1">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Xác nhận từ admin
-                                </div>
-                                <div class="text-muted">
-                                    Đơn đặt sân sẽ có trạng thái chờ xác nhận sau khi gửi.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-4 h-100">
-                                <div class="fw-bold mb-1">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Hủy đơn
-                                </div>
-                                <div class="text-muted">
-                                    User chỉ nên hủy đơn khi đơn còn ở trạng thái chờ xác nhận.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-4 h-100">
-                                <div class="fw-bold mb-1">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Liên hệ hỗ trợ
-                                </div>
-                                <div class="text-muted">
-                                    Liên hệ cơ sở sân nếu cần hỗ trợ thêm về lịch đặt.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-
-            <div class="card info-card booking-panel">
+            <div class="card info-card booking-panel mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="fw-bold mb-0">
                         <i class="bi bi-calendar-check text-success me-2"></i>
@@ -548,6 +484,66 @@
                 </div>
             </div>
 
+            <div class="card info-card">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="fw-bold mb-0">
+                        <i class="bi bi-shield-check text-warning me-2"></i>
+                        Quy định đặt sân
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-4 h-100">
+                                <div class="fw-bold mb-1">
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Đặt sân trước
+                                </div>
+                                <div class="text-muted">
+                                    Khách hàng nên đặt sân trước để giữ lịch thi đấu.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-4 h-100">
+                                <div class="fw-bold mb-1">
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Xác nhận từ admin
+                                </div>
+                                <div class="text-muted">
+                                    Đơn đặt sân sẽ có trạng thái chờ xác nhận sau khi gửi.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-4 h-100">
+                                <div class="fw-bold mb-1">
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Hủy đơn
+                                </div>
+                                <div class="text-muted">
+                                    User chỉ nên hủy đơn khi đơn còn ở trạng thái chờ xác nhận.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-4 h-100">
+                                <div class="fw-bold mb-1">
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Liên hệ hỗ trợ
+                                </div>
+                                <div class="text-muted">
+                                    Liên hệ cơ sở sân nếu cần hỗ trợ thêm về lịch đặt.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
