@@ -85,6 +85,9 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
             ->name('user.bookings.show');
+
+        Route::post('/don-dat-san-cua-toi/{booking}/review', [UserReviewController::class, 'storeBooking'])
+            ->name('user.bookings.review.store');
             
         Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
             ->name('user.bookings.destroy');

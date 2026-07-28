@@ -463,6 +463,14 @@
                                                     <i class="bi bi-eye-fill"></i>
                                                 </button>
 
+                                                @if($status === 'completed')
+                                                    <a href="{{ route('user.bookings.show', $booking->id) }}" 
+                                                       class="btn btn-sm btn-outline-warning rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
+                                                       title="Đánh giá đơn hoàn thành">
+                                                        <i class="bi bi-star-fill"></i>
+                                                    </a>
+                                                @endif
+
                                                 @if(in_array($status, ['pending', 'confirmed']))
                                                     @php
                                                         $mDate = \Carbon\Carbon::parse(($bookingDate ?? now()->format('Y-m-d')) . ' ' . ($startTime ?? '00:00:00'));

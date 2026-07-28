@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="fw-semibold mb-0">
                 <i class="bi bi-basket text-primary me-2"></i>
@@ -322,5 +322,54 @@
             </div>
         </div>
     </div>
+
+    @if($status === 'completed')
+        <div class="card border-0 shadow-sm rounded-4 mt-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-semibold mb-0">
+                    <i class="bi bi-star-fill text-warning me-2"></i>
+                    Đánh giá đơn hoàn thành
+                </h5>
+            </div>
+            <div class="card-body">
+                @if(empty($bookingReview))
+                    <form action="{{ route('user.bookings.review.store', $booking->id) }}" method="POST">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Điểm đánh giá</label>
+                            <select name="rating" class="form-select rounded-3 @error('rating') is-invalid @enderror" required>
+                                <option value="">-- Chọn điểm --</option>
+                                @for($i = 5; $i >= 1; $i--)
+                                    <option value="{{ $i }}" @selected(old('rating') == $i)>{{ $i }} sao</option>
+                                @endfor
+                            </select>
+                            @error('rating')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nội dung đánh giá</label>
+                            <textarea name="comment" rows="4" class="form-control rounded-3 @error('comment') is-invalid @enderror" placeholder="Chia sẻ cảm nhận của bạn...">{{ old('comment') }}</textarea>
+                            @error('comment')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="btn btn-success rounded-3 px-4">
+                            <i class="bi bi-send me-1"></i>
+                            Gửi đánh giá
+                        </button>
+                    </form>
+                @else
+                    <div class="alert alert-success rounded-4">
+                        Bạn đã đánh giá đơn này với <strong>{{ $bookingReview->rating }} sao</strong>.
+                    </div>
+                    <p class="text-muted">"{{ $bookingReview->comment ?? 'Không có nội dung đánh giá.' }}"</p>
+                @endif
+            </div>
+        </div>
+    @endif
 </div>
 @endsection

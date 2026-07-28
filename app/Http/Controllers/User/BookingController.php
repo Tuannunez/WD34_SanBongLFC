@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Promotion;
+use App\Models\Review;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -69,10 +70,13 @@ class BookingController extends Controller
             )
             ->get();
 
+        $bookingReview = Review::where('booking_id', $booking->id)->first();
+
         return view('user.bookings.show', compact(
             'booking',
             'bookingDetails',
-            'bookingServices'
+            'bookingServices',
+            'bookingReview'
         ));
     }
 
