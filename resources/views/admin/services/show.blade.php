@@ -28,6 +28,15 @@
                 </div>
             </div>
 
+            @if($service->image)
+                <div class="mb-4">
+                    <img src="{{ $service->image }}"
+                         alt="{{ $service->name }}"
+                         class="img-fluid rounded-4 w-100"
+                         style="max-height: 300px; object-fit: cover;">
+                </div>
+            @endif
+
             <div class="row g-3">
                 <div class="col-md-6">
                     <div class="border rounded-4 p-3 h-100">

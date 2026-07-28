@@ -23,7 +23,7 @@
         </div>
 
         <div class="card-body">
-            <form action="{{ route('admin.services.update', $service->id) }}" method="POST">
+            <form action="{{ route('admin.services.update', $service->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -88,6 +88,27 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Hình ảnh dịch vụ</label>
+                        <input type="file"
+                               name="image_file"
+                               class="form-control rounded-3 @error('image_file') is-invalid @enderror"
+                               accept="image/*">
+
+                        @error('image_file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    @if($service->image)
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ảnh hiện tại</label>
+                            <div>
+                                <img src="{{ $service->image }}" alt="{{ $service->name }}" class="img-fluid rounded-3" style="max-height: 120px;">
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="mt-4 d-flex gap-2">

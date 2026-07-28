@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\User\StadiumController;
+use App\Http\Controllers\User\ServiceController as UserServiceController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\PaymentController;
@@ -43,6 +44,12 @@ Route::middleware(['web'])->group(function () {
 
     Route::get('/stadiums', [StadiumController::class, 'list'])
         ->name('stadiums.index');
+
+    Route::get('/services', [UserServiceController::class, 'index'])
+        ->name('services.index');
+
+    Route::get('/services/{service}', [UserServiceController::class, 'show'])
+        ->name('services.show');
 
     Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
         ->name('stadiums.show');
