@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Field;
 use App\Models\Stadium;
 use App\Models\Booking;
+use App\Models\Review;
 use App\Models\Service;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
@@ -14,6 +15,7 @@ use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class StadiumController extends Controller
 {
@@ -142,7 +144,13 @@ class StadiumController extends Controller
             ->take(3)
             ->get();
 
-        return compact('fields', 'services', 'news');
+        $reviews = Review::with(['user', 'field.stadium'])
+            ->where('status', true)
+            ->latest()
+            ->take(3)
+            ->get();
+
+        return compact('fields', 'services', 'news', 'reviews');
     }
 
     public function show(Request $request, $id)
@@ -266,9 +274,9 @@ class StadiumController extends Controller
 
         $eligibleBookings = collect();
 
-        if (auth()->check()) {
+        if (Auth::check()) {
             $eligibleBookings = Booking::query()
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->where('status', 'completed')
                 ->whereDoesntHave('review')
                 ->whereHas('bookingDetails.field', fn ($query) => $query->where('stadium_id', $stadium->id))

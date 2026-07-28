@@ -373,6 +373,43 @@
                 @endif
             </div>
         </div>
+
+        <section class="py-5" id="review-homepage">
+            <div class="container">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <span class="badge text-bg-warning rounded-pill mb-3">Đánh giá</span>
+                        <h2 class="section-title mb-3">Đánh giá từ khách hàng</h2>
+                        <p class="text-muted mb-4">Những phản hồi gần đây giúp bạn lựa chọn sân tốt hơn.</p>
+
+                        @if(!empty($reviews) && $reviews->isNotEmpty())
+                            <div class="row g-3">
+                                @foreach($reviews as $review)
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <div>
+                                                        <strong>{{ $review->user?->name ?? 'Khách' }}</strong>
+                                                        <div class="text-muted small">{{ $review->field?->name ?? 'Sân' }}@if($review->field?->stadium), {{ $review->field->stadium->name }}@endif</div>
+                                                    </div>
+                                                    <span class="badge bg-warning-subtle text-warning">{{ $review->rating }} sao</span>
+                                                </div>
+
+                                                <p class="text-muted mb-3">{{ \Illuminate\Support\Str::limit($review->comment ?? 'Không có nhận xét.', 120) }}</p>
+                                                <div class="text-muted small">{{ $review->created_at?->format('d/m/Y') }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="alert alert-light rounded-4">Hiện chưa có đánh giá nào. Hãy quay lại sau để xem thêm phản hồi.</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 </section>
 @endsection

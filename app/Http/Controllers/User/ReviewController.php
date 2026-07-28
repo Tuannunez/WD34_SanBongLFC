@@ -61,4 +61,49 @@ class ReviewController extends Controller
 
         return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
     }
+
+    public function storeBooking(Request $request, $bookingId)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        $booking = Booking::with(['bookingDetails.field', 'review'])
+            ->whereKey($bookingId)
+            ->where('user_id', Auth::id())
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$booking) {
+            return back()->withErrors([
+                'booking_id' => 'Chỉ có thể đánh giá đơn đặt sân của bạn sau khi đã hoàn thành.',
+            ]);
+        }
+
+        if ($booking->review) {
+            return back()->withErrors([
+                'booking_id' => 'Đơn này đã được đánh giá.',
+            ]);
+        }
+
+        $bookingDetail = $booking->bookingDetails->first();
+
+        if (!$bookingDetail || !$bookingDetail->field) {
+            return back()->withErrors([
+                'booking_id' => 'Không tìm thấy thông tin sân để đánh giá.',
+            ]);
+        }
+
+        $review = Review::create([
+            'user_id' => Auth::id(),
+            'booking_id' => $booking->id,
+            'field_id' => $bookingDetail->field_id,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
+            'status' => true,
+        ]);
+
+        return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
+    }
 }
