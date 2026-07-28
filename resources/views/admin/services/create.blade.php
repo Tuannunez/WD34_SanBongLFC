@@ -23,7 +23,7 @@
         </div>
 
         <div class="card-body">
-            <form action="{{ route('admin.services.store') }}" method="POST">
+            <form action="{{ route('admin.services.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <div class="row g-3">
@@ -103,6 +103,18 @@
                                   placeholder="Nhập mô tả dịch vụ">{{ old('description') }}</textarea>
 
                         @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Hình ảnh dịch vụ</label>
+                        <input type="file"
+                               name="image_file"
+                               class="form-control rounded-3 @error('image_file') is-invalid @enderror"
+                               accept="image/*">
+
+                        @error('image_file')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

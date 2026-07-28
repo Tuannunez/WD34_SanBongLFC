@@ -42,6 +42,7 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">ID</th>
+                            <th>Hình ảnh</th>
                             <th>Tên dịch vụ</th>
                             <th>Giá</th>
                             <th>Đơn vị</th>
@@ -55,7 +56,14 @@
                         @forelse($services as $service)
                             <tr>
                                 <td class="ps-4 fw-semibold">{{ $service->id }}</td>
-
+                                <td>
+                                    <img src="{{ $service->image ?: asset('images/logo.png') }}"
+                                         alt="{{ $service->name }}"
+                                         width="64"
+                                         height="64"
+                                         class="rounded-3"
+                                         style="object-fit: cover;">
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3"

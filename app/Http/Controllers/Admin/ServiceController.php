@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
@@ -72,11 +73,12 @@ class ServiceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'description' => 'nullable|string',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'status' => 'required|in:0,1',
         ], [
             'name.required' => 'Vui lòng nhập tên dịch vụ.',
@@ -85,12 +87,18 @@ class ServiceController extends Controller
             'status.required' => 'Vui lòng chọn trạng thái.',
         ]);
 
+        if ($request->hasFile('image_file')) {
+            $path = $request->file('image_file')->store('services', 'public');
+            $data['image'] = Storage::url($path);
+        }
+
         Service::create([
-            'name' => $request->name,
-            'price' => $request->price,
-            'unit' => $request->unit,
-            'description' => $request->description,
-            'status' => $request->status,
+            'name' => $data['name'],
+            'price' => $data['price'],
+            'unit' => $data['unit'],
+            'description' => $data['description'],
+            'image' => $data['image'] ?? null,
+            'status' => $data['status'],
         ]);
 
         return redirect()
@@ -116,11 +124,12 @@ class ServiceController extends Controller
     {
         $service = Service::findOrFail($id);
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'description' => 'nullable|string',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'status' => 'required|in:0,1',
         ], [
             'name.required' => 'Vui lòng nhập tên dịch vụ.',
@@ -129,12 +138,23 @@ class ServiceController extends Controller
             'status.required' => 'Vui lòng chọn trạng thái.',
         ]);
 
+        if ($request->hasFile('image_file')) {
+            if (! empty($service->image) && str_starts_with($service->image, '/storage/')) {
+                $oldPath = ltrim(str_replace('/storage/', '', $service->image), '/');
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $path = $request->file('image_file')->store('services', 'public');
+            $data['image'] = Storage::url($path);
+        }
+
         $service->update([
-            'name' => $request->name,
-            'price' => $request->price,
-            'unit' => $request->unit,
-            'description' => $request->description,
-            'status' => $request->status,
+            'name' => $data['name'],
+            'price' => $data['price'],
+            'unit' => $data['unit'],
+            'description' => $data['description'],
+            'image' => $data['image'] ?? $service->image,
+            'status' => $data['status'],
         ]);
 
         return redirect()
