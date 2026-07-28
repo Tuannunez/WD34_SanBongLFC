@@ -10,6 +10,32 @@
                 </div>
                 <div class="card-body p-4">
 
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill fs-4"></i>
+                                <div>
+                                    <strong>Thành công!</strong>
+                                    <div class="small">{{ session('success') }}</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-x-circle-fill fs-4"></i>
+                                <div>
+                                    <strong>Lỗi!</strong>
+                                    <div class="small">{{ session('error') }}</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
                     {{-- THANH HIỂN THỊ ĐẾM NGƯỢC THỜI GIAN GIỮ SÂN 5 PHÚT --}}
                     <div class="alert alert-warning text-center fw-bold mb-4 shadow-sm border-0 rounded-3">
                         <i class="bi bi-clock-history me-2 text-danger animate-pulse"></i>
@@ -30,7 +56,7 @@
                                     <div class="mb-2">
                                         <span class="text-muted small d-block">Ma khuyen mai:</span>
                                         <strong class="text-success">{{ $booking->promotion_code }}</strong>
-                                        <small class="text-danger ms-1">-{{ number_format($booking->discount_amount, 0, ',', '.') }} VN�</small>
+                                        <small class="text-danger ms-1">-{{ number_format($booking->discount_amount, 0, ',', '.') }} VN�</small>
                                     </div>
                                 @endif
                                 

@@ -618,7 +618,71 @@
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? '' : '' }}" href="{{ route('home') }}#contact">Liên hệ</a></li>
             </ul>
 
+            @php
+                $clientNotifications = [];
+                if(session('success')) {
+                    $clientNotifications[] = [
+                        'type' => 'success',
+                        'title' => 'Thành công',
+                        'message' => session('success'),
+                        'icon' => 'bi-check-circle-fill',
+                        'bg' => 'bg-success text-white',
+                    ];
+                }
+                if(session('error')) {
+                    $clientNotifications[] = [
+                        'type' => 'error',
+                        'title' => 'Lỗi',
+                        'message' => session('error'),
+                        'icon' => 'bi-x-circle-fill',
+                        'bg' => 'bg-danger text-white',
+                    ];
+                }
+                if(session('warning')) {
+                    $clientNotifications[] = [
+                        'type' => 'warning',
+                        'title' => 'Chú ý',
+                        'message' => session('warning'),
+                        'icon' => 'bi-exclamation-triangle-fill',
+                        'bg' => 'bg-warning text-dark',
+                    ];
+                }
+            @endphp
+
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                <li class="nav-item dropdown">
+                    <button class="btn btn-light border rounded-3 position-relative" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        @if(count($clientNotifications) > 0)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ count($clientNotifications) }}
+                            </span>
+                        @endif
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2" style="min-width: 320px;">
+                        <li class="dropdown-header">Thông báo</li>
+                        @if(count($clientNotifications) > 0)
+                            @foreach($clientNotifications as $notification)
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-start gap-3" href="#">
+                                        <span class="badge rounded-pill p-2 {{ $notification['bg'] }}">
+                                            <i class="bi {{ $notification['icon'] }}"></i>
+                                        </span>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">{{ $notification['title'] }}</div>
+                                            <div class="small text-muted">{{ $notification['message'] }}</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            @endforeach
+                        @else
+                            <li>
+                                <span class="dropdown-item-text text-muted small">Chưa có thông báo mới.</span>
+                            </li>
+                        @endif
+                    </ul>
+                </li>
+
                 @auth
                     <li class="nav-item">
                         <a href="{{ route('user.bookings.index') }}" class="btn btn-outline-success rounded-3">
@@ -732,6 +796,47 @@
 @endif
 
 <main>
+    <div class="container py-4">
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <div class="small">{{ session('success') }}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-x-circle-fill fs-4"></i>
+                    <div>
+                        <strong>Lỗi!</strong>
+                        <div class="small">{{ session('error') }}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if(session('warning'))
+            <div class="alert alert-warning alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                    <div>
+                        <strong>Chú ý!</strong>
+                        <div class="small">{{ session('warning') }}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+    </div>
+
     @yield('content')
 </main>
 
