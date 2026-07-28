@@ -896,6 +896,7 @@
                 <p class="lead mb-4">
                     Tìm hiểu về LFC, dịch vụ đặt sân chuyên nghiệp và tiện ích tại cơ sở sân bóng của chúng tôi ở Hoài Đức, Hà Nội.
                 </p>
+                <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC Logo" class="img-fluid mx-auto" style="max-width: 180px; object-fit: contain;" />
             </div>
         </div>
     </section>
@@ -998,13 +999,14 @@
             </div>
 
             <div class="col-lg-3 col-md-4">
-                <h5>Mạng xã hội</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="#" class="btn btn-dark border text-start rounded-3">Facebook</a>
-                    <a href="#" class="btn btn-dark border text-start rounded-3">Zalo</a>
-                    <a href="#" class="btn btn-dark border text-start rounded-3">TikTok</a>
-                    <a href="#" class="btn btn-dark border text-start rounded-3">YouTube</a>
+                <h5>Vị trí sân bóng</h5>
+                <div class="ratio ratio-16x9 rounded-4 overflow-hidden mt-3">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.661110353743!2d105.63632191532473!3d21.043361792646775!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135aac4d8db92fd%3A0x8d9d33fc5d27e946!2zU-G7kW5nIGJhbmggTGFpIMSQw6Bu!5e0!3m2!1svi!2s!4v1701100000000!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
+                <div class="mt-3">
+                    <a href="https://maps.app.goo.gl/yT4RrvdM8o8RotQj7" target="_blank" rel="noreferrer" class="btn btn-success btn-sm">Xem bản đồ</a>
+                </div>
+                <p class="text-white small mt-2 mb-0" style="opacity: .88;">Sân bóng Lai Xá, Thôn Lai Xá, Hoài Đức, Hà Nội.</p>
             </div>
         </div>
     </div>
