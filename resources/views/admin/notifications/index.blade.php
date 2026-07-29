@@ -8,6 +8,7 @@
             <h3 class="mb-1 fw-bold">Thông báo</h3>
             <p class="text-muted mb-0">Danh sách thông báo mới nhất từ hệ thống và người dùng.</p>
         </div>
+        <a href="{{ route('admin.notifications.create') }}" class="btn btn-primary">Tạo thông báo mới</a>
     </div>
 
     <div class="card shadow-sm border-0 rounded-4">

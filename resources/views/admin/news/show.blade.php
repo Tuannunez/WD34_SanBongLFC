@@ -23,9 +23,19 @@
                     @endif
                 </div>
 
-                @if($news->image)
+                @php
+                    $newsImages = !empty($news->images) && is_array($news->images) ? $news->images : ($news->image ? [$news->image] : []);
+                @endphp
+
+                @if(count($newsImages))
                     <div class="mb-3">
-                        <img src="{{ $news->image }}" alt="{{ $news->title }}" style="width:100%; max-width:880px; border-radius:12px; object-fit:cover;" />
+                        <div class="row g-3">
+                            @foreach($newsImages as $image)
+                                <div class="col-md-{{ count($newsImages) > 1 ? '6' : '12' }}">
+                                    <img src="{{ $image }}" alt="{{ $news->title }}" style="width:100%; border-radius:12px; object-fit:cover;" />
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 @endif
 

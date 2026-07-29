@@ -15,8 +15,11 @@
                 @endphp
 
                 <article class="news-featured-card card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                    @if($featured->image)
-                        <img src="{{ $featured->image }}" alt="{{ $featured->title }}" class="news-featured-image">
+                    @php
+                        $featuredImages = !empty($featured->images) && is_array($featured->images) ? $featured->images : ($featured->image ? [$featured->image] : []);
+                    @endphp
+                    @if(count($featuredImages))
+                        <img src="{{ $featuredImages[0] }}" alt="{{ $featured->title }}" class="news-featured-image">
                     @endif
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center gap-3 mb-3">
@@ -31,10 +34,13 @@
 
                 <div class="row g-4">
                     @foreach($moreItems as $item)
+                        @php
+                            $itemImages = !empty($item->images) && is_array($item->images) ? $item->images : ($item->image ? [$item->image] : []);
+                        @endphp
                         <div class="col-md-6">
                             <article class="news-card small-card h-100">
-                                @if($item->image)
-                                    <img src="{{ $item->image }}" alt="{{ $item->title }}">
+                                @if(count($itemImages))
+                                    <img src="{{ $itemImages[0] }}" alt="{{ $item->title }}">
                                 @endif
                                 <div class="news-card-body">
                                     <p class="news-card-meta">{{ $item->published_at?->format('d/m/Y') }}</p>
@@ -63,8 +69,11 @@
                             <div class="news-sidebar-item pb-3 mb-3 border-bottom">
                                 <a href="{{ route('news.show', $item->id) }}" class="text-dark text-decoration-none">
                                     <div class="d-flex align-items-start gap-3">
-                                        @if($item->image)
-                                            <img src="{{ $item->image }}" alt="{{ $item->title }}" class="news-sidebar-thumb">
+                                        @php
+                                            $itemSidebarImages = !empty($item->images) && is_array($item->images) ? $item->images : ($item->image ? [$item->image] : []);
+                                        @endphp
+                                        @if(count($itemSidebarImages))
+                                            <img src="{{ $itemSidebarImages[0] }}" alt="{{ $item->title }}" class="news-sidebar-thumb">
                                         @endif
                                         <div>
                                             <div class="mb-1 text-muted small">{{ $item->published_at?->format('d/m/Y') }}</div>

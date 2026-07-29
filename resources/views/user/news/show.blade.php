@@ -19,10 +19,14 @@
                 </div>
             </div>
 
-            @if($news->image)
+            @php
+                $newsImages = !empty($news->images) && is_array($news->images) ? $news->images : ($news->image ? [$news->image] : []);
+            @endphp
+
+            @if(count($newsImages))
                 <figure class="news-detail-figure card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#newsImageModal" class="news-detail-link">
-                        <img src="{{ $news->image }}" alt="{{ $news->title }}" class="news-detail-figure-image">
+                        <img src="{{ $newsImages[0] }}" alt="{{ $news->title }}" class="news-detail-figure-image">
                         <span class="news-detail-link-label">Xem ảnh đầy đủ</span>
                     </a>
                 </figure>
@@ -32,7 +36,7 @@
                 {!! nl2br(e($news->content)) !!}
             </article>
 
-            @if($news->image)
+            @if(count($newsImages))
                 <div class="modal fade" id="newsImageModal" tabindex="-1" aria-labelledby="newsImageModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-fullscreen-sm-down modal-dialog-centered">
                         <div class="modal-content bg-transparent border-0">
@@ -40,10 +44,20 @@
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body p-0 d-flex justify-content-center align-items-center">
-                                <img src="{{ $news->image }}" alt="{{ $news->title }}" class="w-100 news-detail-modal-image">
+                                <img src="{{ $newsImages[0] }}" alt="{{ $news->title }}" class="w-100 news-detail-modal-image">
                             </div>
                         </div>
                     </div>
+                </div>
+            @endif
+
+            @if(count($newsImages) > 1)
+                <div class="row g-3 mt-3">
+                    @foreach($newsImages as $image)
+                        <div class="col-md-4">
+                            <img src="{{ $image }}" alt="{{ $news->title }}" class="img-fluid rounded-4">
+                        </div>
+                    @endforeach
                 </div>
             @endif
         </div>
