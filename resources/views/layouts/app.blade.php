@@ -56,7 +56,7 @@
             min-height: 520px;
             background:
                 linear-gradient(135deg, rgba(21, 128, 61, .92), rgba(22, 101, 52, .82)),
-                url('{{ asset('images/banner1.png') }}') center/cover no-repeat;
+                url('/images/banner1.png') center/cover no-repeat;
             color: #ffffff;
             overflow: hidden;
         }
@@ -1242,7 +1242,7 @@
                     <li><i class="bi bi-geo-alt text-success me-2"></i> Hoài Đức, Hà Nội</li>
                     <li><i class="bi bi-telephone text-success me-2"></i> 1900 1234</li>
                     <li><i class="bi bi-envelope text-success me-2"></i> support@sanbonglfc.vn</li>
-                    <li><i class="bi bi-clock text-success me-2"></i> 07:00 - 22:00</li>
+                    <li><i class="bi bi-clock text-success me-2"></i> 07:00 - 23:00</li>
                 </ul>
             </div>
 

@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
@@ -59,6 +60,16 @@ class ReviewController extends Controller
             ]);
         }
 
+        DB::table('notifications')->insert([
+            'user_id' => Auth::id(),
+            'title' => 'Đã gửi đánh giá sân',
+            'content' => 'Bạn đã gửi đánh giá cho sân ' . optional($bookingDetail->field)->name . '. Admin sẽ xem xét phản hồi của bạn.',
+            'type' => 'review',
+            'is_read' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
     }
 
@@ -102,6 +113,16 @@ class ReviewController extends Controller
             'rating' => $request->rating,
             'comment' => $request->comment,
             'status' => true,
+        ]);
+
+        DB::table('notifications')->insert([
+            'user_id' => Auth::id(),
+            'title' => 'Đã gửi đánh giá sân',
+            'content' => 'Bạn đã gửi đánh giá cho sân ' . optional($bookingDetail->field)->name . '. Admin sẽ xem xét phản hồi của bạn.',
+            'type' => 'review',
+            'is_read' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
