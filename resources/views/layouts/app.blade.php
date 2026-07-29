@@ -899,6 +899,22 @@
 
             @php
                 $clientNotifications = [];
+                $dbNotifications = collect();
+                $unreadCount = 0;
+
+                if(Auth::check()) {
+                    $dbNotifications = \Illuminate\Support\Facades\DB::table('notifications')
+                        ->where('user_id', Auth::id())
+                        ->orderByDesc('created_at')
+                        ->limit(5)
+                        ->get();
+
+                    $unreadCount = \Illuminate\Support\Facades\DB::table('notifications')
+                        ->where('user_id', Auth::id())
+                        ->where('is_read', false)
+                        ->count();
+                }
+
                 if(session('success')) {
                     $clientNotifications[] = [
                         'type' => 'success',
@@ -932,15 +948,36 @@
                 <li class="nav-item dropdown">
                     <button class="btn btn-light border rounded-3 position-relative" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
-                        @if(count($clientNotifications) > 0)
+                        @if($unreadCount > 0)
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ count($clientNotifications) }}
+                                {{ $unreadCount }}
                             </span>
                         @endif
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2" style="min-width: 320px;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2" style="min-width: 360px;">
                         <li class="dropdown-header">Thông báo</li>
+
+                        @if(isset($dbNotifications) && $dbNotifications->isNotEmpty())
+                            @foreach($dbNotifications as $n)
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-start gap-3" href="{{ route('user.notifications.show', $n->id) }}">
+                                        <span class="badge rounded-pill p-2 bg-success text-white">
+                                            <i class="bi bi-envelope-open"></i>
+                                        </span>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">{{ $n->title }}</div>
+                                            <div class="small text-muted">{{ \Illuminate\Support\Str::limit($n->content, 80) }}</div>
+                                        </div>
+                                        @if(!$n->is_read)
+                                            <span class="badge bg-danger ms-2">Mới</span>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        @endif
+
                         @if(count($clientNotifications) > 0)
+                            <li><hr class="dropdown-divider"></li>
                             @foreach($clientNotifications as $notification)
                                 <li>
                                     <a class="dropdown-item d-flex align-items-start gap-3" href="#">
@@ -954,11 +991,12 @@
                                     </a>
                                 </li>
                             @endforeach
-                        @else
-                            <li>
-                                <span class="dropdown-item-text text-muted small">Chưa có thông báo mới.</span>
-                            </li>
                         @endif
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-center" href="{{ route('user.notifications.index') }}">Xem tất cả</a>
+                        </li>
                     </ul>
                 </li>
 

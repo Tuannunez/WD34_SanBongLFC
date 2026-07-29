@@ -280,6 +280,51 @@
                 </div>
             </div>
 
+            {{-- ĐÁNH GIÁ CỦA TÔI --}}
+            <div class="card border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-semibold mb-0">
+                        <i class="bi bi-chat-square-text text-primary me-2"></i>
+                        Đánh giá của tôi
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    @if(isset($reviews) && $reviews->isNotEmpty())
+                        <div class="row g-3">
+                            @foreach($reviews as $review)
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <strong>{{ $review->field?->name ?? 'Sân bóng' }}</strong>
+                                                    <div class="text-muted small">{{ $review->created_at?->format('d/m/Y') }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-warning-subtle text-warning">{{ $review->rating }} sao</span>
+                                                </div>
+                                            </div>
+
+                                            <p class="text-muted mb-2">{{ $review->comment ?? 'Không có nhận xét.' }}</p>
+
+                                            @if($review->booking)
+                                                <div class="text-muted small">Đặt ngày: {{ \Carbon\Carbon::parse($review->booking->created_at)->format('d/m/Y') }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-3">
+                            {{ $reviews->links() }}
+                        </div>
+                    @else
+                        <div class="alert alert-light">Bạn chưa có đánh giá nào.</div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>
