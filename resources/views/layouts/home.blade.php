@@ -109,7 +109,7 @@
                     <div class="contact-item"><span>📍</span><div>Địa chỉ: 123 Đường Sân Bóng, Hoài Đức, BTL, Hà Nội</div></div>
                     <div class="contact-item"><span>📞</span><div>Hotline: 1900 1234</div></div>
                     <div class="contact-item"><span>📧</span><div>Email: support@sanbonglfc.vn</div></div>
-                    <div class="contact-item"><span>🕒</span><div>Giờ mở cửa: 07:00 - 22:00</div></div>
+                    <div class="contact-item"><span>🕒</span><div>Giờ mở cửa: 07:00 - 23:00</div></div>
                 </div>
             </div>
             <div class="footer-col">
