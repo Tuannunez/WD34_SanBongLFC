@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request, $stadium)
+    public function store(Request $request, int $stadium)
     {
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
@@ -62,7 +62,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Cảm ơn bạn đã gửi đánh giá.');
     }
 
-    public function storeBooking(Request $request, $bookingId)
+    public function storeBooking(Request $request, int $bookingId)
     {
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',

@@ -47,7 +47,7 @@ class PaymentController extends Controller
     }
 
     // 1. Hiển thị trang chọn phương thức thanh toán
-    public function showPaymentPage($booking_id)
+    public function showPaymentPage(int $booking_id)
     {
         $booking = DB::table('bookings')
             ->leftJoin('promotions', 'bookings.promotion_id', '=', 'promotions.id')

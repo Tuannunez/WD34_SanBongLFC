@@ -4,131 +4,72 @@
 
 @section('hero-bottom')
     @if($fields->isNotEmpty())
-        <section class="hero-schedule-section py-4">
+        <section class="hero-stadiums-section py-4">
             <div class="container">
-                <div class="card shadow-sm rounded-4 border-0">
-                    <div class="card-body py-3 px-3 px-lg-4">
-                        <div class="schedule-card-header mb-4">
-                            <h2 class="section-title mb-2">Lịch đặt sân</h2>
-                            <p class="text-muted mb-0">Xem nhanh khung giờ trống và trạng thái đặt sân trong tuần.</p>
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-8">
+                        <div class="text-start">
+                            <span class="badge bg-success rounded-pill mb-2">Sân nổi bật</span>
+                            <h2 class="section-title mb-1">Danh sách sân bóng</h2>
+                            <p class="text-muted mb-0">Chọn sân theo loại và vị trí, xem giá tham khảo và đặt sân ngay.</p>
                         </div>
-                        <div class="hero-schedule-header mb-3">
-                            <div class="hero-schedule-controls d-flex flex-wrap align-items-center gap-2 mb-3">
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill hero-schedule-prev">
-                                    <i class="bi bi-chevron-left"></i>
-                                </button>
-                                <div class="hero-schedule-range px-3 py-2 rounded-pill bg-white border">
-                                    {{ $fields->first()->scheduleDates[0]['dayLabel'] ?? '' }} - {{ $fields->first()->scheduleDates[count($fields->first()->scheduleDates) - 1]['dayLabel'] ?? '' }}
-                                </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill hero-schedule-next">
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
+                    </div>
+                    <div class="col-md-4">
+                        <form method="GET" action="{{ route('home') }}" class="d-flex gap-2 align-items-center justify-content-md-end">
+                            <div class="flex-grow-1">
+                                <select name="field_type" class="form-select form-select-sm">
+                                    <option value="">Tất cả loại sân</option>
+                                    @foreach($fieldTypes as $fieldType)
+                                        <option value="{{ $fieldType->id }}" @if(request()->input('field_type') == $fieldType->id) selected @endif>{{ $fieldType->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <div class="hero-schedule-legend d-flex flex-wrap gap-2 align-items-center">
-                                <div class="legend-item"><span class="legend-dot legend-available"></span>Trống</div>
-                                <div class="legend-item"><span class="legend-dot legend-locked"></span>Đã khóa</div>
-                                <div class="legend-item"><span class="legend-dot legend-booked"></span>Đã đặt</div>
-                                <div class="legend-item"><span class="legend-dot legend-played"></span>Đã đá</div>
-                            </div>
-                        </div>
+                            <button type="submit" class="btn btn-success btn-sm">Lọc</button>
+                        </form>
+                    </div>
+                </div>
 
-                        <div class="hero-day-tabs d-flex flex-wrap gap-2 mb-3">
-                            @foreach($fields->first()->scheduleDates as $dayIndex => $day)
-                                <button type="button" class="btn btn-outline-secondary hero-day-tab @if($dayIndex === 0) active @endif"
-                                        data-day-index="{{ $dayIndex }}">
-                                    <div class="small text-muted mb-1">{{ $day['weekday'] }}</div>
-                                    <div class="fw-semibold">{{ $day['dayLabel'] }}</div>
-                                </button>
-                            @endforeach
-                        </div>
+                <div class="row g-4">
+                    @foreach($fields as $field)
+                        @php
+                            $stadium = $field->stadium;
+                            $image = $field->images->first()?->image_path
+                                ?? data_get($stadium, 'image')
+                                ?? data_get($stadium, 'thumbnail')
+                                ?? data_get($stadium, 'image_url');
+                            $imageUrl = $image ? asset('storage/' . $image) : asset('images/banner1.png');
+                            $fieldName = $field->name ?: 'Sân bóng';
+                            $address = data_get($stadium, 'address', 'Đang cập nhật địa chỉ');
+                            $price = $field->display_price;
+                        @endphp
 
-                        <div class="hero-schedule-fields">
-                            @foreach($fields as $field)
-                                <div class="field-schedule-row mb-2 shadow-sm rounded-3 border">
-                                    <div class="field-schedule-label d-flex align-items-center gap-2 px-3 py-2">
-                                        <span class="field-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-white border text-secondary">
-                                            <i class="bi bi-grid-1x2-fill"></i>
-                                        </span>
-                                        <div>
-                                            <div class="fw-semibold mb-0">{{ $field->name ?: 'Sân bóng' }}</div>
-                                            <div class="text-muted small">{{ $field->stadium?->name }}</div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card stadium-card h-100 shadow-sm rounded-4 overflow-hidden">
+                                <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $fieldName }}" style="height: 220px; object-fit: cover;">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="fw-bold mb-2">{{ $fieldName }}</h5>
+                                    <p class="text-muted small mb-2">{{ $field->fieldType?->name ?? 'Loại sân không xác định' }}</p>
+                                    <p class="text-muted mb-3"><i class="bi bi-geo-alt-fill me-1"></i> {{ $address }}</p>
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <div class="h5 mb-0 text-success">{{ number_format((float) $price, 0, ',', '.') }}đ</div>
+                                                <small class="text-muted">Giá tham khảo</small>
+                                            </div>
+                                            <a href="{{ route('stadiums.show', ['id' => $stadium->id, 'field' => $field->id]) }}" class="btn btn-success rounded-3">Đặt sân</a>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $field->fieldType?->number_of_players ? $field->fieldType->number_of_players . ' người' : 'Số người chưa rõ' }}</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $stadium->name }}</span>
                                         </div>
                                     </div>
-                                    <div class="field-schedule-day-wrapper px-2 py-2">
-                                        @foreach($field->scheduleDates as $dayIndex => $day)
-                                            <div class="field-schedule-day @if($dayIndex !== 0) d-none @endif" data-day-index="{{ $dayIndex }}">
-                                                @foreach($day['slots'] as $slot)
-                                                    <div class="schedule-slot {{ $slot['status'] }}" title="{{ $slot['time'] }} - {{ $slot['label'] }}">
-                                                        <span class="slot-time">{{ $slot['time'] }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endforeach
-                                    </div>
                                 </div>
-                            @endforeach
+                            </div>
                         </div>
-
-                    </div>
+                    @endforeach
                 </div>
             </div>
         </section>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const tabs = Array.from(document.querySelectorAll('.hero-day-tab'));
-                const dayBlocks = Array.from(document.querySelectorAll('.field-schedule-day'));
-                const prevButton = document.querySelector('.hero-schedule-prev');
-                const nextButton = document.querySelector('.hero-schedule-next');
-                const rangeDisplay = document.querySelector('.hero-schedule-range');
-
-                const days = tabs.map(tab => ({
-                    index: parseInt(tab.dataset.dayIndex, 10),
-                    weekday: tab.querySelector('.small').textContent.trim(),
-                    label: tab.querySelector('.fw-semibold').textContent.trim(),
-                }));
-
-                function setActiveDay(index) {
-                    tabs.forEach(tab => {
-                        tab.classList.toggle('active', parseInt(tab.dataset.dayIndex, 10) === index);
-                    });
-                    dayBlocks.forEach(block => {
-                        block.classList.toggle('d-none', parseInt(block.dataset.dayIndex, 10) !== index);
-                    });
-
-                    const day = days.find(d => d.index === index);
-                    if (day && rangeDisplay) {
-                        rangeDisplay.textContent = `${day.weekday} ${day.label}`;
-                    }
-                }
-
-                function getActiveIndex() {
-                    const activeTab = tabs.find(tab => tab.classList.contains('active'));
-                    return activeTab ? parseInt(activeTab.dataset.dayIndex, 10) : 0;
-                }
-
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', function () {
-                        const index = parseInt(this.dataset.dayIndex, 10);
-                        setActiveDay(index);
-                    });
-                });
-
-                prevButton?.addEventListener('click', function () {
-                    const currentIndex = getActiveIndex();
-                    const nextIndex = Math.max(0, currentIndex - 1);
-                    setActiveDay(nextIndex);
-                });
-
-                nextButton?.addEventListener('click', function () {
-                    const currentIndex = getActiveIndex();
-                    const nextIndex = Math.min(days.length - 1, currentIndex + 1);
-                    setActiveDay(nextIndex);
-                });
-
-                setActiveDay(0);
-            });
-        </script>
     @endif
 @endsection
 

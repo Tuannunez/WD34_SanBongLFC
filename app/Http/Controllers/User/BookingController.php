@@ -38,7 +38,7 @@ class BookingController extends Controller
         return view('user.bookings.index', compact('bookings'));
     }
 
-    public function show($booking)
+    public function show(int $booking)
     {
         $booking = DB::table('bookings')
             ->where('id', $booking)
@@ -80,7 +80,7 @@ class BookingController extends Controller
         ));
     }
 
-    public function create($stadium)
+    public function create(int $stadium)
     {
         $stadiumData = DB::table('stadiums')->where('id', $stadium)->first();
 
@@ -122,7 +122,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function availability(Request $request, $stadium)
+    public function availability(Request $request, int $stadium)
     {
         $stadiumData = DB::table('stadiums')->where('id', $stadium)->first();
 
@@ -205,7 +205,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function storeFromStadium(Request $request, $stadium)
+    public function storeFromStadium(Request $request, int $stadium)
     {
         $request->merge([
             'stadium_id' => $request->input('stadium_id', $stadium),
@@ -576,7 +576,7 @@ class BookingController extends Controller
         }
     }
 
-    public function destroy(Request $request, $booking)
+    public function destroy(Request $request, int $booking)
     {
         $bookingData = DB::table('bookings')
             ->leftJoin('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
@@ -604,6 +604,7 @@ class BookingController extends Controller
 
         $refundAmount = 0;
         $refundNote = '';
+        $isPaidFull = false;
 
         if ($status === 'pending') {
             $refundAmount = 0;
@@ -743,7 +744,7 @@ class BookingController extends Controller
         }
     }
 
-    public function confirmRefund($id)
+    public function confirmRefund(int $id)
     {
         DB::table('bookings')
             ->where('id', $id)
@@ -767,7 +768,7 @@ class BookingController extends Controller
         return back()->with('success', 'Cảm ơn bạn đã xác nhận! Giao dịch hủy sân và hoàn tiền đã hoàn tất.');
     }
 
-    public function disputeRefund(Request $request, $id)
+    public function disputeRefund(Request $request, int $id)
     {
         $request->validate([
             'dispute_reason' => 'required|string|max:500',
@@ -851,7 +852,7 @@ class BookingController extends Controller
         return $time;
     }
 
-    private function parseMoney($value): float
+    private function parseMoney(mixed $value): float
     {
         return (float) preg_replace('/[^0-9]/', '', (string) $value);
     }
@@ -899,7 +900,7 @@ class BookingController extends Controller
         return $result;
     }
 
-    public function checkStatus($id)
+    public function checkStatus(int $id)
     {
         $booking = DB::table('bookings')->where('id', $id)->first();
         if (!$booking) {

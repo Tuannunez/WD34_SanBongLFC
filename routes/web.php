@@ -45,14 +45,14 @@ Route::middleware(['web'])->group(function () {
     Route::get('/stadiums', [StadiumController::class, 'list'])
         ->name('stadiums.index');
 
+    Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
+        ->name('stadiums.show');
+
     Route::get('/services', [UserServiceController::class, 'index'])
         ->name('services.index');
 
     Route::get('/services/{service}', [UserServiceController::class, 'show'])
         ->name('services.show');
-
-    Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
-        ->name('stadiums.show');
 
     Route::get('/register', [RegisteredUserController::class, 'create'])
         ->name('register');
