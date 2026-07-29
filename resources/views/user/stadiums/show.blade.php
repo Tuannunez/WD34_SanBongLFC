@@ -278,8 +278,6 @@
                 </div>
             </div>
 
-            <!-- Dịch vụ đi kèm: intentionally removed from stadium detail per request -->
-
             <div class="card info-card booking-panel mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="fw-bold mb-0">
@@ -465,7 +463,7 @@
                         </form>
                     @else
                         <div class="text-center py-4">
-                            <div class="bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                            <div class="bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
                                  style="width: 72px; height: 72px;">
                                 <i class="bi bi-lock fs-2"></i>
                             </div>
@@ -553,6 +551,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const slotButtons = Array.from(document.querySelectorAll('.js-slot-btn'));
+        const scheduleSlotButtons = Array.from(document.querySelectorAll('.js-schedule-slot-btn'));
         const selectedTimeSlot = document.getElementById('selectedTimeSlot');
         const selectedPrice = document.getElementById('selectedPrice');
         const summaryTime = document.getElementById('summaryTime');
@@ -699,6 +698,49 @@
 
                 const time = button.dataset.time;
                 const price = button.dataset.price;
+
+                if (selectedTimeSlot) {
+                    selectedTimeSlot.value = time;
+                }
+
+                if (selectedPrice) {
+                    selectedPrice.value = price;
+                }
+
+                if (summaryTime) {
+                    summaryTime.innerText = time;
+                }
+
+                if (summaryPrice) {
+                    summaryPrice.innerText = formatMoney(price);
+                }
+            });
+        });
+
+        scheduleSlotButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                if (button.disabled) {
+                    return;
+                }
+
+                scheduleSlotButtons.forEach(function (item) {
+                    item.classList.remove('active');
+                });
+
+                button.classList.add('active');
+
+                const fieldId = button.dataset.fieldId;
+                const bookingDateValue = button.dataset.bookingDate;
+                const time = button.dataset.time;
+                const price = button.dataset.price;
+
+                if (selectedField && fieldId) {
+                    selectedField.value = fieldId;
+                }
+
+                if (bookingDate && bookingDateValue) {
+                    bookingDate.value = bookingDateValue;
+                }
 
                 if (selectedTimeSlot) {
                     selectedTimeSlot.value = time;

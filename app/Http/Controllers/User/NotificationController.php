@@ -19,7 +19,7 @@ class NotificationController extends Controller
         return view('user.notifications.index', compact('notifications'));
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $notification = DB::table('notifications')
             ->where('id', $id)

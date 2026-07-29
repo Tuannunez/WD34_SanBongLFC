@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Field;
+use App\Models\FieldType;
 use App\Models\Stadium;
 use App\Models\Booking;
 use App\Models\Review;
@@ -37,6 +38,7 @@ class StadiumController extends Controller
     private function loadFieldsWithSchedule(Request $request): array
     {
         $keyword = $request->keyword;
+        $fieldTypeId = $request->input('field_type');
 
         $fields = Field::query()
             ->with([
@@ -49,9 +51,13 @@ class StadiumController extends Controller
                 $query->where(function ($query) use ($keyword) {
                     $query->where('name', 'like', "%{$keyword}%")
                         ->orWhereHas('stadium', function ($stadiumQuery) use ($keyword) {
-                            $stadiumQuery->where('name', 'like', "%{$keyword}%");
+                            $stadiumQuery->where('name', 'like', "%{$keyword}%")
+                                ->orWhere('address', 'like', "%{$keyword}%");
                         });
                 });
+            })
+            ->when($fieldTypeId, function ($query) use ($fieldTypeId) {
+                $query->where('field_type_id', $fieldTypeId);
             })
             ->latest()
             ->get();
@@ -127,6 +133,10 @@ class StadiumController extends Controller
             ->orderBy('name')
             ->get();
 
+        $fieldTypes = FieldType::query()
+            ->orderBy('name')
+            ->get();
+
         if ($services->isEmpty()) {
             $fallbackServices = [
                 ['name' => 'Nước uống', 'description' => 'Nước suối, nước ngọt', 'price' => 10000, 'unit' => 'chai'],
@@ -150,10 +160,10 @@ class StadiumController extends Controller
             ->take(3)
             ->get();
 
-        return compact('fields', 'services', 'news', 'reviews');
+        return compact('fields', 'services', 'news', 'reviews', 'fieldTypes');
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, int $id)
     {
         $stadium = Stadium::findOrFail($id);
 
@@ -161,12 +171,80 @@ class StadiumController extends Controller
         $selectedField = $fields->firstWhere('id', $request->integer('field'))
             ?? $fields->first();
 
-        $reviews = $stadium->reviews()
-            ->where('reviews.status', true)
-            ->with(['user', 'field'])
-            ->latest()
+        $dates = collect(range(0, 6))->map(fn ($offset) => Carbon::today()->addDays($offset));
+
+        $fixedTimeSlots = TimeSlot::where('status', true)
+            ->orderBy('start_time')
             ->get();
 
+        $bookingMap = DB::table('booking_details as bd')
+            ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+            ->join('fields as f', 'bd.field_id', '=', 'f.id')
+            ->where('f.stadium_id', $stadium->id)
+            ->whereBetween('bd.booking_date', [$dates->first()->toDateString(), $dates->last()->toDateString()])
+            ->where('b.status', '!=', 'cancelled')
+            ->select('bd.field_id', 'bd.time_slot_id', 'bd.booking_date', 'b.status')
+            ->get()
+            ->groupBy(fn ($item) => $item->field_id . '-' . $item->booking_date . '-' . $item->time_slot_id);
+
+        $fields->each(function (Field $field) use ($fixedTimeSlots, $bookingMap, $dates) {
+            $field->setAttribute('display_price', $this->calculateSlotPrice($field, '06:00:00'));
+
+            $field->setAttribute('scheduleDates', $dates->map(function (Carbon $date) use ($field, $fixedTimeSlots, $bookingMap) {
+                $dayLabel = $date->format('d/m');
+                $weekday = match ($date->dayOfWeek) {
+                    0 => 'CN',
+                    1 => 'Thứ 2',
+                    2 => 'Thứ 3',
+                    3 => 'Thứ 4',
+                    4 => 'Thứ 5',
+                    5 => 'Thứ 6',
+                    6 => 'Thứ 7',
+                };
+
+                $slots = $fixedTimeSlots->map(function ($slot) use ($field, $date, $bookingMap) {
+                    $key = $field->id . '-' . $date->toDateString() . '-' . $slot->id;
+                    $booking = $bookingMap[$key][0] ?? null;
+                    $startTime = is_string($slot->start_time) ? $slot->start_time : data_get($slot, 'start_time');
+                    $slotDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->toDateString() . ' ' . substr($startTime, 0, 8));
+                    $isPast = $slotDateTime->isPast();
+
+                    if ($booking) {
+                        $status = $isPast ? 'played' : 'booked';
+                        $label = $isPast ? 'Đã chơi' : 'Đã đặt';
+                    } elseif ($isPast) {
+                        $status = 'locked';
+                        $label = 'Đã khóa';
+                    } else {
+                        $status = 'available';
+                        $label = 'Trống';
+                    }
+
+                    return [
+                        'id' => $slot->id,
+                        'status' => $status,
+                        'label' => $label,
+                        'time' => substr($startTime, 0, 5),
+                        'price' => $this->calculateSlotPrice($field, $startTime),
+                    ];
+                });
+
+                return [
+                    'date' => $date->toDateString(),
+                    'dayLabel' => $dayLabel,
+                    'weekday' => $weekday,
+                    'slots' => $slots,
+                ];
+            })->toArray());
+        });
+
+        $fieldTypeGroups = $fields->groupBy(fn ($field) => $field->fieldType?->name ?? 'Loại sân khác');
+
+        $reviews = Review::with(['user', 'field'])
+            ->whereHas('field', fn ($query) => $query->where('stadium_id', $stadium->id))
+            ->where('reviews.status', true)
+            ->latest()
+            ->get();
 
         $averageRating = $stadium->reviews()
             ->where('reviews.status', true)
@@ -177,10 +255,6 @@ class StadiumController extends Controller
         $slotPrices = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
             ->pluck('price', 'time_slot_id')
             ->toArray();
-
-        $fixedTimeSlots = TimeSlot::where('status', true)
-            ->orderBy('start_time')
-            ->get();
 
         $customSlots = StadiumSpecialTimeSlot::where('stadium_id', $stadium->id)
             ->orderBy('start_time')
@@ -298,12 +372,13 @@ class StadiumController extends Controller
             'averageRating',
             'defaultPrice',
             'eligibleBookings',
-            'services'
+            'services',
+            'fieldTypeGroups'
         ));
     }
 
     /** Giá cho một ca 90 phút; ca bắt đầu từ 18:00 được cộng 100.000đ. */
-    private function calculateSlotPrice($field, ?string $startTime): float
+    private function calculateSlotPrice(Field $field, ?string $startTime): float
     {
         $players = null;
 
