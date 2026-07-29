@@ -104,6 +104,12 @@ Route::middleware(['web'])->group(function () {
         Route::get('/ho-so-ca-nhan', [ProfileController::class, 'index'])
             ->name('user.profile.index');
 
+        // User notifications
+        Route::get('/thong-bao', [App\Http\Controllers\User\NotificationController::class, 'index'])
+            ->name('user.notifications.index');
+        Route::get('/thong-bao/{id}', [App\Http\Controllers\User\NotificationController::class, 'show'])
+            ->name('user.notifications.show');
+
         Route::put('/ho-so-ca-nhan', [ProfileController::class, 'update'])
             ->name('user.profile.update');
 

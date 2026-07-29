@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use App\Models\Review;
 
 class ProfileController extends Controller
 {
@@ -53,13 +54,19 @@ class ProfileController extends Controller
             }
         }
 
+        $reviews = Review::with(['field', 'booking'])
+            ->where('user_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->paginate(6);
+
         return view('user.profile.index', compact(
             'user',
             'totalBookings',
             'pendingBookings',
             'confirmedBookings',
             'completedBookings',
-            'totalSpent'
+            'totalSpent',
+            'reviews'
         ));
     }
 
