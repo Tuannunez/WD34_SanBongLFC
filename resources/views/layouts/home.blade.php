@@ -140,9 +140,6 @@
     </script>
 </body>
 </html>
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #111827; }
         a { text-decoration: none; color: inherit; }
         header { background: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 10px rgba(15, 23, 42, 0.08); position: sticky; top: 0; z-index: 10; }
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #16a34a; }

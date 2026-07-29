@@ -84,6 +84,167 @@
             right: -80px;
         }
 
+        .home-page-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 320px) 1fr;
+            gap: 28px;
+            align-items: start;
+            margin: 0 auto;
+            max-width: 1180px;
+            padding: 36px 0 28px;
+        }
+
+        .home-sidebar {
+            background: linear-gradient(180deg, #f4fef8 0%, #ffffff 100%);
+            border-radius: 28px;
+            padding: 26px;
+            box-shadow: 0 28px 60px rgba(16, 185, 129, .16);
+            border: 1px solid rgba(16, 185, 129, .18);
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            position: sticky;
+            top: 100px;
+            align-self: start;
+        }
+
+        .home-sidebar h2 {
+            font-size: 1.45rem;
+            margin-bottom: 0.9rem;
+            color: #115e3d;
+            letter-spacing: 0.01em;
+        }
+
+        .home-sidebar p,
+        .home-sidebar li {
+            color: #374151;
+            line-height: 1.9;
+        }
+
+        .home-sidebar ul {
+            padding-left: 1rem;
+            margin: 0 0 1rem;
+        }
+
+        .home-sidebar li {
+            margin-bottom: 0.9rem;
+            position: relative;
+        }
+
+        .home-sidebar li::before {
+            content: "";
+            position: absolute;
+            left: -1rem;
+            top: 0.55rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #16a34a;
+        }
+
+        .home-sidebar ul li a {
+            color: #065f46;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .home-sidebar ul li a:hover {
+            color: #0f766e;
+            text-decoration: underline;
+        }
+
+        .home-sidebar .sidebar-card {
+            background: #ffffff;
+            border: 1px solid rgba(16, 185, 129, .15);
+            border-radius: 22px;
+            padding: 20px 18px;
+            margin-top: 0;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .home-sidebar .sidebar-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 35px rgba(16, 185, 129, .14);
+        }
+
+        .home-sidebar .sidebar-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 0;
+            margin-bottom: 0.85rem;
+            font-size: 1.03rem;
+            color: #0f5132;
+        }
+
+        .home-sidebar .sidebar-card p {
+            margin-bottom: 0;
+            color: #475569;
+        }
+
+        .home-sidebar .sidebar-card .card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            background: #d9f7e3;
+            color: #0f5132;
+            font-size: 1rem;
+            box-shadow: inset 0 3px 6px rgba(16, 185, 129, .12);
+        }
+
+        .home-sidebar .sidebar-stats {
+            display: grid;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .home-sidebar .sidebar-stat {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(22, 163, 74, .08);
+            border-radius: 18px;
+            border: 1px solid rgba(22, 163, 74, .18);
+            padding: 16px;
+        }
+
+        .home-sidebar .sidebar-stat strong {
+            font-size: 1rem;
+            color: #0f5132;
+            display: block;
+        }
+
+        .home-sidebar .sidebar-stat span {
+            font-size: 0.93rem;
+            color: #475569;
+        }
+
+        .home-sidebar .sidebar-cta {
+            display: grid;
+            gap: 12px;
+            margin-top: 0;
+        }
+
+        .home-sidebar .sidebar-cta .btn {
+            width: 100%;
+            padding: 14px 18px;
+            font-weight: 700;
+            border-radius: 16px;
+        }
+
+        .home-sidebar .sidebar-cta .btn-outline-success {
+            background: rgba(16, 185, 129, .1);
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .home-sidebar .sidebar-card:last-child {
+            margin-bottom: 0;
+        }
+
         .news-hero .hero-text-wrap {
             max-width: 860px;
             margin: 0 auto;
@@ -888,6 +1049,48 @@
     </section>
 
     @yield('hero-bottom')
+
+    <main>
+        <div class="container">
+            <div class="home-page-grid">
+                <aside class="home-sidebar">
+                    <h2>Thông tin nhanh</h2>
+                    <p>Trang chủ SanBongLFC hiện gồm các phần chính:</p>
+                    <ul>
+                        <li><a href="#about">Giới thiệu</a></li>
+                        <li><a href="#amenities">Tiện ích</a></li>
+                        <li><a href="#booking-process">Quy trình đặt sân</a></li>
+                        <li><a href="#news">Tin tức</a></li>
+                        <li><a href="#contact">Liên hệ hỗ trợ</a></li>
+                    </ul>
+
+                    <div class="sidebar-card">
+                        <h3><span class="card-icon">📰</span> Tin tức mới</h3>
+                        <p>Cập nhật nhanh tin tức bóng đá và các bài viết liên quan đến SanBongLFC.</p>
+                    </div>
+
+                    <div class="sidebar-card">
+                        <h3><span class="card-icon">📞</span> Hỗ trợ khách hàng</h3>
+                        <p>Hotline: <strong>1900 1234</strong> · Email: <strong>support@sanbonglfc.vn</strong></p>
+                    </div>
+
+                    <div class="sidebar-card">
+                        <h3><span class="card-icon">⚽</span> Đặt sân dễ dàng</h3>
+                        <p>Chọn sân, chọn giờ, xác nhận thanh toán và nhận thông tin ngay trên trang chủ.</p>
+                    </div>
+
+                    <div class="sidebar-cta">
+                        <a href="{{ route('home') }}#news" class="btn btn-success rounded-3">Xem tin tức</a>
+                        <a href="{{ route('home') }}#contact" class="btn btn-outline-success rounded-3">Liên hệ ngay</a>
+                    </div>
+                </aside>
+
+                <div class="home-page-content">
+                    @yield('content')
+                </div>
+            </div>
+        </div>
+    </main>
 @elseif(request()->routeIs('about'))
     <section class="hero-section about-hero">
         <div class="container hero-content text-center">
@@ -914,50 +1117,52 @@
     </section>
 @endif
 
-<main>
-    <div class="container py-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-check-circle-fill fs-4"></i>
-                    <div>
-                        <strong>Thành công!</strong>
-                        <div class="small">{{ session('success') }}</div>
+@unless(request()->routeIs('home'))
+    <main>
+        <div class="container py-4">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill fs-4"></i>
+                        <div>
+                            <strong>Thành công!</strong>
+                            <div class="small">{{ session('success') }}</div>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+            @endif
 
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-x-circle-fill fs-4"></i>
-                    <div>
-                        <strong>Lỗi!</strong>
-                        <div class="small">{{ session('error') }}</div>
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-x-circle-fill fs-4"></i>
+                        <div>
+                            <strong>Lỗi!</strong>
+                            <div class="small">{{ session('error') }}</div>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+            @endif
 
-        @if(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-                    <div>
-                        <strong>Chú ý!</strong>
-                        <div class="small">{{ session('warning') }}</div>
+            @if(session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        <div>
+                            <strong>Chú ý!</strong>
+                            <div class="small">{{ session('warning') }}</div>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-    </div>
+            @endif
+        </div>
 
-    @yield('content')
-</main>
+        @yield('content')
+    </main>
+@endunless
 
 <footer class="footer-main pt-5">
     <div class="container pb-4">
