@@ -165,6 +165,10 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');
+        Route::get('/notifications/create', [NotificationController::class, 'create'])
+            ->name('notifications.create');
+        Route::post('/notifications', [NotificationController::class, 'store'])
+            ->name('notifications.store');
 
         Route::resource('roles', RoleController::class);
 

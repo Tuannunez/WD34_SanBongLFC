@@ -30,18 +30,33 @@ class NewsController extends Controller
             'content' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'image_files' => 'nullable|array',
+            'image_files.*' => 'file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'is_published' => 'nullable|in:0,1,true,false',
             'published_at' => 'nullable|date',
         ]);
 
-        if ($request->hasFile('image_file')) {
+        $imagePaths = [];
+        if ($request->hasFile('image_files')) {
+            foreach ($request->file('image_files') as $file) {
+                $path = $file->store('news', 'public');
+                $imagePaths[] = Storage::url($path);
+            }
+        } elseif ($request->hasFile('image_file')) {
             $path = $request->file('image_file')->store('news', 'public');
-            $data['image'] = Storage::url($path);
+            $imagePaths[] = Storage::url($path);
         }
 
-        // remove temporary upload key before saving to DB
+        if (! empty($imagePaths)) {
+            $data['images'] = $imagePaths;
+            $data['image'] = $data['image'] ?? $imagePaths[0];
+        }
+
         if (array_key_exists('image_file', $data)) {
             unset($data['image_file']);
+        }
+        if (array_key_exists('image_files', $data)) {
+            unset($data['image_files']);
         }
 
         $data['is_published'] = $request->boolean('is_published');
@@ -77,20 +92,41 @@ class NewsController extends Controller
             'published_at' => 'nullable|date',
         ]);
 
-        if ($request->hasFile('image_file')) {
-            // delete old image file if exists and stored in storage
-            if (! empty($news->image) && str_starts_with($news->image, '/storage/')) {
+        if ($request->hasFile('image_files') || $request->hasFile('image_file')) {
+            if (! empty($news->images) && is_array($news->images)) {
+                foreach ($news->images as $oldImage) {
+                    if (str_starts_with($oldImage, '/storage/')) {
+                        $oldPath = ltrim(str_replace('/storage/', '', $oldImage), '/');
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+            } elseif (! empty($news->image) && str_starts_with($news->image, '/storage/')) {
                 $oldPath = ltrim(str_replace('/storage/', '', $news->image), '/');
                 Storage::disk('public')->delete($oldPath);
             }
 
-            $path = $request->file('image_file')->store('news', 'public');
-            $data['image'] = Storage::url($path);
+            $imagePaths = [];
+            if ($request->hasFile('image_files')) {
+                foreach ($request->file('image_files') as $file) {
+                    $path = $file->store('news', 'public');
+                    $imagePaths[] = Storage::url($path);
+                }
+            } elseif ($request->hasFile('image_file')) {
+                $path = $request->file('image_file')->store('news', 'public');
+                $imagePaths[] = Storage::url($path);
+            }
+
+            if (! empty($imagePaths)) {
+                $data['images'] = $imagePaths;
+                $data['image'] = $imagePaths[0];
+            }
         }
 
-        // remove temporary upload key before updating DB
         if (array_key_exists('image_file', $data)) {
             unset($data['image_file']);
+        }
+        if (array_key_exists('image_files', $data)) {
+            unset($data['image_files']);
         }
 
         $data['is_published'] = $request->boolean('is_published');

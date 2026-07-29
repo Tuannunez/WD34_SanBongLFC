@@ -903,13 +903,19 @@
 
                 if(Auth::check()) {
                     $dbNotifications = \Illuminate\Support\Facades\DB::table('notifications')
-                        ->where('user_id', Auth::id())
+                        ->where(function ($query) {
+                            $query->where('user_id', Auth::id())
+                                ->orWhereNull('user_id');
+                        })
                         ->orderByDesc('created_at')
                         ->limit(5)
                         ->get();
 
                     $unreadCount = \Illuminate\Support\Facades\DB::table('notifications')
-                        ->where('user_id', Auth::id())
+                        ->where(function ($query) {
+                            $query->where('user_id', Auth::id())
+                                ->orWhereNull('user_id');
+                        })
                         ->where('is_read', false)
                         ->count();
                 }

@@ -27,14 +27,20 @@
 
         <div class="mb-3">
             <label class="form-label">Ảnh hiện tại</label>
-            @if($news->image)
+            @if(!empty($news->images) && is_array($news->images))
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    @foreach($news->images as $image)
+                        <img src="{{ $image }}" alt="" style="max-width:140px; height:auto;" />
+                    @endforeach
+                </div>
+            @elseif($news->image)
                 <div class="mb-2">
                     <img src="{{ $news->image }}" alt="" style="max-width:200px; height:auto;" />
                 </div>
             @endif
             <label class="form-label">Thay ảnh (tải lên)</label>
-            <input type="file" name="image_file" class="form-control">
-            <small class="text-muted">Để trống nếu không muốn thay ảnh. Định dạng: jpg, png, webp. Kích thước tối đa 5MB.</small>
+            <input type="file" name="image_files[]" class="form-control" multiple>
+            <small class="text-muted">Bạn có thể chọn nhiều ảnh. Để trống nếu không muốn thay. Định dạng: jpg, png, webp. Kích thước tối đa 5MB mỗi ảnh.</small>
         </div>
 
         <div class="mb-3 form-check">
