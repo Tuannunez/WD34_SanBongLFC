@@ -65,7 +65,7 @@ Route::middleware(['web'])->group(function () {
 
     Route::post('/login', [LoginController::class, 'store'])
         ->name('login.store');
-    
+
     Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
         ->name('user.bookings.store.from-stadium');
 
@@ -77,8 +77,16 @@ Route::middleware(['web'])->group(function () {
         Route::get('/dat-san/{stadium}', [UserBookingController::class, 'create'])
             ->name('user.bookings.create');
 
+        // 🔥 ROUTE MỚI: MỞ TRANG RIÊNG DÀNH CHO ĐẶT CỐ ĐỊNH THEO THÁNG
+        Route::get('/dat-san-thang/{stadium}', [UserBookingController::class, 'createMonthly'])
+            ->name('user.bookings.createMonthly');
+
         Route::post('/dat-san', [UserBookingController::class, 'store'])
             ->name('user.bookings.store');
+
+        // 🔥 ROUTE XỬ LÝ LƯU ĐƠN LỊCH CỐ ĐỊNH THEO THÁNG
+        Route::post('/dat-san-thang', [UserBookingController::class, 'storeMonthly'])
+            ->name('user.bookings.storeMonthly');
 
         Route::get('/don-dat-san-cua-toi', [UserBookingController::class, 'index'])
             ->name('user.bookings.index');
@@ -88,7 +96,7 @@ Route::middleware(['web'])->group(function () {
 
         Route::post('/don-dat-san-cua-toi/{booking}/review', [UserReviewController::class, 'storeBooking'])
             ->name('user.bookings.review.store');
-            
+
         Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
             ->name('user.bookings.destroy');
 
@@ -131,7 +139,7 @@ Route::middleware(['web'])->group(function () {
         // =========================================================================
         // CẤU HÌNH CÁC TUYẾN ĐƯỜNG THANH TOÁN VNPAY CHO USER
         // =========================================================================
-        
+
         // 1. Hiển thị trang lựa chọn phương thức thanh toán
         Route::get('/thanh-toan/{booking_id}', [PaymentController::class, 'showPaymentPage'])
             ->name('user.payment.show');
