@@ -181,11 +181,16 @@ class BookingController extends Controller
 
         if ($timeSlots->isEmpty() && Schema::hasTable('time_slots')) {
             $timeSlots = collect([
-                ['start_time' => '06:00:00', 'end_time' => '07:00:00', 'status' => true],
-                ['start_time' => '07:00:00', 'end_time' => '08:00:00', 'status' => true],
-                ['start_time' => '08:00:00', 'end_time' => '09:00:00', 'status' => true],
-                ['start_time' => '09:00:00', 'end_time' => '10:00:00', 'status' => true],
-                ['start_time' => '10:00:00', 'end_time' => '11:00:00', 'status' => true],
+                ['start_time' => '06:00:00', 'end_time' => '07:30:00', 'status' => true],
+                ['start_time' => '07:30:00', 'end_time' => '09:00:00', 'status' => true],
+                ['start_time' => '09:00:00', 'end_time' => '10:30:00', 'status' => true],
+                ['start_time' => '10:30:00', 'end_time' => '12:00:00', 'status' => true],
+                ['start_time' => '12:00:00', 'end_time' => '13:30:00', 'status' => true],
+                ['start_time' => '13:30:00', 'end_time' => '15:00:00', 'status' => true],
+                ['start_time' => '15:00:00', 'end_time' => '16:30:00', 'status' => true],
+                ['start_time' => '16:30:00', 'end_time' => '18:00:00', 'status' => true],
+                ['start_time' => '18:00:00', 'end_time' => '19:30:00', 'status' => true],
+                ['start_time' => '19:30:00', 'end_time' => '21:00:00', 'status' => true],
             ]);
         }
 

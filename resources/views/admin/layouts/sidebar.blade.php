@@ -118,8 +118,19 @@
 
         </div>
 
-        <div class="sidebar-title">
-            Thanh toán
+        <div class="sidebar-title">            Dịch vụ
+        </div>
+
+        <a href="{{ route('admin.services.index') }}"
+            class="sidebar-link ps-5 {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+
+            <i class="bi bi-box-seam"></i>
+
+            Quản lý dịch vụ
+
+        </a>
+
+        <div class="sidebar-title">            Thanh toán
         </div>
 
         <a class="sidebar-link" data-bs-toggle="collapse" href="#paymentMenu">

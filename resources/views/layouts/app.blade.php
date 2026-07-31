@@ -1097,6 +1097,12 @@
         }
 
         @media (max-width: 768px) {
+            .footer-links {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
             .hero-title {
                 font-size: 36px;
             }

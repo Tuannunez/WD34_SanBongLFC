@@ -42,17 +42,19 @@ class BookingAvailabilityTest extends TestCase
             'status' => true,
         ]);
 
+        DB::table('time_slots')->delete();
+
         $firstSlotId = DB::table('time_slots')->insertGetId([
             'start_time' => '06:00:00',
-            'end_time' => '07:00:00',
+            'end_time' => '07:30:00',
             'status' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $secondSlotId = DB::table('time_slots')->insertGetId([
-            'start_time' => '07:00:00',
-            'end_time' => '08:00:00',
+            'start_time' => '07:30:00',
+            'end_time' => '09:00:00',
             'status' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -73,22 +75,22 @@ class BookingAvailabilityTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $bookingDate = now()->addDay()->format('Y-m-d');
+
         DB::table('booking_details')->insert([
             'booking_id' => $bookingId,
             'field_id' => $field->id,
             'time_slot_id' => $firstSlotId,
-            'booking_date' => '2026-07-14',
+            'booking_date' => $bookingDate,
             'price' => 300000,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        $response = $this->getJson(route('user.bookings.availability', ['stadium' => $stadium->id]), [
-            'field_id' => $field->id,
-            'booking_date' => '2026-07-14',
-        ]);
+        $response = $this->getJson(route('user.bookings.availability', ['stadium' => $stadium->id]) . '?field_id=' . $field->id . '&booking_date=' . $bookingDate);
 
         $response->assertOk();
+        $response->assertJsonCount(2, 'slots');
         $response->assertJsonPath('slots.0.available', false);
         $response->assertJsonPath('slots.1.available', true);
     }
