@@ -86,12 +86,16 @@
 
         .home-page-grid {
             display: grid;
-            grid-template-columns: minmax(260px, 320px) 1fr;
-            gap: 28px;
+            grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+            gap: 18px;
             align-items: start;
+            justify-items: start;
             margin: 0 auto;
             max-width: 1180px;
             padding: 36px 0 28px;
+            width: calc(100% + 30px);
+            margin-left: -15px;
+            margin-right: -15px;
         }
 
         .home-sidebar {
@@ -106,6 +110,21 @@
             position: sticky;
             top: 100px;
             align-self: start;
+            width: 100%;
+        }
+
+        .home-page-content {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .home-page-content > .container {
+            width: 100%;
+            max-width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: 0;
+            margin-right: 0;
         }
 
         .home-sidebar h2 {
@@ -673,33 +692,249 @@
             margin: 30px 0;
         }
 
+        .hero-section {
+            position: relative;
+            min-height: 520px;
+            background-image: url('/images/banner1.png');
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            color: #ffffff;
+            overflow: hidden;
+            padding: 40px 0 32px;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, .18);
+            pointer-events: none;
+        }
+
         .hero-content {
             position: relative;
             z-index: 2;
-            padding: 90px 0 70px;
+            padding: 0;
         }
 
         .hero-text-wrap {
-            max-width: 760px;
+            max-width: 680px;
             margin: 0 auto;
             text-align: center;
+            padding: 0 10px;
+        }
+
+        .hero-top-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .hero-top-logo img {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, .28);
+            background: rgba(255, 255, 255, .12);
+            padding: 6px;
+        }
+
+        .hero-top-logo span {
+            font-size: 0.95rem;
+            color: #ffffff;
+            font-weight: 800;
+            white-space: nowrap;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+        }
+
+        .hero-title {
+            font-size: clamp(2.4rem, 3.8vw, 3.8rem);
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            text-shadow: 0 26px 60px rgba(0, 0, 0, .55);
+        }
+
+        .hero-title span {
+            color: #ffef61;
+        }
+
+        .hero-description {
+            font-size: 1rem;
+            max-width: 560px;
+            margin: 1rem auto 1.5rem;
+            color: #f8f9fb;
+            line-height: 1.85;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, .22);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 999px;
+            padding: 10px 18px;
+            margin: 0 auto 20px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .12);
+        }
+
+        .badge-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .18);
+            color: #ffffff;
+            font-size: 1.1rem;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+        }
+
+        .badge-text {
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            font-size: 0.95rem;
         }
 
         .hero-actions {
             display: flex;
-            gap: 12px;
+            gap: 14px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
-        .hero-title {
-            font-size: 48px;
-            line-height: 1.1;
-            font-weight: 800;
+        .hero-actions .btn {
+            min-width: 170px;
+            padding: 14px 22px;
+            font-size: 0.98rem;
+            font-weight: 700;
         }
 
-        .hero-title span {
-            color: #bbf7d0;
+        .hero-actions .btn-outline-light {
+            border-color: rgba(255, 255, 255, .55);
+            color: #ffffff;
+        }
+
+        .hero-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, .18);
+            margin: 30px auto 0;
+            width: 100%;
+            max-width: 720px;
+        }
+
+        .hero-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .hero-stat-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 18px;
+            padding: 14px 16px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, .08);
+        }
+
+        .hero-stat-icon {
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 992px) {
+            .hero-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .hero-feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hero-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 50px;
+        }
+
+        .hero-feature-card {
+            background: rgba(255, 255, 255, .08);
+            border-radius: 24px;
+            padding: 24px 20px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, .12);
+            color: #f8fafc;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .hero-feature-card .feature-icon {
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .12);
+            color: #a7f3d0;
+            font-size: 1.25rem;
+        }
+
+        .hero-feature-card h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .hero-feature-card p {
+            margin: 0;
+            color: rgba(255, 255, 255, .78);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 992px) {
+            .hero-feature-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .hero-section {
+                min-height: auto;
+                padding: 60px 0 50px;
+            }
+
+            .hero-feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .schedule-card-header h2 {
@@ -1073,19 +1308,41 @@
     <section class="hero-section">
         <div class="container hero-content">
             <div class="hero-text-wrap">
+                <div class="hero-badge mb-4">
+                    <span class="badge-circle">⚽</span>
+                    <span class="badge-text">Đặt sân trực tuyến #1</span>
+                </div>
+
                 <h1 class="hero-title mb-3">
-                    Đặt sân bóng <span>chuyên nghiệp</span> trong vài phút
+                    Đặt sân bóng<br>
+                    <span>chưa bao giờ dễ đến thế</span>
                 </h1>
 
-                <p class="lead mb-4">
-                    Từ sân 5, sân 7 đến sân 11 chất lượng, SanBongLFC mang đến trải nghiệm đặt sân nhanh, an toàn và tiện lợi cho mọi nhu cầu của bạn.
+                <p class="hero-description mb-4">
+                    Đặt sân 5 • 7 • 11 người<br>
+                    Kiểm tra lịch trống theo thời gian thực<br>
+                    Thanh toán an toàn - Xác nhận tức thì
                 </p>
 
-                <div class="hero-actions">
-                    <a href="{{ route('home') }}#stadiums" class="btn btn-success rounded-3 px-4 py-2 fw-bold">
-                        <i class="bi bi-calendar-check me-1"></i>
-                        Xem sân ngay
-                    </a>
+                <div class="hero-divider"></div>
+
+                <div class="hero-stat-grid mt-4">
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-icon">⚽</span>
+                        <span>Sân đạt chuẩn</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-icon">⚡</span>
+                        <span>Đặt trong 30 giây</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-icon">⭐</span>
+                        <span>4.9/5 đánh giá</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-icon">🛡</span>
+                        <span>Thanh toán an toàn</span>
+                    </div>
                 </div>
             </div>
         </div>
