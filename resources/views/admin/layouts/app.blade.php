@@ -608,7 +608,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    @stack('scripts')
+   
 
     <script>
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -642,6 +642,9 @@
 
     });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+     @stack('scripts')
 </body>
 
 </html>
