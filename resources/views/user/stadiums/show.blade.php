@@ -28,6 +28,65 @@
         top: 95px;
     }
 
+    .rules-list {
+        display: grid;
+        gap: 14px;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .rules-list li {
+        background: #f8fafc;
+        color: #111827;
+        border-radius: 16px;
+        padding: 14px 18px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .08);
+        list-style: none;
+        font-weight: 600;
+    }
+
+    .rules-list li::before {
+        content: '';
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 12px;
+        border-radius: 50%;
+        background: #16a34a;
+    }
+
+    .related-stadium-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    .related-stadium-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+
+    .related-stadium-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, .08);
+    }
+
+    .related-stadium-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+    }
+
+    .related-stadium-card .card-body {
+        padding: 1rem 1rem 1.25rem;
+    }
+
+    .related-stadium-card .stadium-name {
+        min-height: 3rem;
+    }
+
     .slot-btn {
         border: 1px solid #d1d5db;
         border-radius: 16px;
@@ -217,270 +276,342 @@
 
         <div class="col-12 col-xl-11 mx-auto" style="max-width: 1400px;">
 
-            <div class="card info-card mb-4">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="fw-bold mb-0">
-                        <i class="bi bi-info-circle text-primary me-2"></i>
-                        Thông tin cơ sở sân
-                    </h4>
-                </div>
-
-                <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="d-flex gap-3">
-                                <div class="feature-icon">
-                                    <i class="bi bi-building"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small">Tên cơ sở</div>
-                                    <div class="fw-bold">{{ $stadiumName }}</div>
-                                </div>
-                            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-lg-5 order-lg-1 order-2">
+                    <div class="card info-card h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h4 class="fw-bold mb-0">
+                                <i class="bi bi-info-circle text-primary me-2"></i>
+                                Thông tin cơ sở sân
+                            </h4>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="d-flex gap-3">
-                                <div class="feature-icon">
-                                    <i class="bi bi-telephone"></i>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-12">
+                                    <div class="d-flex gap-3">
+                                        <div class="feature-icon">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Tên cơ sở</div>
+                                            <div class="fw-bold">{{ $stadiumName }}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="text-muted small">Số điện thoại</div>
-                                    <div class="fw-bold">{{ $stadiumPhone }}</div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="col-md-12">
-                            <div class="d-flex gap-3">
-                                <div class="feature-icon">
-                                    <i class="bi bi-geo-alt"></i>
+                                <div class="col-md-12">
+                                    <div class="d-flex gap-3">
+                                        <div class="feature-icon">
+                                            <i class="bi bi-telephone"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Số điện thoại</div>
+                                            <div class="fw-bold">{{ $stadiumPhone }}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="text-muted small">Địa chỉ</div>
-                                    <div class="fw-bold">{{ $stadiumAddress }}</div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="col-md-12">
-                            <div class="d-flex gap-3">
-                                <div class="feature-icon">
-                                    <i class="bi bi-card-text"></i>
+                                <div class="col-md-12">
+                                    <div class="d-flex gap-3">
+                                        <div class="feature-icon">
+                                            <i class="bi bi-geo-alt"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Địa chỉ</div>
+                                            <div class="fw-bold">{{ $stadiumAddress }}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="text-muted small">Mô tả</div>
-                                    <div>{{ $stadiumDescription }}</div>
+
+                                <div class="col-md-12">
+                                    <div class="d-flex gap-3">
+                                        <div class="feature-icon">
+                                            <i class="bi bi-card-text"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Mô tả</div>
+                                            <div>{{ $stadiumDescription }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <div class="mt-4">
+                                        <h5 class="fw-bold mb-3">Nội quy sân</h5>
+                                        <ul class="list-unstyled mb-0 rules-list">
+                                            <li>✓ Có mặt trước giờ thi đấu 15 phút.</li>
+                                            <li>✓ Không mang giày đinh sắt.</li>
+                                            <li>✓ Không hút thuốc trên sân.</li>
+                                            <li>✓ Giữ gìn vệ sinh.</li>
+                                            <li>✓ Bảo quản tài sản cá nhân.</li>
+                                            <li>✓ Không gây mất trật tự.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <div class="mt-4">
+                                        <h5 class="fw-bold mb-3">Chính sách đặt sân</h5>
+                                        <ul class="list-unstyled mb-0 rules-list">
+                                            <li>✓ Đặt sân trước tối đa 30 ngày.</li>
+                                            <li>✓ Hủy trước 24 giờ được hoàn tiền.</li>
+                                            <li>✓ Sau thời gian trên không hoàn tiền.</li>
+                                            <li>✓ Đổi lịch nếu còn sân trống.</li>
+                                            <li>✓ Thanh toán trước khi vào sân.</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card info-card booking-panel mb-4">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="fw-bold mb-0">
-                        <i class="bi bi-calendar-check text-success me-2"></i>
-                        Đặt sân ngay
-                    </h4>
-                    <p class="text-muted mb-0 mt-1">
-                        Chọn ngày và khung giờ bạn muốn đặt
-                    </p>
-                </div>
+                <div class="col-12 col-lg-7 order-lg-2 order-1">
+                    <div class="card info-card booking-panel h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h4 class="fw-bold mb-0">
+                                <i class="bi bi-calendar-check text-success me-2"></i>
+                                Đặt sân ngay
+                            </h4>
+                            <p class="text-muted mb-0 mt-1">
+                                Chọn ngày và khung giờ bạn muốn đặt
+                            </p>
+                        </div>
 
-                <div class="card-body p-4">
-                    @auth
-                        <form action="{{ route('user.bookings.store.from-stadium', $stadium->id) }}"
-                              method="POST"
-                              id="bookingForm">
-                            @csrf
+                        <div class="card-body p-4">
+                            @auth
+                                <form action="{{ route('user.bookings.store.from-stadium', $stadium->id) }}"
+                                      method="POST"
+                                      id="bookingForm">
+                                    @csrf
 
-                            <input type="hidden" name="stadium_id" value="{{ $stadium->id }}">
-                            <input type="hidden" name="field_id" id="selectedField" value="{{ $selectedField?->id }}">
-                            <input type="hidden" name="time_slot" id="selectedTimeSlot" value="{{ old('time_slot') }}">
-                            <input type="hidden" name="total_price" id="selectedPrice" value="{{ old('total_price') }}">
+                                    <input type="hidden" name="stadium_id" value="{{ $stadium->id }}">
+                                    <input type="hidden" name="field_id" id="selectedField" value="{{ $selectedField?->id }}">
+                                    <input type="hidden" name="time_slot" id="selectedTimeSlot" value="{{ old('time_slot') }}">
+                                    <input type="hidden" name="total_price" id="selectedPrice" value="{{ old('total_price') }}">
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold" for="promotionCode">Mã giảm giá</label>
-                                <input type="text"
-                                       id="promotionCode"
-                                       name="promotion_code"
-                                       value="{{ old('promotion_code') }}"
-                                       class="form-control rounded-3 @error('promotion_code') is-invalid @enderror"
-                                       placeholder="Nhập mã giảm giá nếu có"
-                                       style="text-transform: uppercase">
-                                @error('promotion_code')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold" for="promotionCode">Mã giảm giá</label>
+                                        <input type="text"
+                                               id="promotionCode"
+                                               name="promotion_code"
+                                               value="{{ old('promotion_code') }}"
+                                               class="form-control rounded-3 @error('promotion_code') is-invalid @enderror"
+                                               placeholder="Nhập mã giảm giá nếu có"
+                                               style="text-transform: uppercase">
+                                        @error('promotion_code')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    Ngày đặt sân <span class="text-danger">*</span>
-                                </label>
-                                <input type="date"
-                                       id="bookingDate"
-                                       name="booking_date"
-                                       value="{{ old('booking_date', date('Y-m-d')) }}"
-                                       min="{{ date('Y-m-d') }}"
-                                       class="form-control rounded-3 @error('booking_date') is-invalid @enderror"
-                                       required>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Ngày đặt sân <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="date"
+                                               id="bookingDate"
+                                               name="booking_date"
+                                               value="{{ old('booking_date', date('Y-m-d')) }}"
+                                               min="{{ date('Y-m-d') }}"
+                                               class="form-control rounded-3 @error('booking_date') is-invalid @enderror"
+                                               required>
 
-                                @error('booking_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                                        @error('booking_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    Số điện thoại liên hệ
-                                </label>
-                                <input type="text"
-                                       name="customer_phone"
-                                       value="{{ old('customer_phone', Auth::user()->phone ?? '') }}"
-                                       class="form-control rounded-3"
-                                       placeholder="Nhập số điện thoại liên hệ">
-                            </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Số điện thoại liên hệ
+                                        </label>
+                                        <input type="text"
+                                               name="customer_phone"
+                                               value="{{ old('customer_phone', Auth::user()->phone ?? '') }}"
+                                               class="form-control rounded-3"
+                                               placeholder="Nhập số điện thoại liên hệ">
+                                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    Chọn khung giờ <span class="text-danger">*</span>
-                                </label>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Chọn khung giờ <span class="text-danger">*</span>
+                                        </label>
 
-                                <div class="accordion" id="slotAccordion">
-                                    @if(empty($timeSlots))
-                                        <div class="alert alert-light rounded-3 border">Chưa có khung giờ nào được cấu hình cho sân này.</div>
-                                    @else
-                                    @foreach($timeSlots as $groupIndex => $group)
-                                        <div class="accordion-item border rounded-4 mb-2 overflow-hidden">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button {{ $groupIndex !== 0 ? 'collapsed' : '' }}"
-                                                        type="button"
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#slotGroup{{ $groupIndex }}">
-                                                    {{ $group['session'] }}
-                                                </button>
-                                            </h2>
+                                        <div class="accordion" id="slotAccordion">
+                                            @if(empty($timeSlots))
+                                                <div class="alert alert-light rounded-3 border">Chưa có khung giờ nào được cấu hình cho sân này.</div>
+                                            @else
+                                            @foreach($timeSlots as $groupIndex => $group)
+                                                <div class="accordion-item border rounded-4 mb-2 overflow-hidden">
+                                                    <h2 class="accordion-header">
+                                                        <button class="accordion-button {{ $groupIndex !== 0 ? 'collapsed' : '' }}"
+                                                                type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#slotGroup{{ $groupIndex }}">
+                                                            {{ $group['session'] }}
+                                                        </button>
+                                                    </h2>
 
-                                            <div id="slotGroup{{ $groupIndex }}"
-                                                 class="accordion-collapse collapse {{ $groupIndex === 0 ? 'show' : '' }}"
-                                                 data-bs-parent="#slotAccordion">
-                                                <div class="accordion-body">
-                                                    <div class="d-grid gap-2">
-                                                        @foreach($group['slots'] as $slot)
-                                                            <button type="button"
-                                                                    class="slot-btn js-slot-btn"
-                                                                    data-slot-id="{{ $slot['id'] ?? '' }}"
-                                                                    data-time="{{ $slot['time'] }}"
-                                                                    data-price="{{ $slot['price'] }}"
-                                                                    data-available="true">
-                                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                                    <div>
-                                                                        <div class="slot-time">
-                                                                            {{ $slot['time'] }}
+                                                    <div id="slotGroup{{ $groupIndex }}"
+                                                         class="accordion-collapse collapse {{ $groupIndex === 0 ? 'show' : '' }}"
+                                                         data-bs-parent="#slotAccordion">
+                                                        <div class="accordion-body">
+                                                            <div class="d-grid gap-2">
+                                                                @foreach($group['slots'] as $slot)
+                                                                    <button type="button"
+                                                                            class="slot-btn js-slot-btn"
+                                                                            data-slot-id="{{ $slot['id'] ?? '' }}"
+                                                                            data-time="{{ $slot['time'] }}"
+                                                                            data-price="{{ $slot['price'] }}"
+                                                                            data-available="true">
+                                                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                                                            <div>
+                                                                                <div class="slot-time">
+                                                                                    {{ $slot['time'] }}
+                                                                                </div>
+                                                                                <small class="text-muted">Bấm để chọn</small>
+                                                                            </div>
+
+                                                                            <div class="text-end">
+                                                                                <div class="slot-price">
+                                                                                    {{ number_format((float) $slot['price'], 0, ',', '.') }}đ
+                                                                                </div>
+                                                                                <span class="slot-state badge rounded-pill mt-2 bg-success-subtle text-success">Còn trống</span>
+                                                                            </div>
                                                                         </div>
-                                                                        <small class="text-muted">Bấm để chọn</small>
-                                                                    </div>
-
-                                                                    <div class="text-end">
-                                                                        <div class="slot-price">
-                                                                            {{ number_format((float) $slot['price'], 0, ',', '.') }}đ
-                                                                        </div>
-                                                                        <span class="slot-state badge rounded-pill mt-2 bg-success-subtle text-success">Còn trống</span>
-                                                                    </div>
-                                                                </div>
-                                                            </button>
-                                                        @endforeach
+                                                                    </button>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                            @endforeach
+                                            @endif
+                                        </div>
+
+                                        @error('time_slot')
+                                            <div class="text-danger small mt-2">{{ $message }}</div>
+                                        @enderror
+
+                                        @error('booking_time')
+                                            <div class="text-danger small mt-2">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Ghi chú
+                                        </label>
+                                        <textarea name="note"
+                                                  rows="3"
+                                                  class="form-control rounded-3"
+                                                  placeholder="Nhập ghi chú nếu có">{{ old('note') }}</textarea>
+                                    </div>
+
+                                    @if($services->isNotEmpty())
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Dịch vụ đi kèm</label>
+                                            <div class="list-group list-group-flush">
+                                                @foreach($services as $sIndex => $service)
+                                                    <div class="d-flex align-items-center justify-content-between py-2">
+                                                        <div class="d-flex align-items-center">
+                                                            <input class="form-check-input me-2 service-select-panel" type="checkbox"
+                                                                   id="stadiumServiceCheck{{ $sIndex }}" data-index="{{ $sIndex }}">
+                                                            <label for="stadiumServiceCheck{{ $sIndex }}" class="mb-0">
+                                                                <div class="fw-semibold">{{ $service->name }}</div>
+                                                                <small class="text-muted">{{ $service->unit ?? 'lượt' }} - {{ number_format((float)$service->price,0,',','.') }}đ</small>
+                                                            </label>
+                                                            <input type="hidden" name="services[{{ $sIndex }}][id]" value="{{ $service->id }}">
+                                                        </div>
+
+                                                        <div style="width:90px">
+                                                            <input type="number" name="services[{{ $sIndex }}][quantity]" value="0" min="0" class="form-control form-control-sm service-qty-panel" data-index="{{ $sIndex }}" disabled>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         </div>
-                                    @endforeach
                                     @endif
-                                </div>
 
-                                @error('time_slot')
-                                    <div class="text-danger small mt-2">{{ $message }}</div>
-                                @enderror
+                                    <div class="bg-light rounded-4 p-3 mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted">Khung giờ</span>
+                                            <strong id="summaryTime">Chưa chọn</strong>
+                                        </div>
 
-                                @error('booking_time')
-                                    <div class="text-danger small mt-2">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    Ghi chú
-                                </label>
-                                <textarea name="note"
-                                          rows="3"
-                                          class="form-control rounded-3"
-                                          placeholder="Nhập ghi chú nếu có">{{ old('note') }}</textarea>
-                            </div>
-
-                            @if($services->isNotEmpty())
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Dịch vụ đi kèm</label>
-                                    <div class="list-group list-group-flush">
-                                        @foreach($services as $sIndex => $service)
-                                            <div class="d-flex align-items-center justify-content-between py-2">
-                                                <div class="d-flex align-items-center">
-                                                    <input class="form-check-input me-2 service-select-panel" type="checkbox"
-                                                           id="stadiumServiceCheck{{ $sIndex }}" data-index="{{ $sIndex }}">
-                                                    <label for="stadiumServiceCheck{{ $sIndex }}" class="mb-0">
-                                                        <div class="fw-semibold">{{ $service->name }}</div>
-                                                        <small class="text-muted">{{ $service->unit ?? 'lượt' }} - {{ number_format((float)$service->price,0,',','.') }}đ</small>
-                                                    </label>
-                                                    <input type="hidden" name="services[{{ $sIndex }}][id]" value="{{ $service->id }}">
-                                                </div>
-
-                                                <div style="width:90px">
-                                                    <input type="number" name="services[{{ $sIndex }}][quantity]" value="0" min="0" class="form-control form-control-sm service-qty-panel" data-index="{{ $sIndex }}" disabled>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Tổng tiền</span>
+                                            <strong class="text-success fs-5" id="summaryPrice">0đ</strong>
+                                        </div>
                                     </div>
+
+                                    <button type="submit" class="btn btn-success rounded-3 w-100 py-3 fw-bold">
+                                        <i class="bi bi-calendar-check me-1"></i>
+                                        Gửi đơn đặt sân
+                                    </button>
+                                </form>
+                            @else
+                                <div class="text-center py-4">
+                                    <div class="bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                         style="width: 72px; height: 72px;">
+                                        <i class="bi bi-lock fs-2"></i>
+                                    </div>
+
+                                    <h5 class="fw-bold">Bạn cần đăng nhập</h5>
+                                    <p class="text-muted">
+                                        Vui lòng đăng nhập để gửi đơn đặt sân.
+                                    </p>
+
+                                    <a href="{{ route('login') }}" class="btn btn-primary rounded-3 w-100 py-3">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                                        Đăng nhập để đặt sân
+                                    </a>
                                 </div>
-                            @endif
-
-                            <div class="bg-light rounded-4 p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="text-muted">Khung giờ</span>
-                                    <strong id="summaryTime">Chưa chọn</strong>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted">Tổng tiền</span>
-                                    <strong class="text-success fs-5" id="summaryPrice">0đ</strong>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-success rounded-3 w-100 py-3 fw-bold">
-                                <i class="bi bi-calendar-check me-1"></i>
-                                Gửi đơn đặt sân
-                            </button>
-                        </form>
-                    @else
-                        <div class="text-center py-4">
-                            <div class="bg-secondary-subtle text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                 style="width: 72px; height: 72px;">
-                                <i class="bi bi-lock fs-2"></i>
-                            </div>
-
-                            <h5 class="fw-bold">Bạn cần đăng nhập</h5>
-                            <p class="text-muted">
-                                Vui lòng đăng nhập để gửi đơn đặt sân.
-                            </p>
-
-                            <a href="{{ route('login') }}" class="btn btn-primary rounded-3 w-100 py-3">
-                                <i class="bi bi-box-arrow-in-right me-1"></i>
-                                Đăng nhập để đặt sân
-                            </a>
+                            @endauth
                         </div>
-                    @endauth
+                    </div>
                 </div>
             </div>
+
+            @if(!empty($relatedStadiums) && $relatedStadiums->isNotEmpty())
+                <div class="card info-card mb-4">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <h4 class="fw-bold mb-0">
+                            <i class="bi bi-grid-3x3-gap text-primary me-2"></i>
+                            Gợi ý sân khác
+                        </h4>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="related-stadium-list">
+                            @foreach($relatedStadiums as $otherStadium)
+                                @php
+                                    $otherImage = $otherStadium->image
+                                        ?? $otherStadium->thumbnail
+                                        ?? $otherStadium->image_url
+                                        ?? null;
+                                    $otherImageUrl = $otherImage
+                                        ? asset('storage/' . $otherImage)
+                                        : asset('images/banner1.png');
+                                @endphp
+
+                                <a href="{{ route('stadiums.show', $otherStadium->id) }}" class="related-stadium-card text-decoration-none text-dark">
+                                    <img src="{{ $otherImageUrl }}" alt="{{ $otherStadium->name }}">
+                                    <div class="card-body">
+                                        <h5 class="fw-bold stadium-name mb-2">{{ $otherStadium->name }}</h5>
+                                        <p class="text-muted small mb-2">{{ $otherStadium->address ?? 'Địa chỉ cập nhật' }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-success fw-semibold">Giá từ {{ number_format((float) ($otherStadium->price ?? 0), 0, ',', '.') }}đ</span>
+                                            <span class="badge bg-light text-dark rounded-pill">Xem thêm</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="card info-card">
                 <div class="card-header bg-white border-0 pt-4 px-4">
@@ -559,7 +690,7 @@
         const bookingForm = document.getElementById('bookingForm');
         const bookingDate = document.getElementById('bookingDate');
         const selectedField = document.getElementById('selectedField');
-        const availabilityUrl = '{{ route('user.bookings.availability', $stadium->id) }}';
+        const availabilityUrl = "{{ route('user.bookings.availability', $stadium->id) }}";
 
         function formatMoney(value) {
             value = Number(value || 0);

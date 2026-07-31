@@ -362,6 +362,21 @@ class StadiumController extends Controller
                 ->get();
         }
 
+        $relatedStadiums = Stadium::query()
+            ->where('id', '!=', $stadium->id)
+            ->when($stadium->field_type_id, fn ($query) => $query->where('field_type_id', $stadium->field_type_id))
+            ->inRandomOrder()
+            ->take(3)
+            ->get();
+
+        if ($relatedStadiums->isEmpty()) {
+            $relatedStadiums = Stadium::query()
+                ->where('id', '!=', $stadium->id)
+                ->inRandomOrder()
+                ->take(3)
+                ->get();
+        }
+
         return view('user.stadiums.show', compact(
             'stadium',
             'timeSlots',
@@ -373,7 +388,8 @@ class StadiumController extends Controller
             'defaultPrice',
             'eligibleBookings',
             'services',
-            'fieldTypeGroups'
+            'fieldTypeGroups',
+            'relatedStadiums'
         ));
     }
 
