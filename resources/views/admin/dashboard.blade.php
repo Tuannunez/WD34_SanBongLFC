@@ -9,21 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-body{
+body {
 
-background:
+    background:
 
-linear-gradient(
+        linear-gradient(180deg,
 
-180deg,
+            #f8fafc 0%,
 
-#f8fafc 0%,
+            #f3f6fb 100%);
 
-#f3f6fb 100%
-
-);
-
-font-family:Inter,sans-serif;
+    font-family: Inter, sans-serif;
 
 }
 
@@ -166,23 +162,23 @@ font-family:Inter,sans-serif;
 
 }
 
-.dashboard-card .card-header{
+.dashboard-card .card-header {
 
-padding:22px 24px;
+    padding: 22px 24px;
 
-background:white;
+    background: white;
 
-font-size:17px;
+    font-size: 17px;
 
-font-weight:700;
+    font-weight: 700;
 
-border-bottom:1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
 
-display:flex;
+    display: flex;
 
-justify-content:space-between;
+    justify-content: space-between;
 
-align-items:center;
+    align-items: center;
 
 }
 
@@ -257,231 +253,366 @@ align-items:center;
     font-size: 18px;
 
 }
-.dark-mode{
 
-background:#111827;
+.dark-mode {
 
-color:white;
+    background: #111827;
 
-}
-
-.dark-mode .card{
-
-background:#1e293b;
-
-color:white;
+    color: white;
 
 }
 
-.dark-mode .dashboard-card .card-header{
+.dark-mode .card {
 
-background:#1e293b;
+    background: #1e293b;
 
-}
-
-.dark-mode table{
-
-color:white;
+    color: white;
 
 }
 
-.dark-mode .table-light{
+.dark-mode .dashboard-card .card-header {
 
-background:#243041;
-
-}
-
-.dark-mode .btn-light{
-
-background:#334155;
-
-color:white;
-
-border:0;
-
-.card{
-
-transition:.35s;
+    background: #1e293b;
 
 }
 
-.card:hover{
+.dark-mode table {
 
-transform:translateY(-6px);
-
-box-shadow:0 18px 35px rgba(0,0,0,.08);
+    color: white;
 
 }
 
-.btn{
+.dark-mode .table-light {
 
-transition:.25s;
-
-}
-
-.btn:hover{
-
-transform:translateY(-2px);
+    background: #243041;
 
 }
 
-.progress-bar{
+.dark-mode .btn-light {
 
-transition:width 1.5s ease;
+    background: #334155;
 
-}
+    color: white;
 
-.table tbody tr{
+    border: 0;
 
-transition:.25s;
+    .card {
 
-}
+        transition: .35s;
 
-.table tbody tr:hover{
+    }
 
-background:#f8fbff;
+    .card:hover {
 
-transform:scale(1.01);
+        transform: translateY(-6px);
 
-}
+        box-shadow: 0 18px 35px rgba(0, 0, 0, .08);
 
-}
+    }
 
-.avatar-circle{
+    .btn {
 
-width:44px;
+        transition: .25s;
 
-height:44px;
+    }
 
-border-radius:50%;
+    .btn:hover {
 
-background:#206bc4;
+        transform: translateY(-2px);
 
-color:white;
+    }
 
-display:flex;
+    .progress-bar {
 
-align-items:center;
+        transition: width 1.5s ease;
 
-justify-content:center;
+    }
 
-font-weight:700;
+    .table tbody tr {
 
-}
+        transition: .25s;
 
-.skeleton{
+    }
 
-height:20px;
+    .table tbody tr:hover {
 
-background:linear-gradient(
+        background: #f8fbff;
 
-90deg,
+        transform: scale(1.01);
 
-#ececec,
-
-#f8f8f8,
-
-#ececec
-
-);
-
-background-size:300%;
-
-animation:skeleton 1.5s infinite;
-
-border-radius:10px;
+    }
 
 }
 
-@keyframes skeleton{
+.avatar-circle {
 
-0%{
+    width: 44px;
 
-background-position:100%;
+    height: 44px;
 
-}
+    border-radius: 50%;
 
-100%{
+    background: #206bc4;
 
-background-position:-100%;
+    color: white;
 
-}
+    display: flex;
 
-}
+    align-items: center;
 
-.floating-btn{
+    justify-content: center;
 
-position:fixed;
-
-right:35px;
-
-bottom:35px;
-
-width:60px;
-
-height:60px;
-
-border-radius:50%;
-
-background:#206bc4;
-
-color:white;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:24px;
-
-box-shadow:0 12px 30px rgba(0,0,0,.2);
-
-z-index:999;
-
-transition:.3s;
+    font-weight: 700;
 
 }
 
-.floating-btn:hover{
+.skeleton {
 
-transform:scale(1.08);
+    height: 20px;
 
-color:white;
+    background: linear-gradient(90deg,
+
+            #ececec,
+
+            #f8f8f8,
+
+            #ececec);
+
+    background-size: 300%;
+
+    animation: skeleton 1.5s infinite;
+
+    border-radius: 10px;
 
 }
 
-.stat-icon{
+@keyframes skeleton {
 
-transition:.35s;
+    0% {
+
+        background-position: 100%;
+
+    }
+
+    100% {
+
+        background-position: -100%;
+
+    }
 
 }
 
-.stat-card:hover .stat-icon{
+.floating-btn {
 
-transform:rotate(-12deg) scale(1.1);
+    position: fixed;
+
+    right: 35px;
+
+    bottom: 35px;
+
+    width: 60px;
+
+    height: 60px;
+
+    border-radius: 50%;
+
+    background: #206bc4;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 24px;
+
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .2);
+
+    z-index: 999;
+
+    transition: .3s;
 
 }
 
-.stat-card::before{
+.floating-btn:hover {
 
-content:"";
+    transform: scale(1.08);
 
-position:absolute;
+    color: white;
 
-top:-80px;
+}
 
-right:-80px;
+.stat-icon {
 
-width:180px;
+    transition: .35s;
 
-height:180px;
+}
 
-background:
+.stat-card:hover .stat-icon {
 
-rgba(255,255,255,.12);
+    transform: rotate(-12deg) scale(1.1);
 
-border-radius:50%;
+}
+
+.stat-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: -80px;
+
+    right: -80px;
+
+    width: 180px;
+
+    height: 180px;
+
+    background:
+
+        rgba(255, 255, 255, .12);
+
+    border-radius: 50%;
+
+}
+
+.table-hover tbody tr {
+
+    transition: .3s;
+
+}
+
+.table-hover tbody tr:hover {
+
+    background: #f7fbff;
+
+    transform: scale(1.01);
+
+    box-shadow:
+
+        0 10px 20px rgba(0, 0, 0, .04);
+
+}
+
+::-webkit-scrollbar {
+
+    width: 8px;
+
+}
+
+::-webkit-scrollbar-thumb {
+
+    background: #c8d2e1;
+
+    border-radius: 20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover {
+
+    background: #9aa8bb;
+
+}
+
+.dashboard-card {
+
+    overflow: hidden;
+
+}
+
+.dashboard-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    height: 3px;
+
+    width: 100%;
+
+    background: #206bc4;
+
+}
+
+.dashboard-card {
+
+    position: relative;
+
+}
+
+.dashboard-card:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow:
+
+        0 25px 40px rgba(0, 0, 0, .08);
+
+}
+
+.loading {
+
+    opacity: .6;
+
+    pointer-events: none;
+
+}
+
+.loading::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+
+        rgba(255, 255, 255, .6);
+
+}
+
+.badge {
+
+    padding: 8px 14px;
+
+    border-radius: 30px;
+
+    font-weight: 600;
+
+    font-size: 12px;
+
+}
+
+@keyframes fadeCard {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(20px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: none;
+
+    }
+
+}
+
+.dashboard-card {
+
+    animation: fadeCard .5s ease;
 
 }
 </style>
@@ -494,103 +625,22 @@ border-radius:50%;
 
     <div>
 
-        <div class="dashboard-title">
-
-            Dashboard
-
-        </div>
-
-        <div class="dashboard-subtitle">
-
-            Xin chào Admin 👋
-
-        </div>
-
-    </div>
-
-    <div>
-
         <button class="btn btn-light" id="themeToggle">
 
-<i class="bi bi-moon"></i>
+            <i class="bi bi-moon"></i>
 
-</button>
+        </button>
 
-<button class="btn btn-light dashboard-btn">
+        <button class="btn btn-light dashboard-btn">
 
-Refresh
+            Refresh
 
-</button>
-
-<button class="btn btn-primary dashboard-btn">
-
-Export
-
-</button>
+        </button>
 
     </div>
 
 </div>
 
-<div class="row mb-4">
-
-    <div class="col-lg-12">
-
-        <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
-
-            <div class="card-body p-4">
-
-                <div class="row align-items-center">
-
-                    <div class="col-lg-8">
-
-                        <h2 class="fw-bold mb-2">
-                            👋 Chào mừng trở lại, Admin
-                        </h2>
-
-                        <p class="text-muted mb-4">
-                            Quản lý sân bóng, theo dõi doanh thu và các đơn đặt sân
-                            ngay trên Dashboard.
-                        </p>
-
-                        <div class="d-flex gap-3">
-
-                            <a href="#" class="btn btn-primary px-4">
-
-                                <i class="bi bi-plus-circle me-2"></i>
-
-                                Thêm sân
-
-                            </a>
-
-                            <a href="#" class="btn btn-outline-primary px-4">
-
-                                <i class="bi bi-graph-up me-2"></i>
-
-                                Xem báo cáo
-
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-lg-4 text-center">
-
-                        <img src="{{ asset('images/dashboard.svg') }}"
-                             style="max-height:180px">
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
 
 <div class="row g-4">
 
@@ -623,6 +673,7 @@ Export
                             12%
 
                         </div>
+                        <div id="sparkField"></div>
 
                     </div>
 
@@ -664,13 +715,14 @@ Export
 
                         </div>
 
-                        <div class="stat-growth">
+                        <div class="stat-growth {{ $growth['revenue'] >= 0 ? 'text-success' : 'text-danger' }}">
 
-                            <i class="bi bi-arrow-up"></i>
+                            <i class="bi bi-arrow-{{ $growth['revenue'] >= 0 ? 'up' : 'down' }}"></i>
 
-                            6%
+                            {{ abs($growth['revenue']) }}%
 
                         </div>
+                        <div id="sparkBooking"></div>
 
                     </div>
 
@@ -708,7 +760,7 @@ Export
 
                         <div class="stat-value">
 
-                            {{ number_format($monthlyRevenue,0,',','.') }}
+                            {{ number_format($monthlyRevenue,0,',','.') }} đ
 
                         </div>
 
@@ -716,7 +768,19 @@ Export
 
                             <i class="bi bi-arrow-up"></i>
 
-                            18%
+                            @if($growth['revenue']>=0)
+
+                            <i class="bi bi-arrow-up"></i>
+
+                            {{ $growth['revenue'] }}%
+
+                            @else
+
+                            <i class="bi bi-arrow-down"></i>
+
+                            {{ abs($growth['revenue']) }}%
+
+                            @endif
 
                         </div>
 
@@ -767,6 +831,7 @@ Export
                             9%
 
                         </div>
+                        <div id="sparkCustomer"></div>
 
                     </div>
 
@@ -796,12 +861,27 @@ Export
 
             <div class="card-header d-flex justify-content-between align-items-center">
 
-                <span>Revenue Analytics</span>
+                <div>
+
+                    <div class="fw-bold fs-5">
+                        Revenue Analytics
+                    </div>
+
+                    <small class="text-muted">
+                        Thống kê doanh thu năm {{ now()->year }}
+                    </small>
+
+                </div>
 
                 <div>
 
-                    <button class="btn btn-sm btn-light">7 ngày</button>
-                    <button class="btn btn-sm btn-primary">30 ngày</button>
+                    <button id="btn7" class="btn btn-secondary">
+                        7 ngày
+                    </button>
+
+                    <button id="btn30" class="btn btn-primary">
+                        30 ngày
+                    </button>
 
                 </div>
 
@@ -816,6 +896,7 @@ Export
         </div>
 
     </div>
+
 
     {{-- Booking Status --}}
     <div class="col-lg-4">
@@ -833,714 +914,330 @@ Export
                 <div id="bookingChart" style="height:300px"></div>
 
                 <hr>
-
-                <div class="d-flex justify-content-between">
-
-                    <span>Hoàn thành</span>
-
-                    <strong class="text-success">68%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-success" style="width:68%"></div>
-
-                </div>
-
-                <div class="d-flex justify-content-between mt-4">
-
-                    <span>Đang xử lý</span>
-
-                    <strong class="text-warning">21%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-warning" style="width:21%"></div>
-
-                </div>
-
-                <div class="d-flex justify-content-between mt-4">
-
-                    <span>Đã huỷ</span>
-
-                    <strong class="text-danger">11%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-danger" style="width:11%"></div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-<div class="row mt-4">
-
-    {{-- Revenue Chart --}}
-    <div class="col-lg-8">
-
-        <div class="card dashboard-card h-100">
-
-            <div class="card-header d-flex justify-content-between align-items-center">
-
-                <span>Revenue Analytics</span>
-
-                <div>
-
-                    <button class="btn btn-sm btn-light">7 ngày</button>
-                    <button class="btn btn-sm btn-primary">30 ngày</button>
-
-                </div>
-
-            </div>
-
-            <div class="card-body">
-
-                <div id="revenueChart" style="height:360px"></div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    {{-- Booking Status --}}
-    <div class="col-lg-4">
-
-        <div class="card dashboard-card h-100">
-
-            <div class="card-header">
-
-                Booking Overview
-
-            </div>
-
-            <div class="card-body">
-
-                <div id="bookingChart" style="height:300px"></div>
-
-                <hr>
-
-                <div class="d-flex justify-content-between">
-
-                    <span>Hoàn thành</span>
-
-                    <strong class="text-success">68%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-success" style="width:68%"></div>
-
-                </div>
-
-                <div class="d-flex justify-content-between mt-4">
-
-                    <span>Đang xử lý</span>
-
-                    <strong class="text-warning">21%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-warning" style="width:21%"></div>
-
-                </div>
-
-                <div class="d-flex justify-content-between mt-4">
-
-                    <span>Đã huỷ</span>
-
-                    <strong class="text-danger">11%</strong>
-
-                </div>
-
-                <div class="progress mt-2">
-
-                    <div class="progress-bar bg-danger" style="width:11%"></div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-<div class="row mt-4">
-
-    <div class="col-lg-8">
-
-        <div class="card dashboard-card">
-
-            <div class="card-header">
-
-                Đơn đặt sân mới nhất
-
-            </div>
-
-            <div class="card-body p-0">
-
-                <div class="table-responsive">
-
-                    <table class="table table-hover align-middle mb-0">
-
-                        <thead class="table-light">
-
-                            <tr>
-
-                                <th>#</th>
-
-                                <th>Khách hàng</th>
-
-                                <th>Sân</th>
-
-                                <th>Ngày</th>
-
-                                <th>Trạng thái</th>
-
-                                <th class="text-end">Tiền</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            @forelse($latestBookings as $booking)
-
-                            <tr>
-
-                                <td>
-
-                                    <strong>#{{ $booking->id }}</strong>
-
-                                </td>
-
-                                <td>
-
-                                    <div class="fw-bold">
-
-                                        <div class="d-flex align-items-center">
-
-<div class="avatar-circle me-3">
-
-{{ strtoupper(substr($booking->user_name ?? 'K',0,1)) }}
-
-</div>
-
-<div>
-
-<div class="fw-bold">
-
-{{ $booking->user_name }}
-
-</div>
-
-<small class="text-muted">
-
-{{ $booking->user_email }}
-
-</small>
-
-</div>
-
-</div>
-
-                                    </div>
-
-                                    <small class="text-muted">
-
-                                        {{ $booking->user_email }}
-
-                                    </small>
-
-                                </td>
-
-                                <td>
-
-                                    {{ $booking->field_name }}
-
-                                </td>
-
-                                <td>
-
-                                    {{ \Carbon\Carbon::parse($booking->booking_date)->format('d/m/Y') }}
-
-                                </td>
-
-                                <td>
-
-                                    @if(($booking->status ?? '')=='completed')
-
-                                    <span class="badge badge-status status-success">
-
-                                        Hoàn thành
-
-                                    </span>
-
-                                    @elseif(($booking->status ?? '')=='pending')
-
-                                    <span class="badge badge-status status-warning">
-
-                                        Đang xử lý
-
-                                    </span>
-
-                                    @else
-
-                                    <span class="badge badge-status status-danger">
-
-                                        {{ $booking->status ?? 'Huỷ' }}
-
-                                    </span>
-
-                                    @endif
-
-                                </td>
-
-                                <td class="text-end fw-bold">
-
-                                    {{ number_format($booking->display_total,0,',','.') }}đ
-
-                                </td>
-
-                            </tr>
-
-                            @empty
-
-                            <tr>
-
-                                <td colspan="6" class="text-center p-5">
-
-                                    Không có dữ liệu
-
-                                </td>
-
-                            </tr>
-
-                            @endforelse
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-    <div class="col-lg-4">
-
-        <div class="card dashboard-card">
-
-            <div class="card-header">
-
-                System Status
-
-            </div>
-
-            <div class="col-lg-4">
-
-<div class="card dashboard-card">
-
-<div class="card-header">
-
-Thông báo
-
-</div>
-
-<div class="card-body">
-
-<div class="d-flex mb-3">
-
-<i class="bi bi-bell-fill text-warning me-3 fs-4"></i>
-
-<div>
-
-<strong>Có booking mới</strong>
-
-<div class="text-muted">
-
-5 phút trước
-
-</div>
-
-</div>
-
-</div>
-
-<div class="d-flex mb-3">
-
-<i class="bi bi-cash-stack text-success me-3 fs-4"></i>
-
-<div>
-
-<strong>Thanh toán thành công</strong>
-
-<div class="text-muted">
-
-20 phút trước
-
-</div>
-
-</div>
-
-</div>
-
-<div class="d-flex">
-
-<i class="bi bi-exclamation-circle text-danger me-3 fs-4"></i>
-
-<div>
-
-<strong>1 booking bị huỷ</strong>
-
-<div class="text-muted">
-
-1 giờ trước
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="card dashboard-card mt-4">
-
-<div class="card-header">
-
-Lịch hôm nay
-
-</div>
-
-<div class="card-body">
-
-<div class="d-flex justify-content-between mb-3">
-
-<div>
-
-<strong>07:00 - 08:30</strong>
-
-<div class="text-muted">
-
-Sân số 1
-
-</div>
-
-</div>
-
-<span class="badge bg-success">
-
-Đã đặt
-
-</span>
-
-</div>
-
-<div class="d-flex justify-content-between mb-3">
-
-<div>
-
-<strong>09:00 - 10:30</strong>
-
-<div class="text-muted">
-
-Sân số 2
-
-</div>
-
-</div>
-
-<span class="badge bg-warning">
-
-Đang chờ
-
-</span>
-
-</div>
-
-<div class="d-flex justify-content-between">
-
-<div>
-
-<strong>18:00 - 19:30</strong>
-
-<div class="text-muted">
-
-Sân số 5
-
-</div>
-
-</div>
-
-<span class="badge bg-primary">
-
-Sắp tới
-
-</span>
-
-</div>
-
-</div>
-
-</div>
-
-            <div class="card-body">
-
-                <div class="system-item">
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>Cơ sở</span>
-
-                        <span class="system-number">
-
-                            {{ $totalStadiums }}
-
-                        </span>
-
-                    </div>
-
-                    <div class="progress mt-2">
-
-                        <div class="progress-bar bg-primary" style="width:100%"></div>
-
-                    </div>
-
-                </div>
-
-                <div class="system-item">
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>Loại sân</span>
-
-                        <span class="system-number">
-
-                            {{ $totalFieldTypes }}
-
-                        </span>
-
-                    </div>
-
-                    <div class="progress mt-2">
-
-                        <div class="progress-bar bg-success" style="width:80%"></div>
-
-                    </div>
-
-                </div>
-
-                <div class="system-item">
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>Khung giờ</span>
-
-                        <span class="system-number">
-
-                            {{ $totalTimeSlots }}
-
-                        </span>
-
-                    </div>
-
-                    <div class="progress mt-2">
-
-                        <div class="progress-bar bg-warning" style="width:70%"></div>
-
-                    </div>
-
-                </div>
-
-                <div class="system-item">
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>Dịch vụ</span>
-
-                        <span class="system-number">
-
-                            {{ $totalServices }}
-
-                        </span>
-
-                    </div>
-
-                    <div class="progress mt-2">
-
-                        <div class="progress-bar bg-info" style="width:60%"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-<div class="row mt-4">
-
-    {{-- Top Fields --}}
-    <div class="col-lg-6">
-
-        <div class="card dashboard-card">
-
-            <div class="card-header d-flex justify-content-between">
-
-                <span>Top sân được đặt nhiều</span>
-
-                <span class="text-primary fw-bold">Top 5</span>
-
-            </div>
-
-            <div class="card-body">
 
                 @php
-                    $topFields = [
-                        ['name'=>'Sân A','percent'=>95],
-                        ['name'=>'Sân B','percent'=>82],
-                        ['name'=>'Sân C','percent'=>71],
-                        ['name'=>'Sân D','percent'=>56],
-                        ['name'=>'Sân E','percent'=>43],
-                    ];
+                $totalBooking = array_sum($bookingStatusChart);
+
+                $confirmed = $totalBooking
+                ? round(($bookingStatusChart[0] / $totalBooking) * 100)
+                : 0;
+
+                $pending = $totalBooking
+                ? round(($bookingStatusChart[1] / $totalBooking) * 100)
+                : 0;
+
+                $cancelled = $totalBooking
+                ? round(($bookingStatusChart[2] / $totalBooking) * 100)
+                : 0;
                 @endphp
 
-                @foreach($topFields as $field)
+                <div class="d-flex justify-content-between">
+                    <span>Hoàn thành</span>
+                    <strong class="text-success">{{ $confirmed }}%</strong>
+                </div>
 
-                <div class="mb-4">
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-success" style="width: {{ $confirmed }}%">
+                    </div>
+                </div>
 
-                    <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between mt-4">
+                    <span>Đang xử lý</span>
+                    <strong class="text-warning">{{ $pending }}%</strong>
+                </div>
 
-                        <strong>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-warning" style="width: {{ $pending }}%">
+                    </div>
+                </div>
 
-                            {{ $field['name'] }}
+                <div class="d-flex justify-content-between mt-4">
+                    <span>Đã huỷ</span>
+                    <strong class="text-danger">{{ $cancelled }}%</strong>
+                </div>
 
-                        </strong>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-danger" style="width: {{ $cancelled }}%">
+                    </div>
+                </div>
 
-                        <span>
+            </div>
 
-                            {{ $field['percent'] }}%
+        </div>
 
-                        </span>
+    </div>
+
+</div>
+<div class="row mt-4">
+
+    <div class="row mt-4">
+
+        <div class="col-lg-8">
+
+            <div class="card dashboard-card">
+
+                <div class="card-header d-flex justify-content-between align-items-center">
+
+                    <div>
+
+                        <div class="fw-bold fs-5">
+                            Latest Bookings
+                        </div>
+
+                        <small class="text-muted">
+                            8 booking gần đây
+                        </small>
 
                     </div>
 
-                    <div class="progress mt-2">
+                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-sm btn-outline-primary">
+                        Xem tất cả
+                    </a>
 
-                        <div
+                </div>
 
-                            class="progress-bar bg-primary"
+                <div class="card-body p-0">
 
-                            style="width:{{$field['percent']}}%"
+                    <div class="table-responsive">
 
-                        ></div>
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+
+                                <tr>
+
+                                    <th>#</th>
+
+                                    <th>Khách hàng</th>
+
+                                    <th>Sân</th>
+
+                                    <th>Ngày</th>
+
+                                    <th>Trạng thái</th>
+
+                                    <th class="text-end">Tiền</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @forelse($latestBookings as $booking)
+
+                                <tr>
+
+                                    <td>
+
+                                        <strong>#{{ $booking->id }}</strong>
+
+                                    </td>
+
+                                    <td>
+
+                                        <div class="fw-bold">
+
+                                            <div class="d-flex align-items-center">
+
+                                                <div class="avatar-circle me-3">
+
+                                                    {{ strtoupper(substr($booking->user_name ?? 'K',0,1)) }}
+
+                                                </div>
+
+                                                <div>
+
+                                                    <div class="fw-bold">
+
+                                                        {{ $booking->user_name }}
+
+                                                    </div>
+
+                                                    <small class="text-muted">
+
+                                                        {{ $booking->user_email }}
+
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <small class="text-muted">
+
+                                            {{ $booking->user_email }}
+
+                                        </small>
+
+                                    </td>
+
+                                    <td>
+
+                                        {{ $booking->field_name }}
+
+                                    </td>
+
+                                    <td>
+
+                                        {{ \Carbon\Carbon::parse($booking->booking_date)->format('d/m/Y') }}
+
+                                    </td>
+
+                                    <td>
+
+                                        @php
+                                        $status = strtolower($booking->status ?? '');
+                                        @endphp
+
+                                        @if(in_array($status,['confirmed','paid','success']))
+
+                                        <span class="badge bg-success">
+                                            Hoàn thành
+                                        </span>
+
+                                        @elseif(in_array($status,['pending','waiting']))
+
+                                        <span class="badge bg-warning text-dark">
+                                            Chờ xác nhận
+                                        </span>
+
+                                        @elseif(in_array($status,['cancelled','cancel']))
+
+                                        <span class="badge bg-danger">
+                                            Đã huỷ
+                                        </span>
+
+                                        @else
+
+                                        <span class="badge bg-secondary">
+                                            {{ $booking->status }}
+                                        </span>
+
+                                        @endif
+
+                                    </td>
+
+                                    <td class="text-end fw-bold">
+
+                                        {{ number_format($booking->display_total,0,',','.') }}đ
+
+                                    </td>
+
+                                </tr>
+
+                                @empty
+
+                                <tr>
+
+                                    <td colspan="6" class="text-center p-5">
+
+                                        Không có dữ liệu
+
+                                    </td>
+
+                                </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
 
                     </div>
 
                 </div>
 
-                @endforeach
+            </div>
+
+        </div>
+
+
+        {{-- Top Fields --}}
+        <div class="col-lg-6">
+
+            <div class="card dashboard-card">
+
+                <div class="card-header d-flex justify-content-between">
+
+                    <span>Top sân được đặt nhiều</span>
+
+                    <span class="text-primary fw-bold">Top 5</span>
+
+                </div>
+
+                <div class="card-body">
+
+
+                    @foreach($topFieldsChart as $field)
+
+                    <div class="mb-4">
+
+                        <div class="d-flex justify-content-between">
+
+                            <strong>
+
+                                {{ $field->name }}
+
+                            </strong>
+
+                            <span>
+
+                                {{ $field->total }}
+
+                            </span>
+
+                        </div>
+
+                        <div class="progress mt-2">
+
+                            <div class="progress-bar bg-primary" style="width:{{ min($field->total * 10, 100) }}%">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    @endforeach
+
+                </div>
 
             </div>
 
         </div>
 
-    </div>
+        {{-- Revenue Goal --}}
 
-    {{-- Revenue Goal --}}
+        <div class="col-lg-6">
 
-    <div class="col-lg-6">
+            <div class="card dashboard-card">
 
-        <div class="card dashboard-card">
+                <div class="card-header">
 
-            <div class="card-header">
+                    Doanh thu tháng
 
-                Doanh thu tháng
+                </div>
 
-            </div>
+                <div class="card-body text-center">
 
-            <div class="card-body text-center">
+                    <div id="goalChart" style="height:300px"></div>
 
-                <div
+                    <h3 class="fw-bold">
 
-                    id="goalChart"
+                        {{ number_format($monthlyRevenue,0,',','.') }}
 
-                    style="height:300px"
+                        đ
 
-                ></div>
+                    </h3>
+                    <div id="sparkRevenue"></div>
 
-                <h3 class="fw-bold">
+                    <p class="text-muted">
 
-                    {{ number_format($monthlyRevenue,0,',','.') }}
+                        76% mục tiêu tháng
 
-                    đ
-
-                </h3>
-
-                <p class="text-muted">
-
-                    76% mục tiêu tháng
-
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="row g-4 mt-1">
-
-    <div class="col-md-3">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <small class="text-muted">
-
-                    Booking tháng này
-
-                </small>
-
-                <h2 class="fw-bold mt-2">
-
-                    238
-
-                </h2>
-
-                <div class="text-success">
-
-                    <i class="bi bi-arrow-up"></i>
-
-                    +18%
+                    </p>
 
                 </div>
 
@@ -1550,57 +1247,31 @@ Sắp tới
 
     </div>
 
-    <div class="col-md-3">
+    <div class="row g-4 mt-1">
 
-        <div class="card dashboard-card">
+        <div class="col-md-3">
 
-            <div class="card-body">
+            <div class="card dashboard-card">
 
-                <small class="text-muted">
+                <div class="card-body">
 
-                    Doanh thu hôm nay
+                    <small class="text-muted">
 
-                </small>
+                        Booking tháng này
 
-                <h2 class="fw-bold mt-2">
+                    </small>
 
-                    8.4M
+                    <h2 class="fw-bold mt-2">
+                        {{ $bookingThisMonth }}
+                    </h2>
 
-                </h2>
+                    <div class="text-success">
 
-                <div class="text-success">
+                        <i class="bi bi-arrow-up"></i>
 
-                    +12%
+                        +18%
 
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <div class="card dashboard-card">
-
-            <div class="card-body">
-
-                <small class="text-muted">
-
-                    Khách mới
-
-                </small>
-
-                <h2 class="fw-bold mt-2">
-
-                    21
-
-                </h2>
-
-                <div class="text-danger">
-
-                    -2%
+                    </div>
 
                 </div>
 
@@ -1608,606 +1279,612 @@ Sắp tới
 
         </div>
 
-    </div>
+        <div class="col-md-3">
 
-    <div class="col-md-3">
+            <div class="card dashboard-card">
 
-        <div class="card dashboard-card">
+                <div class="card-body">
 
-            <div class="card-body">
-
-                <small class="text-muted">
-
-                    Tỷ lệ đặt sân
-
-                </small>
-
-                <h2 class="fw-bold mt-2">
-
-                    84%
-
-                </h2>
-
-                <div class="text-success">
-
-                    +5%
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="row mt-4">
-
-<div class="col-lg-12">
-
-<div class="card dashboard-card">
-
-<div class="card-header">
-
-Thao tác nhanh
-
-</div>
-
-<div class="card-body">
-
-<div class="row">
-
-<div class="col-md-3">
-
-<a href="#" class="btn btn-primary w-100 py-3">
-
-<i class="bi bi-plus-circle"></i>
-
-<br>
-
-Thêm sân
-
-</a>
-
-</div>
-
-<div class="col-md-3">
-
-<a href="#" class="btn btn-success w-100 py-3">
-
-<i class="bi bi-calendar2-plus"></i>
-
-<br>
-
-Đặt sân
-
-</a>
-
-</div>
-
-<div class="col-md-3">
-
-<a href="#" class="btn btn-warning w-100 py-3">
-
-<i class="bi bi-people"></i>
-
-<br>
-
-Khách hàng
-
-</a>
-
-</div>
-
-<div class="col-md-3">
-
-<a href="#" class="btn btn-dark w-100 py-3">
-
-<i class="bi bi-graph-up"></i>
-
-<br>
-
-Báo cáo
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="row mt-4">
-
-<div class="col-lg-6">
-
-<div class="card dashboard-card">
-
-<div class="card-header">
-
-Hoạt động gần đây
-
-</div>
-
-<div class="card-body">
-
-<div class="timeline">
-
-<div class="d-flex mb-4">
-
-<div class="me-3">
-
-<span class="badge bg-primary rounded-circle p-3">
-
-<i class="bi bi-check"></i>
-
-</span>
-
-</div>
-
-<div>
-
-<strong>
-
-Nguyễn Văn A
-
-</strong>
-
-<br>
-
-Đặt sân số 3
-
-<br>
-
-<small class="text-muted">
-
-10 phút trước
-
+                   <small class="text-muted">
+    Doanh thu tháng này
 </small>
 
+                    <h2 class="fw-bold mt-2">
+    {{ number_format($monthlyRevenueCard, 0, ',', '.') }}đ
+</h2>       
+
+<div class="{{ $revenueGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+    <i class="bi bi-arrow-{{ $revenueGrowth >= 0 ? 'up' : 'down' }}"></i>
+    {{ abs($revenueGrowth) }}%
 </div>
 
-</div>
+                </div>
 
-<div class="d-flex mb-4">
+            </div>
 
-<div class="me-3">
+        </div>
 
-<span class="badge bg-success rounded-circle p-3">
+        <div class="col-md-3">
 
-<i class="bi bi-cash"></i>
+            <div class="card dashboard-card">
 
-</span>
+                <div class="card-body">
 
-</div>
+                    <small class="text-muted">
 
-<div>
+                        Khách mới
 
-<strong>
+                    </small>
 
-Thanh toán thành công
+                    <h2 class="fw-bold mt-2">
+    {{ $occupancyRate }}%
+</h2>
 
-</strong>
+                </div>
 
-<br>
+            </div>
 
-650.000đ
+        </div>
 
-<br>
+        <div class="col-md-3">
 
-<small class="text-muted">
+            <div class="card dashboard-card">
 
-25 phút trước
+                <div class="card-body">
 
-</small>
+                    <small class="text-muted">
 
-</div>
+                        Tỷ lệ đặt sân
 
-</div>
+                    </small>
 
-<div class="d-flex">
+                    <h2 class="fw-bold mt-2">
+    {{ $occupancyRate }}%
+</h2>
 
-<div class="me-3">
+                    <div class="text-success">
 
-<span class="badge bg-warning rounded-circle p-3">
+                        +5%
 
-<i class="bi bi-calendar"></i>
+                    </div>
 
-</span>
+                </div>
 
-</div>
+            </div>
 
-<div>
+        </div>
 
-<strong>
+    </div>
 
-Có booking mới
 
-</strong>
+    <div class="row mt-4">
 
-<br>
 
-Sân số 5
 
-<br>
+        <div class="row mt-4">
 
-<small class="text-muted">
+            <div class="col-lg-6">
 
-1 giờ trước
+                <div class="card dashboard-card">
 
-</small>
+                    <div class="card-header">
 
-</div>
+                        <div>
 
-</div>
+                            <div class="fw-bold">
 
-</div>
+                                Top khách hàng
 
-</div>
+                            </div>
 
-</div>
+                            <small class="text-muted">
 
-<div class="col-lg-6">
+                                Đặt sân nhiều nhất
 
-<div class="card dashboard-card">
+                            </small>
 
-<div class="card-header">
+                        </div>
 
-Lịch hôm nay
+                    </div>
 
-</div>
+                    <div class="card-body">
 
-<div class="card-body">
 
-<div id="calendar"></div>
+                        @foreach($topCustomers as $customer)
 
-</div>
+                        <div class="d-flex align-items-center mb-4">
 
-</div>
+                            <div class="avatar-circle me-3">
 
-</div>
+                                {{ strtoupper(substr($customer->name,0,1)) }}
 
-</div>
+                            </div>
 
-<a
+                            <div class="flex-grow-1">
 
-href="#"
+                                <div class="fw-bold">
 
-class="floating-btn"
+                                    {{ $customer->name }}
 
->
+                                </div>
 
-<i class="bi bi-plus-lg"></i>
+                                <small class="text-muted">
 
-</a>
-@endsection
-@push('scripts')
-<script>
+                                    {{ $customer->total }}
 
-function sparkline(id,color){
+                                </small>
 
-new ApexCharts(document.querySelector(id),{
+                            </div>
 
-chart:{
-height:55,
-type:'area',
-sparkline:{enabled:true},
-toolbar:{show:false}
-},
+                            <span class="badge bg-primary">
 
-stroke:{
-curve:'smooth',
-width:3
-},
+                                VIP
 
-fill:{
-opacity:.2
-},
+                            </span>
 
-colors:[color],
+                        </div>
 
-series:[{
-data:[
-12,
-18,
-14,
-22,
-17,
-29,
-31,
-27,
-35,
-40,
-38,
-44
-]
-}]
+                        @endforeach
 
-}).render();
+                    </div>
 
-}
+                </div>
 
-sparkline("#spark1","#206bc4");
+            </div>
 
-sparkline("#spark2","#2fb344");
+            <div class="col-lg-6">
 
-sparkline("#spark3","#f59f00");
+                <div class="card dashboard-card">
 
-sparkline("#spark4","#d63939");
+                    <div class="card-header">
 
-</script>
-<script>
+                        <div>
 
-new ApexCharts(
+                            <div class="fw-bold">
 
-document.querySelector("#revenueChart"),
+                                Tỷ lệ sử dụng sân
 
-{
+                            </div>
 
-chart:{
+                            <small class="text-muted">
 
-height:360,
+                                Theo từng sân
 
-type:"area",
+                            </small>
 
-toolbar:{
+                        </div>
 
-show:false
+                    </div>
 
-},
+                    <div class="card-body">
 
-zoom:{
+                        <div id="occupancyChart"></div>
 
-enabled:false
+                    </div>
 
-}
+                </div>
 
-},
+            </div>
 
-colors:["#206bc4"],
+        </div>
 
-stroke:{
+        <div class="row mt-4">
 
-curve:"smooth",
+            <div class="col-lg-12">
 
-width:4
+                <div class="card dashboard-card">
 
-},
+                    <div class="card-header">
 
-fill:{
+                        Dashboard Statistics
 
-type:"gradient",
+                    </div>
 
-gradient:{
+                    <div class="card-body">
 
-opacityFrom:.45,
+                        <div class="row text-center">
 
-opacityTo:.05
+                            <div class="col">
 
-}
+                                <h2 class="fw-bold">
 
-},
+                                    {{ $totalFields }}
 
-series:[{
-    name:"Revenue",
-    data:@json($monthlyRevenueChart)
-}],
+                                </h2>
 
-xaxis:{
+                                <p class="text-muted">
 
-categories:[
+                                    Sân
 
-"Jan",
+                                </p>
 
-"Feb",
+                            </div>
 
-"Mar",
+                            <div class="col">
 
-"Apr",
+                                <h2 class="fw-bold">
 
-"May",
+                                    {{ $todayBookings }}
 
-"Jun",
+                                </h2>
 
-"Jul",
+                                <p class="text-muted">
 
-"Aug",
+                                    Booking
 
-"Sep",
+                                </p>
 
-"Oct",
+                            </div>
 
-"Nov",
+                            <div class="col">
 
-"Dec"
+                                <h2 class="fw-bold">
 
-]
+                                    {{ $totalCustomers }}
 
-},
+                                </h2>
 
-grid:{
+                                <p class="text-muted">
 
-borderColor:"#eef2f7"
+                                    Khách
 
-},
+                                </p>
 
-tooltip:{
+                            </div>
 
-theme:"light"
+                            <div class="col">
 
-}
+                                <h2 class="fw-bold">
 
-}
+                                    {{ number_format($monthlyRevenue) }}
 
-).render();
+                                </h2>
 
-</script>
-<script>
+                                <p class="text-muted">
 
-new ApexCharts(
+                                    Doanh thu
 
-document.querySelector("#bookingChart"),
+                                </p>
 
-{
+                            </div>
 
-chart:{
+                        </div>
 
-type:"donut",
+                    </div>
 
-height:280
+                </div>
 
-},
+            </div>
 
-series:[
+        </div>
+        @endsection
+        @push('scripts')
+        <script>
+        const sparkData = {
 
-65,
+            "#spark1": @json($fieldSpark),
 
-20,
+            "#spark2": @json($bookingSpark),
 
-15
+            "#spark3": @json($revenueSpark),
 
-],
+            "#spark4": @json($customerSpark)
 
-labels:[
+        };
 
-"Completed",
+        console.log(sparkData);
 
-"Pending",
+        function sparkline(id, color) {
 
-"Cancelled"
+            new ApexCharts(document.querySelector(id), {
 
-],
+                chart: {
+                    height: 55,
+                    type: 'area',
+                    sparkline: {
+                        enabled: true
+                    },
+                    toolbar: {
+                        show: false
+                    }
+                },
 
-colors:[
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
 
-"#2fb344",
+                fill: {
+                    opacity: .2
+                },
 
-"#f59f00",
+                colors: [color],
 
-"#d63939"
+                series: [{
+                    data: sparkData[id] ?? []
+                }]
 
-],
-
-legend:{
-
-position:"bottom"
-
-},
-
-dataLabels:{
-
-enabled:false
-
-}
-
-}
-
-).render();
-
-</script>
-<script>
-
-// ===== DARK MODE =====
-
-const btn = document.getElementById("themeToggle");
-
-if(btn){
-
-    btn.onclick = function(){
-
-        document.body.classList.toggle("dark-mode");
-
-        localStorage.setItem(
-            "theme",
-            document.body.classList.contains("dark-mode")
-        );
-
-    };
-
-}
-
-if(localStorage.getItem("theme")=="true"){
-
-    document.body.classList.add("dark-mode");
-
-}
-
-</script>
-
-<script>
-
-// ===== Counter Animation =====
-
-document.querySelectorAll(".stat-value").forEach(function(el){
-
-    let target = parseInt(el.innerText.replace(/\D/g,'')) || 0;
-
-    let current = 0;
-
-    let step = Math.ceil(target / 50);
-
-    let timer = setInterval(function(){
-
-        current += step;
-
-        if(current >= target){
-
-            current = target;
-
-            clearInterval(timer);
+            }).render();
 
         }
 
-        el.innerText=current.toLocaleString('vi-VN');
+        sparkline("#spark1", "#206bc4");
+        sparkline("#spark2", "#2fb344");
+        sparkline("#spark3", "#f59f00");
+        sparkline("#spark4", "#d63939");
+        </script>
+        <script>
+        let revenueChart = new ApexCharts(
+            document.querySelector("#revenueChart"), {
 
-    },20);
-
-});
-
-</script>
-<script>
-new ApexCharts(
-    document.querySelector("#goalChart"),
-    {
-        chart:{
-            type:"radialBar",
-            height:280
-        },
-
-        series:[76],
-
-        labels:["Hoàn thành"],
-
-        colors:["#206bc4"],
-
-        plotOptions:{
-            radialBar:{
-                hollow:{
-                    size:"65%"
-                },
-                track:{
-                    background:"#edf2f7"
-                },
-                dataLabels:{
-                    name:{
-                        fontSize:"16px"
+                chart: {
+                    height: 360,
+                    type: "area",
+                    toolbar: {
+                        show: false
                     },
-                    value:{
-                        fontSize:"32px",
-                        fontWeight:700
+                    zoom: {
+                        enabled: false
+                    }
+                },
+
+                colors: ["#206bc4"],
+
+                stroke: {
+                    curve: "smooth",
+                    width: 4
+                },
+
+                fill: {
+                    type: "gradient",
+                    gradient: {
+                        opacityFrom: .45,
+                        opacityTo: .05
+                    }
+                },
+
+                series: [{
+                    name: "Doanh thu",
+                    data: @json($revenue30Days['series'])
+                }],
+
+                xaxis: {
+                    categories: @json($revenue30Days['labels'])
+                }
+
+            }
+        );
+
+        revenueChart.render();
+
+        document.getElementById("btn30").onclick = function() {
+
+            revenueChart.updateOptions({
+
+                series: [{
+                    name: "Doanh thu",
+                    data: @json($revenue30Days['series'])
+                }],
+
+                xaxis: {
+                    categories: @json($revenue30Days['labels'])
+                }
+
+            });
+
+        }
+
+        document.getElementById("btn7").onclick = function() {
+
+            revenueChart.updateOptions({
+
+                series: [{
+                    name: "Doanh thu",
+                    data: @json($revenue7Days['series'])
+                }],
+
+                xaxis: {
+                    categories: @json($revenue7Days['labels'])
+                }
+
+            });
+
+        }
+        </script>
+        <script>
+        new ApexCharts(
+
+            document.querySelector("#bookingChart"),
+
+            {
+
+                chart: {
+
+                    type: "donut",
+
+                    height: 280
+
+                },
+
+                series: @json($bookingStatusChart),
+
+                labels: [
+                    "Hoàn thành",
+                    "Chờ xác nhận",
+                    "Đã huỷ"
+                ],
+
+                colors: [
+
+                    "#2fb344",
+
+                    "#f59f00",
+
+                    "#d63939"
+
+                ],
+
+                legend: {
+
+                    position: "bottom"
+
+                },
+
+                dataLabels: {
+
+                    enabled: false
+
+                }
+
+            }
+
+        ).render();
+        </script>
+        <script>
+        // ===== DARK MODE =====
+
+        const btn = document.getElementById("themeToggle");
+
+        if (btn) {
+
+            btn.onclick = function() {
+
+                document.body.classList.toggle("dark-mode");
+
+                localStorage.setItem(
+                    "theme",
+                    document.body.classList.contains("dark-mode")
+                );
+
+            };
+
+        }
+
+        if (localStorage.getItem("theme") == "true") {
+
+            document.body.classList.add("dark-mode");
+
+        }
+        </script>
+
+        <script>
+        // ===== Counter Animation =====
+
+        document.querySelectorAll(".stat-value").forEach(function(el) {
+
+            let target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
+
+            let current = 0;
+
+            let step = Math.ceil(target / 50);
+
+            let timer = setInterval(function() {
+
+                current += step;
+
+                if (current >= target) {
+
+                    current = target;
+
+                    clearInterval(timer);
+
+                }
+
+                el.innerText = current.toLocaleString('vi-VN');
+
+            }, 20);
+
+        });
+        </script>
+        <script>
+        new ApexCharts(
+            document.querySelector("#goalChart"), {
+                chart: {
+                    type: "radialBar",
+                    height: 280
+                },
+
+                series: [76],
+
+                labels: ["Hoàn thành"],
+
+                colors: ["#206bc4"],
+
+                plotOptions: {
+                    radialBar: {
+                        hollow: {
+                            size: "65%"
+                        },
+                        track: {
+                            background: "#edf2f7"
+                        },
+                        dataLabels: {
+                            name: {
+                                fontSize: "16px"
+                            },
+                            value: {
+                                fontSize: "32px",
+                                fontWeight: 700
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-).render();
-</script>
+        ).render();
+        </script>
 
-@endpush
+        <script>
+        new ApexCharts(
+
+            document.querySelector("#occupancyChart"),
+
+            {
+
+                chart: {
+
+                    type: "bar",
+
+                    height: 320,
+
+                    toolbar: {
+
+                        show: false
+
+                    }
+
+                },
+
+                series: [{
+
+                    name: "Booking",
+
+                    data: @json($fieldOccupancy->pluck('total'))
+
+                }],
+
+                xaxis: {
+
+                    categories: @json($fieldOccupancy->pluck('name'))
+
+                },
+
+                plotOptions: {
+
+                    bar: {
+
+                        borderRadius: 8,
+
+                        columnWidth: "45%"
+
+                    }
+
+                },
+
+                colors: ["#206bc4"]
+
+            }
+
+        ).render();
+        </script>
+
+        @endpush

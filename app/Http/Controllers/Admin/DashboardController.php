@@ -26,36 +26,100 @@ class DashboardController extends Controller
         $totalTimeSlots = $this->countTable('time_slots');
         $totalServices = $this->countTable('services');
 
-        $latestBookings = $this->getLatestBookings();
+        $latestBookings = $this->getLatestBookings(); 
+        $bookingSpark = $this->getBookingSpark();
+$revenueSpark = $this->getRevenueSpark();
+$customerSpark = $this->getCustomerSpark();
+$fieldSpark = $this->getFieldSpark();
+        $growth = $this->getDashboardGrowth();
+        
 
-        $monthlyRevenueChart = [
-                    12,
-                    18,
-                    26,
-                    20,
-                    31,
-                    40,
-                    36,
-                    45,
-                    51,
-                    60,
-                    66,
-                    72
-            ];
+        $revenue7Days = $this->getRevenueChart(7);
+
+$revenue30Days = $this->getRevenueChart(30);
+
+$bookingStatusChart = $this->getBookingStatusChart();
+
+$topFieldsChart = $this->getTopFieldsChart();
+
+$topCustomers = $this->getTopCustomers();
+
+$weeklyRevenueChart = $this->getWeeklyRevenueChart();
+
+$fieldOccupancy = $this->getFieldOccupancy();
+
+$monthlyBookingChart = $this->getMonthlyBookingChart();
+
+$bookingThisMonth = $this->getBookingThisMonth();
+
+$monthlyRevenueCard = $this->getMonthlyRevenueCard();
+
+$newCustomers = $this->getNewCustomers();
+
+$occupancyRate = $this->getOccupancyRate();
+
+$revenueGrowth = $this->getRevenueGrowth();
+
+
 
 
         return view('admin.dashboard', compact(
-            'totalFields',
-            'todayBookings',
-            'monthlyRevenue',
-            'totalCustomers',
-            'totalStadiums',
-            'totalFieldTypes',
-            'totalTimeSlots',
-            'totalServices',
-            'monthlyRevenueChart',
-            'latestBookings'
-        ));
+
+'totalFields',
+
+'todayBookings',
+
+'monthlyRevenue',
+
+'revenueGrowth',
+
+'totalCustomers',
+
+'totalStadiums',
+
+'totalFieldTypes',
+
+'totalTimeSlots',
+
+'totalServices',
+
+'revenue7Days',
+
+'revenue30Days',
+
+'bookingStatusChart',
+
+'topFieldsChart',
+
+'topCustomers',
+
+'weeklyRevenueChart',
+
+'fieldOccupancy',
+
+'monthlyBookingChart',
+
+'growth',
+
+'bookingSpark',
+
+'revenueSpark',
+
+'customerSpark',
+
+'fieldSpark',
+
+'bookingThisMonth',
+
+'monthlyRevenueCard',
+
+'newCustomers',
+
+'occupancyRate',
+
+'latestBookings'
+
+));
     }
 
     private function countTable(string $table): int
@@ -97,7 +161,11 @@ class DashboardController extends Controller
                         ->whereYear('created_at', $now->year);
                 }
 
-                return (float) $query->sum($amountColumn);
+                $revenue = (float) $query->sum($amountColumn);
+
+if ($revenue > 0) {
+    return $revenue;
+}
             }
         }
 
@@ -109,14 +177,15 @@ class DashboardController extends Controller
             ]);
 
             if ($amountColumn) {
-                $query = DB::table('bookings');
+                $query = DB::table('bookings')
+    ->whereIn('bookings.status', ['confirmed', 'completed']);
 
-                if (Schema::hasColumn('bookings', 'created_at')) {
-                    $query->whereMonth('created_at', $now->month)
-                        ->whereYear('created_at', $now->year);
-                }
+if (Schema::hasColumn('bookings', 'created_at')) {
+    $query->whereMonth('created_at', $now->month)
+          ->whereYear('created_at', $now->year);
+}
 
-                return (float) $query->sum($amountColumn);
+return (float) $query->sum($amountColumn);
             }
         }
 
@@ -259,4 +328,438 @@ class DashboardController extends Controller
 
         return null;
     }
+
+    private function getRevenueChart($days = 30)
+{
+    $amountColumn = $this->firstExistingColumn('bookings',[
+        'total_amount',
+        'total_price',
+        'amount'
+    ]);
+
+    if(!$amountColumn){
+        return [
+            'labels'=>[],
+            'series'=>[]
+        ];
+    }
+
+    $start = now()->subDays($days - 1);
+
+   $bookings = DB::table('bookings')
+    ->whereIn('bookings.status', ['confirmed', 'completed'])
+
+        ->selectRaw("
+            DATE(created_at) as date,
+            SUM($amountColumn) as total
+        ")
+
+        ->whereDate('created_at','>=',$start)
+
+        ->groupBy(DB::raw("DATE(created_at)"))
+
+        ->orderBy('date')
+
+        ->get();
+
+    $labels=[];
+
+    $series=[];
+
+    for($i=0;$i<$days;$i++){
+
+        $day=$start->copy()->addDays($i);
+
+        $labels[]=$day->format('d/m');
+
+        $value=$bookings
+            ->firstWhere(
+                'date',
+                $day->format('Y-m-d')
+            );
+
+        $series[]=$value
+            ? (float)$value->total
+            :0;
+
+    }
+
+    return [
+
+        'labels'=>$labels,
+
+        'series'=>$series
+
+    ];
+}
+
+    private function getMonthlyRevenueChart()
+{
+    $result = [];
+
+    for ($month = 1; $month <= 12; $month++) {
+
+        $result[] = DB::table('payments')
+            ->whereMonth('created_at', $month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
+    }
+
+    return $result;
+}
+
+private function getBookingStatusChart()
+{
+    return [
+
+        DB::table('bookings')
+            ->where('status', 'confirmed')
+            ->whereDate('created_at', today())
+            ->count(),
+
+        DB::table('bookings')
+            ->where('status', 'pending')
+            ->whereDate('created_at', today())
+            ->count(),
+
+        DB::table('bookings')
+            ->where('status', 'cancelled')
+            ->whereDate('created_at', today())
+            ->count(),
+
+    ];
+}
+private function getTopCustomers()
+{
+    return DB::table('bookings')
+    ->whereIn('bookings.status', ['confirmed', 'completed'])
+
+        ->join('users', 'bookings.user_id', '=', 'users.id')
+
+        ->select(
+
+            'users.name',
+
+            DB::raw('COUNT(bookings.id) as total')
+
+        )
+
+        ->groupBy('users.id', 'users.name')
+
+        ->orderByDesc('total')
+
+        ->limit(5)
+
+        ->get();
+}
+
+private function getTopFieldsChart()
+{
+    return DB::table('booking_details')
+
+        ->join('fields', 'booking_details.field_id', '=', 'fields.id')
+
+        ->select(
+
+            'fields.name',
+
+            DB::raw('COUNT(*) as total')
+
+        )
+
+        ->groupBy('fields.id', 'fields.name')
+
+        ->orderByDesc('total')
+
+        ->limit(5)
+
+        ->get();
+}
+
+private function getWeeklyRevenueChart()
+{
+    $amountColumn = null;
+
+    if (Schema::hasTable('payments')) {
+        $amountColumn = $this->firstExistingColumn('payments', [
+            'amount',
+            'total_amount',
+            'paid_amount'
+        ]);
+    }
+
+    $labels = [];
+    $data = [];
+
+    for ($i = 6; $i >= 0; $i--) {
+
+        $date = now()->subDays($i);
+
+        $labels[] = $date->format('d/m');
+
+        if ($amountColumn) {
+
+            $data[] = DB::table('payments')
+                ->whereDate('created_at', $date)
+                ->sum($amountColumn);
+
+        } else {
+
+            $data[] = 0;
+
+        }
+
+    }
+
+    return [
+
+        'labels' => $labels,
+
+        'data' => $data
+
+    ];
+}
+
+private function getFieldOccupancy()
+{
+    if (
+        !Schema::hasTable('booking_details') ||
+        !Schema::hasTable('fields')
+    ) {
+        return collect();
+    }
+
+    return DB::table('booking_details')
+        ->join('fields', 'booking_details.field_id', '=', 'fields.id')
+        ->select(
+            'fields.name',
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('fields.id', 'fields.name')
+        ->orderByDesc('total')
+        ->limit(6)
+        ->get();
+}
+
+private function getMonthlyBookingChart()
+{
+    $result = [];
+
+    for ($month = 1; $month <= 12; $month++) {
+
+        $result[] = DB::table('bookings')
+
+            ->whereYear('created_at', now()->year)
+
+            ->whereMonth('created_at', $month)
+
+            ->count();
+
+    }
+
+    return $result;
+}
+
+private function getDashboardGrowth()
+{
+    $today = now();
+
+    $yesterday = now()->subDay();
+
+    $thisMonth = now();
+
+    $lastMonth = now()->subMonth();
+
+    $todayBooking = DB::table('bookings')
+        ->whereDate('created_at', $today)
+        ->count();
+
+    $yesterdayBooking = DB::table('bookings')
+        ->whereDate('created_at', $yesterday)
+        ->count();
+
+    if ($yesterdayBooking == 0) {
+
+    $bookingGrowth = $todayBooking > 0 ? 100 : 0;
+
+} else {
+
+    $bookingGrowth = round(
+        (($todayBooking - $yesterdayBooking) / $yesterdayBooking) * 100
+    );
+
+}
+
+    $amountColumn = $this->firstExistingColumn('bookings',[
+        'total_amount',
+        'total_price',
+        'amount'
+    ]);
+
+    $thisRevenue = 0;
+
+    $lastRevenue = 0;
+
+    if($amountColumn){
+
+    $thisRevenue = DB::table('bookings')
+    ->whereIn('bookings.status', ['confirmed', 'completed'])
+    ->whereMonth('created_at', $thisMonth->month)
+    ->whereYear('created_at', $thisMonth->year)
+    ->sum($amountColumn);
+
+    $lastRevenue = DB::table('bookings')
+    ->whereIn('bookings.status', ['confirmed', 'completed'])
+    ->whereMonth('created_at', $lastMonth->month)
+    ->whereYear('created_at', $lastMonth->year)
+    ->sum($amountColumn);
+    }
+
+    if ($lastRevenue == 0) {
+
+    $revenueGrowth = $thisRevenue > 0 ? 100 : 0;
+
+} else {
+
+    $revenueGrowth = round(
+        (($thisRevenue - $lastRevenue) / $lastRevenue) * 100
+    );
+
+}
+
+    return [
+
+        'booking'=>$bookingGrowth,
+
+        'revenue'=>$revenueGrowth
+
+    ];
+}
+
+private function getBookingSpark()
+{
+    return DB::table('bookings')
+        ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+        ->whereDate('created_at','>=',now()->subDays(11))
+        ->groupBy('day')
+        ->orderBy('day')
+        ->pluck('total')
+        ->values()
+        ->toArray();
+}
+
+private function getRevenueSpark()
+{
+    return DB::table('bookings')
+        ->whereIn('bookings.status', ['confirmed','completed'])
+        ->selectRaw('DATE(created_at) as day, SUM(total_amount) as total')
+        ->whereDate('created_at','>=',now()->subDays(11))
+        ->groupBy('day')
+        ->orderBy('day')
+        ->pluck('total')
+        ->map(fn($v)=>(float)$v)
+        ->values()
+        ->toArray();
+}
+private function getCustomerSpark()
+{
+    return DB::table('users')
+        ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+        ->whereDate('created_at','>=',now()->subDays(11))
+        ->groupBy('day')
+        ->orderBy('day')
+        ->pluck('total')
+        ->values()
+        ->toArray();
+}
+
+private function getFieldSpark()
+{
+    return DB::table('fields')
+        ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+        ->whereDate('created_at','>=',now()->subDays(11))
+        ->groupBy('day')
+        ->orderBy('day')
+        ->pluck('total')
+        ->values()
+        ->toArray();
+}
+private function getBookingThisMonth()
+{
+    return DB::table('bookings')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
+}
+
+private function getMonthlyRevenueCard()
+{
+    $amountColumn = $this->firstExistingColumn('bookings', [
+        'total_amount',
+        'total_price',
+        'amount',
+    ]);
+
+    if (!$amountColumn) {
+        return 0;
+    }
+
+    return DB::table('bookings')
+        ->where('status', 'confirmed')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->sum($amountColumn);
+}
+
+private function getNewCustomers()
+{
+    return DB::table('users')
+        ->whereMonth('created_at', now()->month)
+        ->count();
+}
+
+private function getOccupancyRate()
+{
+    $total = DB::table('bookings')->count();
+
+    if ($total == 0) {
+        return 0;
+    }
+
+    $confirmed = DB::table('bookings')
+        ->where('status', 'confirmed')
+        ->count();
+
+    return round(($confirmed / $total) * 100);
+}
+private function getRevenueGrowth()
+{
+    $amountColumn = $this->firstExistingColumn('bookings', [
+        'total_amount',
+        'total_price',
+        'amount'
+    ]);
+
+    if (!$amountColumn) {
+        return 0;
+    }
+
+    $thisMonth = DB::table('bookings')
+        ->where('status', 'confirmed')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->sum($amountColumn);
+
+    $lastMonth = DB::table('bookings')
+        ->where('status', 'confirmed')
+        ->whereMonth('created_at', now()->subMonth()->month)
+        ->whereYear('created_at', now()->subMonth()->year)
+        ->sum($amountColumn);
+
+    if ($lastMonth == 0) {
+        return $thisMonth > 0 ? 100 : 0;
+    }
+
+    return round((($thisMonth - $lastMonth) / $lastMonth) * 100, 1);
+}
 }
