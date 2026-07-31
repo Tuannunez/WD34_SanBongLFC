@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
 
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StadiumsController;
 use App\Http\Controllers\Admin\TimeSlotsController;
@@ -163,13 +164,8 @@ Route::middleware(['web'])->group(function () {
             return redirect()->route('admin.dashboard');
         });
 
-        Route::get('/dashboard', function () {
-            if (Auth::user()->role !== 'admin') {
-                return redirect('/');
-            }
-
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
 
         Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');

@@ -28,6 +28,22 @@ class DashboardController extends Controller
 
         $latestBookings = $this->getLatestBookings();
 
+        $monthlyRevenueChart = [
+                    12,
+                    18,
+                    26,
+                    20,
+                    31,
+                    40,
+                    36,
+                    45,
+                    51,
+                    60,
+                    66,
+                    72
+            ];
+
+
         return view('admin.dashboard', compact(
             'totalFields',
             'todayBookings',
@@ -37,6 +53,7 @@ class DashboardController extends Controller
             'totalFieldTypes',
             'totalTimeSlots',
             'totalServices',
+            'monthlyRevenueChart',
             'latestBookings'
         ));
     }
