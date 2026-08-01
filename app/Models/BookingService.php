@@ -11,6 +11,15 @@ class BookingService extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'integer',
+            'price' => 'decimal:2',
+            'total' => 'decimal:2',
+        ];
+    }
+
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class, 'booking_id');

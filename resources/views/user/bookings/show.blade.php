@@ -17,6 +17,22 @@
         </a>
     </div>
 
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show rounded-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    @endif
+
     @php
         $status = $booking->status ?? 'pending';
 
@@ -95,6 +111,314 @@
                     </h4>
                 </div>
             </div>
+        </div>
+    </div>
+
+
+    @php
+        $timezone = config(
+            'booking_lifecycle.timezone',
+            config('app.timezone', 'Asia/Ho_Chi_Minh')
+        );
+
+        $checkInEarlyMinutes = max(
+            0,
+            (int) config('booking_lifecycle.check_in_early_minutes', 15)
+        );
+
+        $noShowGraceMinutes = max(
+            0,
+            (int) config('booking_lifecycle.no_show_grace_minutes', 15)
+        );
+
+        $scheduleWindows = collect($bookingDetails ?? [])
+            ->map(function ($detail) use ($timezone, $bookingDate) {
+                $date = $detail->booking_date
+                    ?? $detail->date
+                    ?? $bookingDate
+                    ?? null;
+
+                $startTime = $detail->slot_start_time
+                    ?? $detail->start_time
+                    ?? null;
+
+                $endTime = $detail->slot_end_time
+                    ?? $detail->end_time
+                    ?? null;
+
+                if (!$date || !$startTime || !$endTime) {
+                    return null;
+                }
+
+                try {
+                    $startsAt = \Carbon\CarbonImmutable::parse(
+                        $date . ' ' . $startTime,
+                        $timezone
+                    );
+
+                    $endsAt = \Carbon\CarbonImmutable::parse(
+                        $date . ' ' . $endTime,
+                        $timezone
+                    );
+
+                    if ($endsAt->lessThanOrEqualTo($startsAt)) {
+                        $endsAt = $endsAt->addDay();
+                    }
+
+                    return [
+                        'starts_at' => $startsAt,
+                        'ends_at' => $endsAt,
+                    ];
+                } catch (\Throwable $exception) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->values();
+
+        $firstSchedule = $scheduleWindows
+            ->sortBy(fn ($window) => $window['starts_at']->getTimestamp())
+            ->first();
+
+        $lastSchedule = $scheduleWindows
+            ->sortByDesc(fn ($window) => $window['ends_at']->getTimestamp())
+            ->first();
+
+        $startsAt = $firstSchedule['starts_at'] ?? null;
+        $endsAt = $lastSchedule['ends_at'] ?? null;
+
+        $checkInOpensAt = $startsAt?->subMinutes($checkInEarlyMinutes);
+        $checkInDeadlineAt = $startsAt?->addMinutes($noShowGraceMinutes);
+        $now = \Carbon\CarbonImmutable::now($timezone);
+
+        $normalizedStatus = strtolower((string) ($booking->status ?? 'pending'));
+        $usageStatus = strtolower(
+            (string) ($booking->usage_status ?? 'not_checked_in')
+        );
+        $paymentStatus = strtolower(
+            (string) ($booking->payment_status ?? 'unpaid')
+        );
+
+        $isPaid = in_array(
+            $paymentStatus,
+            ['deposit_paid', 'paid'],
+            true
+        )
+            || (float) ($booking->paid_amount ?? 0) > 0
+            || (bool) ($booking->is_deposit_paid ?? false);
+
+        $canCheckIn = $normalizedStatus === 'confirmed'
+            && $usageStatus === 'not_checked_in'
+            && $isPaid
+            && $checkInOpensAt
+            && $checkInDeadlineAt
+            && $now->greaterThanOrEqualTo($checkInOpensAt)
+            && $now->lessThan($checkInDeadlineAt);
+
+        $usageStatusText = match ($usageStatus) {
+            'checked_in' => 'Đang sử dụng sân',
+            'checked_out' => 'Đã check-out',
+            default => 'Chưa check-in',
+        };
+
+        $usageStatusClass = match ($usageStatus) {
+            'checked_in' => 'bg-success-subtle text-success',
+            'checked_out' => 'bg-primary-subtle text-primary',
+            default => 'bg-secondary-subtle text-secondary',
+        };
+
+        $checkedInDisplay = null;
+        if (!empty($booking->checked_in_at)) {
+            try {
+                $checkedInDisplay = \Carbon\CarbonImmutable::parse(
+                    $booking->checked_in_at,
+                    $timezone
+                )->format('H:i d/m/Y');
+            } catch (\Throwable $exception) {
+                $checkedInDisplay = (string) $booking->checked_in_at;
+            }
+        }
+
+        $checkedOutDisplay = null;
+        if (!empty($booking->checked_out_at)) {
+            try {
+                $checkedOutDisplay = \Carbon\CarbonImmutable::parse(
+                    $booking->checked_out_at,
+                    $timezone
+                )->format('H:i d/m/Y');
+            } catch (\Throwable $exception) {
+                $checkedOutDisplay = (string) $booking->checked_out_at;
+            }
+        }
+
+        $forfeitedDeposit = (float) (
+            $booking->deposit_forfeited_amount
+            ?? $booking->deposit_amount
+            ?? 0
+        );
+    @endphp
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="fw-semibold mb-0">
+                    <i class="bi bi-box-arrow-in-right text-success me-2"></i>
+                    Check-in và sử dụng sân
+                </h5>
+
+                <span class="badge {{ $usageStatusClass }} px-3 py-2">
+                    {{ $usageStatusText }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            @if(!empty($booking->no_show_at))
+                <div class="alert alert-danger rounded-4 mb-0">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-person-x-fill fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold mb-1">Đơn đã bị hủy do khách không đến</div>
+                            <div>
+                                Bạn không check-in trong {{ $noShowGraceMinutes }} phút
+                                sau giờ bắt đầu. Tiền cọc
+                                <strong>{{ number_format($forfeitedDeposit, 0, ',', '.') }}đ</strong>
+                                không được hoàn lại.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif($usageStatus === 'checked_in')
+                <div class="alert alert-success rounded-4 mb-0">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold mb-1">Bạn đã check-in thành công</div>
+                            <div>
+                                Thời gian check-in:
+                                <strong>{{ $checkedInDisplay ?? '-' }}</strong>.
+                                Hệ thống sẽ tự check-out
+                                @if($endsAt)
+                                    lúc <strong>{{ $endsAt->format('H:i d/m/Y') }}</strong>
+                                @else
+                                    khi hết giờ sân
+                                @endif
+                                .
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif($usageStatus === 'checked_out' || $normalizedStatus === 'completed')
+                <div class="alert alert-primary rounded-4 mb-0">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-check2-all fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold mb-1">Phiên sử dụng sân đã hoàn tất</div>
+                            <div>
+                                Check-in: <strong>{{ $checkedInDisplay ?? '-' }}</strong><br>
+                                Check-out: <strong>{{ $checkedOutDisplay ?? '-' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif($normalizedStatus === 'confirmed' && $startsAt && $checkInDeadlineAt)
+                <div class="row g-3 align-items-stretch">
+                    <div class="col-lg-7">
+                        <div class="border rounded-4 p-3 h-100">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Giờ bắt đầu</div>
+                                    <div class="fw-bold">
+                                        {{ $startsAt->format('H:i d/m/Y') }}
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Giờ kết thúc</div>
+                                    <div class="fw-bold">
+                                        {{ $endsAt?->format('H:i d/m/Y') ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Được check-in từ</div>
+                                    <div class="fw-semibold text-primary">
+                                        {{ $checkInOpensAt?->format('H:i d/m/Y') ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Hạn cuối check-in</div>
+                                    <div class="fw-semibold text-danger">
+                                        {{ $checkInDeadlineAt->format('H:i d/m/Y') }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <p class="small text-muted mb-0">
+                                Nếu bạn không check-in trong
+                                <strong>{{ $noShowGraceMinutes }} phút</strong>
+                                sau giờ bắt đầu, đơn sẽ tự hủy và tiền cọc
+                                không được hoàn lại.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="border rounded-4 p-3 h-100 d-flex flex-column justify-content-center">
+                            @if(!$isPaid)
+                                <div class="alert alert-warning rounded-3 mb-0">
+                                    Đơn chưa ghi nhận thanh toán nên chưa thể check-in.
+                                </div>
+                            @elseif($canCheckIn)
+                                <form
+                                    method="POST"
+                                    action="{{ route('user.bookings.check-in', $booking->id) }}"
+                                >
+                                    @csrf
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-success btn-lg rounded-3 w-100"
+                                        onclick="return confirm('Bạn xác nhận đã có mặt tại sân và muốn check-in?')"
+                                    >
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                                        Check-in ngay
+                                    </button>
+                                </form>
+
+                                <div class="small text-muted text-center mt-2">
+                                    Sau khi check-in, hệ thống sẽ tự check-out khi hết giờ.
+                                </div>
+                            @elseif($checkInOpensAt && $now->lessThan($checkInOpensAt))
+                                <div class="alert alert-info rounded-3 mb-0">
+                                    Nút check-in sẽ mở lúc
+                                    <strong>{{ $checkInOpensAt->format('H:i d/m/Y') }}</strong>.
+                                </div>
+                            @else
+                                <div class="alert alert-danger rounded-3 mb-0">
+                                    Đã quá hạn check-in. Scheduler sẽ tự xử lý đơn vắng mặt.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @elseif($normalizedStatus === 'pending')
+                <div class="alert alert-warning rounded-4 mb-0">
+                    Đơn đang chờ xác nhận thanh toán. Bạn chỉ có thể check-in
+                    sau khi đơn chuyển sang trạng thái đã xác nhận.
+                </div>
+            @elseif($normalizedStatus === 'cancelled')
+                <div class="alert alert-secondary rounded-4 mb-0">
+                    Đơn đã bị hủy nên không thể check-in.
+                </div>
+            @else
+                <div class="alert alert-secondary rounded-4 mb-0">
+                    Chưa đủ dữ liệu lịch sân để xác định thời gian check-in.
+                </div>
+            @endif
         </div>
     </div>
 

@@ -120,6 +120,7 @@
                             <th>Số điện thoại</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
+                            <th>Check-in / Check-out</th>
                             <th>Hình thức thanh toán</th>
                             <th>Ngày tạo</th>
                             <th class="text-end pe-4">Thao tác</th>
@@ -146,6 +147,56 @@
                                 $customerEmail = $booking->user_email ?? $booking->customer_email ?? $booking->email ?? '-';
                                 $customerPhone = $booking->customer_phone ?? $booking->phone ?? '-';
                                 $rfStatus = $booking->refund_status ?? 'none';
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Trạng thái check-in / check-out
+                                |--------------------------------------------------------------------------
+                                */
+                                $checkedInAt = null;
+                                $checkedOutAt = null;
+
+                                if (!empty($booking->checked_in_at)) {
+                                    try {
+                                        $checkedInAt = \Carbon\Carbon::parse($booking->checked_in_at);
+                                    } catch (\Throwable $exception) {
+                                        $checkedInAt = null;
+                                    }
+                                }
+
+                                if (!empty($booking->checked_out_at)) {
+                                    try {
+                                        $checkedOutAt = \Carbon\Carbon::parse($booking->checked_out_at);
+                                    } catch (\Throwable $exception) {
+                                        $checkedOutAt = null;
+                                    }
+                                }
+
+                                $usageStatus = strtolower((string) ($booking->usage_status ?? ''));
+
+                                if ($usageStatus === '') {
+                                    if ($checkedOutAt) {
+                                        $usageStatus = 'checked_out';
+                                    } elseif ($checkedInAt) {
+                                        $usageStatus = 'checked_in';
+                                    } else {
+                                        $usageStatus = 'not_checked_in';
+                                    }
+                                }
+
+                                $usageText = match ($usageStatus) {
+                                    'checked_in', 'in_use' => 'Đã check-in',
+                                    'checked_out' => 'Đã check-out',
+                                    'waiting' => 'Chờ check-in',
+                                    default => 'Chưa check-in',
+                                };
+
+                                $usageClass = match ($usageStatus) {
+                                    'checked_in', 'in_use' => 'bg-info-subtle text-info-emphasis',
+                                    'checked_out' => 'bg-success-subtle text-success',
+                                    'waiting' => 'bg-warning-subtle text-warning',
+                                    default => 'bg-secondary-subtle text-secondary',
+                                };
                             @endphp
 
                             <tr>
@@ -184,21 +235,52 @@
                                         @endif
                                     @endif
                                 </td>
+
+                                <td>
+                                    <span class="badge {{ $usageClass }} px-3 py-2">
+                                        @if(in_array($usageStatus, ['checked_in', 'in_use'], true))
+                                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                                        @elseif($usageStatus === 'checked_out')
+                                            <i class="bi bi-box-arrow-right me-1"></i>
+                                        @else
+                                            <i class="bi bi-clock me-1"></i>
+                                        @endif
+
+                                        {{ $usageText }}
+                                    </span>
+
+                                    @if(in_array($usageStatus, ['checked_in', 'in_use'], true) && $checkedInAt)
+                                        <div class="mt-1">
+                                            <small class="text-muted">
+                                                Vào: {{ $checkedInAt->format('H:i d/m/Y') }}
+                                            </small>
+                                        </div>
+                                    @elseif($usageStatus === 'checked_out' && $checkedOutAt)
+                                        <div class="mt-1">
+                                            <small class="text-muted">
+                                                Ra: {{ $checkedOutAt->format('H:i d/m/Y') }}
+                                            </small>
+                                        </div>
+                                    @endif
+                                </td>
+
                                 <td>
                                     <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
                                         {{ $booking->method_name ?? 'Tại sân / Chưa chọn' }}
                                     </span>
                                 </td>
                                 <td>{{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-info rounded-3" title="Xem chi tiết & Upload Bill">
+<td class="text-end pe-4">
+                                    <a href="{{ route('admin.bookings.show', $booking->id) }}"
+                                       class="btn btn-sm btn-outline-info rounded-3"
+                                       title="Xem chi tiết & chỉnh trạng thái check-in">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="10" class="text-center py-5">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
                                     <span class="text-muted">Chưa có đơn đặt sân nào.</span>
                                 </td>

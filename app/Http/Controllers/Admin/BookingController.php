@@ -3,209 +3,167 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class BookingController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('bookings')
-            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->select(
-                'bookings.*',
-                'users.name as user_name',
-                'users.email as user_email',
-                'payment_methods.name as method_name'
-            )
-            ->orderByDesc('bookings.id');
+        $query = Booking::query()
+            ->with(['user', 'bookingDetails.field', 'bookingDetails.timeSlot', 'latestPayment'])
+            ->orderByDesc('id');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+
+        if ($request->filled('usage_status')) {
+            $query->where('usage_status', $request->string('usage_status')->toString());
+        }
 
         if ($request->filled('keyword')) {
-            $keyword = trim($request->keyword);
+            $keyword = trim($request->string('keyword')->toString());
 
-            $query->where(function ($q) use ($keyword) {
-                if (is_numeric($keyword)) {
-                    $q->where('bookings.id', $keyword);
-                }
+            $query->where(function ($bookingQuery) use ($keyword): void {
+                $bookingQuery->where('id', ctype_digit($keyword) ? (int) $keyword : 0);
 
                 if (Schema::hasColumn('bookings', 'booking_code')) {
-                    $q->orWhere('bookings.booking_code', 'like', "%{$keyword}%");
-                }
-
-                if (Schema::hasColumn('bookings', 'code')) {
-                    $q->orWhere('bookings.code', 'like', "%{$keyword}%");
+                    $bookingQuery->orWhere('booking_code', 'like', "%{$keyword}%");
                 }
 
                 if (Schema::hasColumn('bookings', 'customer_name')) {
-                    $q->orWhere('bookings.customer_name', 'like', "%{$keyword}%");
-                }
-
-                if (Schema::hasColumn('bookings', 'customer_email')) {
-                    $q->orWhere('bookings.customer_email', 'like', "%{$keyword}%");
+                    $bookingQuery->orWhere('customer_name', 'like', "%{$keyword}%");
                 }
 
                 if (Schema::hasColumn('bookings', 'customer_phone')) {
-                    $q->orWhere('bookings.customer_phone', 'like', "%{$keyword}%");
+                    $bookingQuery->orWhere('customer_phone', 'like', "%{$keyword}%");
                 }
 
-                $q->orWhere('users.name', 'like', "%{$keyword}%")
-                  ->orWhere('users.email', 'like', "%{$keyword}%");
-
-                if (Schema::hasColumn('bookings', 'status')) {
-                    $q->orWhere('bookings.status', 'like', "%{$keyword}%");
-                }
+                $bookingQuery->orWhereHas('user', function ($userQuery) use ($keyword): void {
+                    $userQuery->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('email', 'like', "%{$keyword}%");
+                });
             });
         }
 
-        if ($request->filled('status') && Schema::hasColumn('bookings', 'status')) {
-            $query->where('bookings.status', $request->status);
-        }
-
-        if ($request->filled('booking_date')) {
-            if (Schema::hasColumn('bookings', 'booking_date')) {
-                $query->whereDate('bookings.booking_date', $request->booking_date);
-            } elseif (Schema::hasColumn('bookings', 'date')) {
-                $query->whereDate('bookings.date', $request->booking_date);
-            }
-        }
-
-        $bookings = $query->paginate(10)->withQueryString();
+        $bookings = $query->paginate(15)->withQueryString();
 
         return view('admin.bookings.index', compact('bookings'));
     }
 
-    public function show($id)
+    public function show(Booking $booking): View
     {
-        $booking = DB::table('bookings')
-            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
-            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->select(
-                'bookings.*',
-                'users.name as user_name',
-                'users.email as user_email',
-                'payment_methods.name as method_name'
-            )
-            ->where('bookings.id', $id)
-            ->first();
+        $booking->load([
+            'user',
+            'bookingDetails.field',
+            'bookingDetails.timeSlot',
+            'bookingServices.service',
+            'payments.paymentMethod',
+            'review',
+        ]);
 
-        if (!$booking) {
-            abort(404);
-        }
+        $bookingDetails = $booking->bookingDetails ?? collect();
+        $bookingServices = $booking->bookingServices ?? collect();
+        $payments = $booking->payments ?? collect();
+        $bookingReview = $booking->review;
 
-        $bookingDetails = DB::table('booking_details')
-            ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
-            ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
-            ->where('booking_details.booking_id', $booking->id)
-            ->select(
-                'booking_details.*',
-                'fields.name as field_name',
-                'fields.price_per_hour as field_price_per_hour',
-                'time_slots.start_time as slot_start_time',
-                'time_slots.end_time as slot_end_time'
-            )
-            ->get();
-
-        return view('admin.bookings.show', compact('booking', 'bookingDetails'));
+        return view('admin.bookings.show', compact(
+            'booking',
+            'bookingDetails',
+            'bookingServices',
+            'payments',
+            'bookingReview'
+        ));
     }
 
-    public function processRefund(Request $request, $id)
+    /**
+     * Admin chỉ xử lý ngoại lệ hoàn tiền; không can thiệp check-in/check-out.
+     */
+    public function processRefund(Request $request, int $id): RedirectResponse
     {
-        $request->validate([
-            'refund_proof_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
-            'refund_proof_note' => 'nullable|string|max:255',
+        $data = $request->validate([
+            'refund_bill' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ], [
-            'refund_proof_image.required' => 'Vui lòng chọn ảnh bill chuyển khoản.',
-            'refund_proof_image.image' => 'File tải lên phải là hình ảnh hợp lệ.',
+            'refund_bill.required' => 'Vui lòng tải lên chứng từ hoàn tiền.',
+            'refund_bill.image' => 'Chứng từ hoàn tiền phải là hình ảnh.',
+            'refund_bill.max' => 'Ảnh chứng từ không được vượt quá 5 MB.',
         ]);
 
-        $booking = DB::table('bookings')->where('id', $id)->first();
+        $path = $data['refund_bill']->store('refunds', 'public');
 
-        if (!$booking) {
-            return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
+        try {
+            DB::transaction(function () use ($id, $path): void {
+                /** @var Booking $booking */
+                $booking = Booking::query()->lockForUpdate()->findOrFail($id);
+
+                abort_unless(
+                    $booking->status === 'cancelled'
+                    && (float) ($booking->refund_amount ?? 0) > 0
+                    && in_array((string) ($booking->refund_status ?? 'none'), ['pending', 'disputed'], true),
+                    422,
+                    'Đơn này không thuộc luồng cần hoàn tiền.'
+                );
+
+                $booking->forceFill([
+                    'refund_status' => 'pending',
+                    'refund_proof' => $path,
+                    'refund_processed_at' => now(),
+                ])->save();
+
+                $this->notifyRefundProcessed($booking);
+            }, 3);
+        } catch (\Throwable $e) {
+            Storage::disk('public')->delete($path);
+            throw $e;
         }
 
-        $imagePath = null;
-        if ($request->hasFile('refund_proof_image')) {
-            $file = $request->file('refund_proof_image');
-            $filename = 'bill_' . $id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            
-            if (!file_exists(public_path('uploads/refunds'))) {
-                mkdir(public_path('uploads/refunds'), 0777, true);
-            }
-            
-            $file->move(public_path('uploads/refunds'), $filename);
-            $imagePath = 'uploads/refunds/' . $filename;
-        }
-
-        DB::table('bookings')->where('id', $id)->update([
-            'refund_status' => 'completed',
-            'refund_proof_image' => $imagePath,
-            'refund_proof_note' => $request->input('refund_proof_note'),
-            'updated_at' => now(),
-        ]);
-
-        return redirect()
-            ->route('admin.bookings.show', $id)
-            ->with('success', 'Đã tải bill chuyển khoản thành công! Khách hàng đã có thể xem được ảnh bill.');
+        return back()->with('success', 'Đã ghi nhận chứng từ hoàn tiền. Khách hàng có thể xác nhận hoặc khiếu nại.');
     }
 
-    public function update(Request $request, $id)
+    public function invoice(int $id): View
     {
-        $request->validate([
-            'status' => ['required', 'string', 'max:50'],
-            'payment_status' => ['nullable', 'string', 'max:50'],
-        ]);
+        /** @var Booking $booking */
+        $booking = Booking::query()
+            ->with([
+                'user',
+                'bookingDetails.field',
+                'bookingDetails.timeSlot',
+                'bookingServices.service',
+                'payments.paymentMethod',
+            ])
+            ->findOrFail($id);
 
-        $updateData = [
-            'status' => $request->status,
-            'updated_at' => now(),
-        ];
-
-        if ($request->filled('payment_status') && $request->payment_status === 'paid') {
-            DB::table('payments')
-                ->where('booking_id', $id)
-                ->update([
-                    'status' => 'paid',
-                    'paid_at' => now(), 
-                    'updated_at' => now()
-                ]);
+        if (Schema::hasColumn('bookings', 'invoice_issued_at') && $booking->invoice_issued_at === null) {
+            $booking->forceFill(['invoice_issued_at' => now()])->save();
         }
 
-        DB::table('bookings')
-            ->where('id', $id)
-            ->update($updateData);
-
-        return redirect()
-            ->route('admin.bookings.show', $id)
-            ->with('success', 'Cập nhật trạng thái đơn hàng thành công.');
+        return view('admin.bookings.invoice', compact('booking'));
     }
 
-    public function destroy($id)
+    private function notifyRefundProcessed(Booking $booking): void
     {
-        if (Schema::hasColumn('bookings', 'status')) {
-            DB::table('bookings')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
+        if (!Schema::hasTable('notifications') || $booking->user_id === null) {
+            return;
         }
 
-        if (Schema::hasColumn('booking_details', 'status')) {
-            DB::table('booking_details')
-                ->where('booking_id', $id)
-                ->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
-        }
+        $data = collect([
+            'user_id' => $booking->user_id,
+            'title' => 'Đã xử lý hoàn tiền',
+            'content' => 'Hoàn tiền cho đơn ' . ($booking->booking_code ?? $booking->code ?? ('#' . $booking->id)) . ' đã được xử lý. Vui lòng kiểm tra và xác nhận.',
+            'type' => 'payment',
+            'is_read' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->filter(fn ($value, $column): bool => Schema::hasColumn('notifications', (string) $column))->all();
 
-        return redirect()
-            ->route('admin.bookings.index')
-            ->with('success', 'Đã hủy đơn đặt sân.');
+        if ($data !== []) {
+            DB::table('notifications')->insert($data);
+        }
     }
 }

@@ -21,17 +21,25 @@ class DatabaseSeeder extends Seeder
     
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'role' => 'admin',
-            'status' => true,
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
+                'role' => 'admin',
+                'status' => true,
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => Hash::make('12345678'),
+                'role' => 'customer',
+                'status' => true,
+            ]
+        );
 
         $this->call(DefaultDataSeeder::class);
     }
