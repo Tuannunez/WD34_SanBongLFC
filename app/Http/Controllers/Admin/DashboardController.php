@@ -19,6 +19,14 @@ class DashboardController extends Controller
 
         $monthlyRevenue = $this->getMonthlyRevenue();
 
+         $monthlyTarget = 15000000;
+
+    $monthlyPercent = $monthlyTarget > 0
+        ? round(($monthlyRevenue / $monthlyTarget) * 100, 1)
+        : 0;
+
+    $totalCustomers = $this->getTotalCustomers();
+
         $totalCustomers = $this->getTotalCustomers();
 
         $totalStadiums = $this->countTable('stadiums');
@@ -58,7 +66,19 @@ $newCustomers = $this->getNewCustomers();
 
 $occupancyRate = $this->getOccupancyRate();
 
+$bookingGrowth = $this->getBookingGrowth();
+
 $revenueGrowth = $this->getRevenueGrowth();
+
+$customerGrowth = $this->getCustomerGrowth();
+
+$occupancyGrowth = $this->getOccupancyGrowth();
+
+$quarter1Revenue = $this->getQuarterRevenue(1);
+
+$quarter2Revenue = $this->getQuarterRevenue(2);
+
+$quarter3Revenue = $this->getQuarterRevenue(3);
 
 
 
@@ -69,9 +89,21 @@ $revenueGrowth = $this->getRevenueGrowth();
 
 'todayBookings',
 
+'quarter1Revenue',
+
+'quarter2Revenue',
+
+'quarter3Revenue',
+
 'monthlyRevenue',
 
+'bookingGrowth',
+
 'revenueGrowth',
+
+'customerGrowth',
+
+'occupancyGrowth',
 
 'totalCustomers',
 
@@ -117,7 +149,11 @@ $revenueGrowth = $this->getRevenueGrowth();
 
 'occupancyRate',
 
-'latestBookings'
+'latestBookings',
+
+'monthlyTarget',
+
+'monthlyPercent'
 
 ));
     }
@@ -720,17 +756,22 @@ private function getNewCustomers()
 
 private function getOccupancyRate()
 {
-    $total = DB::table('bookings')->count();
+    $total = DB::table('bookings')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
 
     if ($total == 0) {
         return 0;
     }
 
-    $confirmed = DB::table('bookings')
+    $success = DB::table('bookings')
         ->where('status', 'confirmed')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
         ->count();
 
-    return round(($confirmed / $total) * 100);
+    return round(($success / $total) * 100);
 }
 private function getRevenueGrowth()
 {
@@ -761,5 +802,107 @@ private function getRevenueGrowth()
     }
 
     return round((($thisMonth - $lastMonth) / $lastMonth) * 100, 1);
+}
+
+private function getBookingGrowth()
+{
+    $thisMonth = DB::table('bookings')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
+
+    $lastMonth = DB::table('bookings')
+        ->whereMonth('created_at', now()->subMonth()->month)
+        ->whereYear('created_at', now()->subMonth()->year)
+        ->count();
+
+    if ($lastMonth == 0) {
+        return $thisMonth > 0 ? 100 : 0;
+    }
+
+    return round((($thisMonth - $lastMonth) / $lastMonth) * 100);
+}
+
+private function getCustomerGrowth()
+{
+    $thisMonth = DB::table('users')
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
+
+    $lastMonth = DB::table('users')
+        ->whereMonth('created_at', now()->subMonth()->month)
+        ->whereYear('created_at', now()->subMonth()->year)
+        ->count();
+
+    if ($lastMonth == 0) {
+        return $thisMonth > 0 ? 100 : 0;
+    }
+
+    return round((($thisMonth - $lastMonth) / $lastMonth) * 100);
+}
+
+private function getOccupancyGrowth()
+{
+    $thisMonth = DB::table('bookings')
+        ->where('status','confirmed')
+        ->whereMonth('created_at',now()->month)
+        ->count();
+
+    $lastMonth = DB::table('bookings')
+        ->where('status','confirmed')
+        ->whereMonth('created_at',now()->subMonth()->month)
+        ->count();
+
+    if($lastMonth==0){
+        return $thisMonth>0?100:0;
+    }
+
+    return round((($thisMonth-$lastMonth)/$lastMonth)*100);
+}
+
+private function getQuarterRevenue($quarter)
+{
+    $amountColumn = $this->firstExistingColumn('bookings', [
+        'total_amount',
+        'total_price',
+        'amount'
+    ]);
+
+    if (!$amountColumn) {
+        return [0,0,0,0];
+    }
+
+    switch ($quarter) {
+
+        case 1:
+            $months = [1,2,3,4];
+            break;
+
+        case 2:
+            $months = [5,6,7,8];
+            break;
+
+        case 3:
+            $months = [9,10,11,12];
+            break;
+
+        default:
+            return [0,0,0,0];
+    }
+
+    $data = [];
+
+    foreach ($months as $month) {
+
+        $data[] = DB::table('bookings')
+            ->where('status','confirmed')
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', $month)
+            ->sum($amountColumn);
+
+    }
+
+    return $data;
 }
 }

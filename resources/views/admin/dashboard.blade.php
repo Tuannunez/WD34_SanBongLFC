@@ -23,6 +23,39 @@ body {
 
 }
 
+.chart-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-tab {
+
+    padding: 9px 18px;
+
+    border-radius: 10px;
+
+    background: #f5f7fb;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+    font-weight: 600;
+
+}
+
+.chart-tab:hover,
+.chart-tab.active {
+
+    background: #206bc4;
+
+    color: #fff;
+
+    transform: translateY(-2px);
+
+}
+
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -614,6 +647,40 @@ body {
 
     animation: fadeCard .5s ease;
 
+
+}
+
+.card dashboard-card {
+    margin-bottom: 28px;
+}
+
+.dashboard-card {
+    margin-bottom: 30px;
+}
+
+.vip-badge {
+    background: linear-gradient(135deg, #FFD54F, #F9A825);
+    color: #6d4c00;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 7px;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, .35);
+    border: 1px solid rgba(255, 255, 255, .5);
+    transition: .3s;
+}
+
+.vip-badge i {
+    color: #ff9800;
+    font-size: 14px;
+}
+
+.vip-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(255, 193, 7, .45);
 }
 </style>
 
@@ -864,7 +931,7 @@ body {
                 <div>
 
                     <div class="fw-bold fs-5">
-                        Revenue Analytics
+                        Phân tích doanh thu
                     </div>
 
                     <small class="text-muted">
@@ -873,17 +940,31 @@ body {
 
                 </div>
 
-                <div>
+                <div class="chart-tabs">
 
-                    <button id="btn7" class="btn btn-secondary">
-                        7 ngày
-                    </button>
-
-                    <button id="btn30" class="btn btn-primary">
+                    <div class="chart-tab active" data-type="30">
                         30 ngày
-                    </button>
+                    </div>
+
+                    <div class="chart-tab" data-type="7">
+                        7 ngày
+                    </div>
+
+                    <div class="chart-tab" data-quarter="1">
+                        Quý 1
+                    </div>
+
+                    <div class="chart-tab" data-quarter="2">
+                        Quý 2
+                    </div>
+
+                    <div class="chart-tab" data-quarter="3">
+                        Quý 3
+                    </div>
 
                 </div>
+
+
 
             </div>
 
@@ -968,185 +1049,175 @@ body {
     </div>
 
 </div>
-<div class="row mt-4">
+<div class="row mt-5">
 
-    <div class="row mt-4">
+    <div class="col-12">
 
-        <div class="col-lg-8">
+        <div class="card dashboard-card">
 
-            <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
 
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
 
-                    <div>
-
-                        <div class="fw-bold fs-5">
-                            Latest Bookings
-                        </div>
-
-                        <small class="text-muted">
-                            8 booking gần đây
-                        </small>
-
+                    <div class="fw-bold fs-5">
+                        Latest Bookings
                     </div>
 
-                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-sm btn-outline-primary">
-                        Xem tất cả
-                    </a>
+                    <small class="text-muted">
+                        8 booking gần đây
+                    </small>
 
                 </div>
 
-                <div class="card-body p-0">
+                <a href="{{ route('admin.bookings.index') }}" class="btn btn-sm btn-outline-primary">
+                    Xem tất cả
+                </a>
 
-                    <div class="table-responsive">
+            </div>
 
-                        <table class="table table-hover align-middle mb-0">
+            <div class="card-body p-0">
 
-                            <thead class="table-light">
+                <div class="table-responsive">
 
-                                <tr>
+                    <table class="table table-hover align-middle mb-0">
 
-                                    <th>#</th>
+                        <thead class="table-light">
 
-                                    <th>Khách hàng</th>
+                            <tr>
 
-                                    <th>Sân</th>
+                                <th>#</th>
 
-                                    <th>Ngày</th>
+                                <th>Khách hàng</th>
 
-                                    <th>Trạng thái</th>
+                                <th>Sân</th>
 
-                                    <th class="text-end">Tiền</th>
+                                <th>Ngày</th>
 
-                                </tr>
+                                <th>Trạng thái</th>
 
-                            </thead>
+                                <th class="text-end">Tiền</th>
 
-                            <tbody>
+                            </tr>
 
-                                @forelse($latestBookings as $booking)
+                        </thead>
 
-                                <tr>
+                        <tbody>
 
-                                    <td>
+                            @forelse($latestBookings as $booking)
 
-                                        <strong>#{{ $booking->id }}</strong>
+                            <tr>
 
-                                    </td>
+                                <td>
 
-                                    <td>
+                                    <strong>#{{ $booking->id }}</strong>
 
-                                        <div class="fw-bold">
+                                </td>
 
-                                            <div class="d-flex align-items-center">
+                                <td>
 
-                                                <div class="avatar-circle me-3">
+                                    <div class="fw-bold">
 
-                                                    {{ strtoupper(substr($booking->user_name ?? 'K',0,1)) }}
+                                        <div class="d-flex align-items-center">
 
-                                                </div>
+                                            <div class="avatar-circle me-3">
 
-                                                <div>
+                                                {{ strtoupper(substr($booking->user_name ?? 'K',0,1)) }}
 
-                                                    <div class="fw-bold">
+                                            </div>
 
-                                                        {{ $booking->user_name }}
+                                            <div>
 
-                                                    </div>
+                                                <div class="fw-bold">
 
-                                                    <small class="text-muted">
-
-                                                        {{ $booking->user_email }}
-
-                                                    </small>
+                                                    {{ $booking->user_name }}
 
                                                 </div>
+
+                                                <small class="text-muted">
+
+                                                    {{ $booking->user_email }}
+
+                                                </small>
 
                                             </div>
 
                                         </div>
 
-                                        <small class="text-muted">
+                                    </div>
 
-                                            {{ $booking->user_email }}
+                                </td>
 
-                                        </small>
+                                <td>
 
-                                    </td>
+                                    {{ $booking->field_name }}
 
-                                    <td>
+                                </td>
 
-                                        {{ $booking->field_name }}
+                                <td>
 
-                                    </td>
+                                    {{ \Carbon\Carbon::parse($booking->booking_date)->format('d/m/Y') }}
 
-                                    <td>
+                                </td>
 
-                                        {{ \Carbon\Carbon::parse($booking->booking_date)->format('d/m/Y') }}
+                                <td>
 
-                                    </td>
+                                    @php
+                                    $status = strtolower($booking->status ?? '');
+                                    @endphp
 
-                                    <td>
+                                    @if(in_array($status,['confirmed','paid','success']))
 
-                                        @php
-                                        $status = strtolower($booking->status ?? '');
-                                        @endphp
+                                    <span class="badge bg-success">
+                                        Hoàn thành
+                                    </span>
 
-                                        @if(in_array($status,['confirmed','paid','success']))
+                                    @elseif(in_array($status,['pending','waiting']))
 
-                                        <span class="badge bg-success">
-                                            Hoàn thành
-                                        </span>
+                                    <span class="badge bg-warning text-dark">
+                                        Chờ xác nhận
+                                    </span>
 
-                                        @elseif(in_array($status,['pending','waiting']))
+                                    @elseif(in_array($status,['cancelled','cancel']))
 
-                                        <span class="badge bg-warning text-dark">
-                                            Chờ xác nhận
-                                        </span>
+                                    <span class="badge bg-danger">
+                                        Đã huỷ
+                                    </span>
 
-                                        @elseif(in_array($status,['cancelled','cancel']))
+                                    @else
 
-                                        <span class="badge bg-danger">
-                                            Đã huỷ
-                                        </span>
+                                    <span class="badge bg-secondary">
+                                        {{ $booking->status }}
+                                    </span>
 
-                                        @else
+                                    @endif
 
-                                        <span class="badge bg-secondary">
-                                            {{ $booking->status }}
-                                        </span>
+                                </td>
 
-                                        @endif
+                                <td class="text-end fw-bold">
 
-                                    </td>
+                                    {{ number_format($booking->display_total,0,',','.') }}đ
 
-                                    <td class="text-end fw-bold">
+                                </td>
 
-                                        {{ number_format($booking->display_total,0,',','.') }}đ
+                            </tr>
 
-                                    </td>
+                            @empty
 
-                                </tr>
+                            <tr>
 
-                                @empty
+                                <td colspan="6" class="text-center p-5">
 
-                                <tr>
+                                    Không có dữ liệu
 
-                                    <td colspan="6" class="text-center p-5">
+                                </td>
 
-                                        Không có dữ liệu
+                            </tr>
 
-                                    </td>
+                            @endforelse
 
-                                </tr>
+                        </tbody>
 
-                                @endforelse
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
+                    </table>
 
                 </div>
 
@@ -1154,49 +1225,277 @@ body {
 
         </div>
 
+    </div>
 
-        {{-- Top Fields --}}
+
+    {{-- Top Fields --}}
+    <div class="col-lg-6">
+
+        <div class="card dashboard-card">
+
+            <div class="card-header d-flex justify-content-between">
+
+                <span>Top sân được đặt nhiều</span>
+
+                <span class="text-primary fw-bold">Top 5</span>
+
+            </div>
+
+            <div class="card-body">
+
+
+                @foreach($topFieldsChart as $field)
+
+                <div class="mb-4">
+
+                    <div class="d-flex justify-content-between">
+
+                        <strong>
+
+                            {{ $field->name }}
+
+                        </strong>
+
+                        <span>
+
+                            {{ $field->total }}
+
+                        </span>
+
+                    </div>
+
+                    <div class="progress mt-2">
+
+                        <div class="progress-bar bg-primary" style="width:{{ min($field->total * 10, 100) }}%">
+                        </div>
+
+                    </div>
+
+                </div>
+
+                @endforeach
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Revenue Goal --}}
+
+    <div class="col-lg-6">
+
+        <div class="card dashboard-card">
+
+            <div class="card-header">
+
+                Doanh thu tháng
+
+            </div>
+
+            <div class="card-body text-center">
+
+                <div id="goalChart" style="height:300px"></div>
+
+                <h3 class="fw-bold">
+                    {{ number_format($monthlyRevenue,0,',','.') }} đ
+                </h3>
+
+                <div id="sparkRevenue"></div>
+
+                <div class="mt-3">
+
+                    <small class="text-muted d-block mt-2">
+                        Mục tiêu tháng:
+                        <strong>{{ number_format($monthlyTarget,0,',','.') }}đ</strong>
+                    </small>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-4 mt-1">
+
+    <div class="col-md-3">
+
+        <div class="card dashboard-card">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+
+                    Booking tháng này
+
+                </small>
+
+                <h2 class="fw-bold mt-2">
+                    {{ $bookingThisMonth }}
+                </h2>
+
+                <div class="{{ $bookingGrowth >= 0 ? 'text-success':'text-danger' }}">
+                    <i class="bi bi-arrow-{{ $bookingGrowth >= 0 ? 'up':'down' }}"></i>
+                    {{ abs($bookingGrowth) }}%
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card dashboard-card">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+                    Doanh thu tháng này
+                </small>
+
+                <h2 class="fw-bold mt-2">
+                    {{ number_format($monthlyRevenueCard, 0, ',', '.') }}đ
+                </h2>
+
+                <div class="{{ $revenueGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+                    <i class="bi bi-arrow-{{ $revenueGrowth >= 0 ? 'up' : 'down' }}"></i>
+                    {{ abs($revenueGrowth) }}%
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card dashboard-card">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+
+                    Khách mới
+
+                </small>
+
+                <h2 class="fw-bold mt-2">
+                    {{ $newCustomers }}%
+                </h2>
+
+                <div class="{{ $customerGrowth >= 0 ? 'text-success':'text-danger' }}">
+                    <i class="bi bi-arrow-{{ $customerGrowth >= 0 ? 'up':'down' }}"></i>
+                    {{ abs($customerGrowth) }}%
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card dashboard-card">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+
+                    Tỷ lệ đặt sân
+
+                </small>
+
+                <h2 class="fw-bold mt-2">
+                    {{ $occupancyRate }}%
+                </h2>
+                <div class="{{ $occupancyGrowth >= 0 ? 'text-success':'text-danger' }}">
+                    <i class="bi bi-arrow-{{ $occupancyGrowth >= 0 ? 'up':'down' }}"></i>
+                    {{ abs($occupancyGrowth) }}%
+                </div>
+
+                <div class="text-success">
+
+                    +5%
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="row mt-4">
+
+
+
+    <div class="row mt-4">
+
         <div class="col-lg-6">
 
             <div class="card dashboard-card">
 
-                <div class="card-header d-flex justify-content-between">
+                <div class="card-header">
 
-                    <span>Top sân được đặt nhiều</span>
+                    <div>
 
-                    <span class="text-primary fw-bold">Top 5</span>
+                        <div class="fw-bold">
+
+                            Top khách hàng
+
+                        </div>
+
+                        <small class="text-muted">
+
+                            Đặt sân nhiều nhất
+
+                        </small>
+
+                    </div>
 
                 </div>
 
                 <div class="card-body">
 
 
-                    @foreach($topFieldsChart as $field)
+                    @foreach($topCustomers as $customer)
 
-                    <div class="mb-4">
+                    <div class="d-flex align-items-center mb-4">
 
-                        <div class="d-flex justify-content-between">
+                        <div class="avatar-circle me-3">
 
-                            <strong>
-
-                                {{ $field->name }}
-
-                            </strong>
-
-                            <span>
-
-                                {{ $field->total }}
-
-                            </span>
+                            {{ strtoupper(substr($customer->name,0,1)) }}
 
                         </div>
 
-                        <div class="progress mt-2">
+                        <div class="flex-grow-1">
 
-                            <div class="progress-bar bg-primary" style="width:{{ min($field->total * 10, 100) }}%">
+                            <div class="fw-bold">
+
+                                {{ $customer->name }}
+
                             </div>
 
+                            <small class="text-muted">
+
+                                Đã đặt sân tổng {{ $customer->total }} lần 
+
+                            </small>
+
                         </div>
+
+                        <span class="badge vip-badge">
+                            <i class="bi bi-crown-fill me-1"></i> VIP
+                        </span>
 
                     </div>
 
@@ -1208,36 +1507,33 @@ body {
 
         </div>
 
-        {{-- Revenue Goal --}}
-
         <div class="col-lg-6">
 
             <div class="card dashboard-card">
 
                 <div class="card-header">
 
-                    Doanh thu tháng
+                    <div>
+
+                        <div class="fw-bold">
+
+                            Tỷ lệ sử dụng sân
+
+                        </div>
+
+                        <small class="text-muted">
+
+                            Theo từng sân
+
+                        </small>
+
+                    </div>
 
                 </div>
 
-                <div class="card-body text-center">
+                <div class="card-body">
 
-                    <div id="goalChart" style="height:300px"></div>
-
-                    <h3 class="fw-bold">
-
-                        {{ number_format($monthlyRevenue,0,',','.') }}
-
-                        đ
-
-                    </h3>
-                    <div id="sparkRevenue"></div>
-
-                    <p class="text-muted">
-
-                        76% mục tiêu tháng
-
-                    </p>
+                    <div id="occupancyChart"></div>
 
                 </div>
 
@@ -1246,645 +1542,435 @@ body {
         </div>
 
     </div>
+    @endsection
+    @push('scripts')
+    <script>
+    const sparkData = {
 
-    <div class="row g-4 mt-1">
+        "#spark1": @json($fieldSpark),
 
-        <div class="col-md-3">
+        "#spark2": @json($bookingSpark),
 
-            <div class="card dashboard-card">
+        "#spark3": @json($revenueSpark),
 
-                <div class="card-body">
+        "#spark4": @json($customerSpark)
 
-                    <small class="text-muted">
+    };
 
-                        Booking tháng này
+    console.log(sparkData);
 
-                    </small>
+    function sparkline(id, color) {
 
-                    <h2 class="fw-bold mt-2">
-                        {{ $bookingThisMonth }}
-                    </h2>
+        new ApexCharts(document.querySelector(id), {
 
-                    <div class="text-success">
+            chart: {
+                height: 55,
+                type: 'area',
+                sparkline: {
+                    enabled: true
+                },
+                toolbar: {
+                    show: false
+                }
+            },
 
-                        <i class="bi bi-arrow-up"></i>
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
 
-                        +18%
+            fill: {
+                opacity: .2
+            },
 
-                    </div>
+            colors: [color],
 
-                </div>
+            series: [{
+                data: sparkData[id] ?? []
+            }]
 
-            </div>
+        }).render();
 
-        </div>
+    }
 
-        <div class="col-md-3">
+    sparkline("#spark1", "#206bc4");
+    sparkline("#spark2", "#2fb344");
+    sparkline("#spark3", "#f59f00");
+    sparkline("#spark4", "#d63939");
+    </script>
+    <script>
+    let revenueChart = new ApexCharts(
+        document.querySelector("#revenueChart"), {
 
-            <div class="card dashboard-card">
+            chart: {
+                height: 360,
+                type: "area",
+                toolbar: {
+                    show: false
+                },
+                zoom: {
+                    enabled: false
+                }
+            },
 
-                <div class="card-body">
+            colors: ["#206bc4"],
 
-                   <small class="text-muted">
-    Doanh thu tháng này
-</small>
+            stroke: {
+                curve: "smooth",
+                width: 4
+            },
 
-                    <h2 class="fw-bold mt-2">
-    {{ number_format($monthlyRevenueCard, 0, ',', '.') }}đ
-</h2>       
+            fill: {
+                type: "gradient",
+                gradient: {
+                    opacityFrom: .45,
+                    opacityTo: .05
+                }
+            },
 
-<div class="{{ $revenueGrowth >= 0 ? 'text-success' : 'text-danger' }}">
-    <i class="bi bi-arrow-{{ $revenueGrowth >= 0 ? 'up' : 'down' }}"></i>
-    {{ abs($revenueGrowth) }}%
-</div>
+            series: [{
+                name: "Doanh thu",
+                data: @json($revenue30Days['series'])
+            }],
 
-                </div>
+            xaxis: {
+                categories: @json($revenue30Days['labels'])
+            }
 
-            </div>
+        }
+    );
 
-        </div>
+    revenueChart.render();
 
-        <div class="col-md-3">
+    document.querySelectorAll(".chart-tab").forEach(tab => {
 
-            <div class="card dashboard-card">
+        tab.addEventListener("mouseenter", function() {
 
-                <div class="card-body">
+            // Active button
+            document.querySelectorAll(".chart-tab").forEach(item => {
+                item.classList.remove("active");
+            });
 
-                    <small class="text-muted">
+            this.classList.add("active");
 
-                        Khách mới
+            // ==========================
+            // 30 ngày
+            // ==========================
 
-                    </small>
+            if (this.dataset.type == "30") {
 
-                    <h2 class="fw-bold mt-2">
-    {{ $occupancyRate }}%
-</h2>
+                revenueChart.updateOptions({
 
-                </div>
+                    xaxis: {
+                        categories: @json($revenue30Days['labels'])
+                    }
 
-            </div>
+                });
 
-        </div>
+                revenueChart.updateSeries([{
 
-        <div class="col-md-3">
+                    name: "Doanh thu",
 
-            <div class="card dashboard-card">
+                    data: @json($revenue30Days['series'])
 
-                <div class="card-body">
+                }]);
 
-                    <small class="text-muted">
+            }
 
-                        Tỷ lệ đặt sân
+            // ==========================
+            // 7 ngày
+            // ==========================
 
-                    </small>
+            if (this.dataset.type == "7") {
 
-                    <h2 class="fw-bold mt-2">
-    {{ $occupancyRate }}%
-</h2>
+                revenueChart.updateOptions({
 
-                    <div class="text-success">
+                    xaxis: {
+                        categories: @json($revenue7Days['labels'])
+                    }
 
-                        +5%
+                });
 
-                    </div>
+                revenueChart.updateSeries([{
 
-                </div>
+                    name: "Doanh thu",
 
-            </div>
+                    data: @json($revenue7Days['series'])
 
-        </div>
+                }]);
 
-    </div>
+            }
 
+            // ==========================
+            // Quý 1
+            // ==========================
 
-    <div class="row mt-4">
+            if (this.dataset.quarter == "1") {
 
+                revenueChart.updateOptions({
 
+                    xaxis: {
+                        categories: ["Th1", "Th2", "Th3", "Th4"]
+                    }
 
-        <div class="row mt-4">
+                });
 
-            <div class="col-lg-6">
+                revenueChart.updateSeries([{
 
-                <div class="card dashboard-card">
+                    name: "Doanh thu",
 
-                    <div class="card-header">
+                    data: @json($quarter1Revenue)
 
-                        <div>
+                }]);
 
-                            <div class="fw-bold">
+            }
 
-                                Top khách hàng
+            // ==========================
+            // Quý 2
+            // ==========================
 
-                            </div>
+            if (this.dataset.quarter == "2") {
 
-                            <small class="text-muted">
+                revenueChart.updateOptions({
 
-                                Đặt sân nhiều nhất
+                    xaxis: {
+                        categories: ["Th5", "Th6", "Th7", "Th8"]
+                    }
 
-                            </small>
+                });
 
-                        </div>
+                revenueChart.updateSeries([{
 
-                    </div>
+                    name: "Doanh thu",
 
-                    <div class="card-body">
+                    data: @json($quarter2Revenue)
 
+                }]);
 
-                        @foreach($topCustomers as $customer)
+            }
 
-                        <div class="d-flex align-items-center mb-4">
+            // ==========================
+            // Quý 3
+            // ==========================
 
-                            <div class="avatar-circle me-3">
+            if (this.dataset.quarter == "3") {
 
-                                {{ strtoupper(substr($customer->name,0,1)) }}
+                revenueChart.updateOptions({
 
-                            </div>
+                    xaxis: {
+                        categories: ["Th9", "Th10", "Th11", "Th12"]
+                    }
 
-                            <div class="flex-grow-1">
+                });
 
-                                <div class="fw-bold">
+                revenueChart.updateSeries([{
 
-                                    {{ $customer->name }}
+                    name: "Doanh thu",
 
-                                </div>
+                    data: @json($quarter3Revenue)
 
-                                <small class="text-muted">
+                }]);
 
-                                    {{ $customer->total }}
+            }
 
-                                </small>
+        });
 
-                            </div>
+    });
+    </script>
+    <script>
+    new ApexCharts(
 
-                            <span class="badge bg-primary">
+        document.querySelector("#bookingChart"),
 
-                                VIP
+        {
 
-                            </span>
+            chart: {
 
-                        </div>
+                type: "donut",
 
-                        @endforeach
+                height: 280
 
-                    </div>
+            },
 
-                </div>
+            series: @json($bookingStatusChart),
 
-            </div>
+            labels: [
+                "Hoàn thành",
+                "Chờ xác nhận",
+                "Đã huỷ"
+            ],
 
-            <div class="col-lg-6">
+            colors: [
 
-                <div class="card dashboard-card">
+                "#2fb344",
 
-                    <div class="card-header">
+                "#f59f00",
 
-                        <div>
+                "#d63939"
 
-                            <div class="fw-bold">
+            ],
 
-                                Tỷ lệ sử dụng sân
+            legend: {
 
-                            </div>
+                position: "bottom"
 
-                            <small class="text-muted">
+            },
 
-                                Theo từng sân
+            dataLabels: {
 
-                            </small>
+                enabled: false
 
-                        </div>
+            }
 
-                    </div>
+        }
 
-                    <div class="card-body">
+    ).render();
+    </script>
+    <script>
+    // ===== DARK MODE =====
 
-                        <div id="occupancyChart"></div>
+    const btn = document.getElementById("themeToggle");
 
-                    </div>
+    if (btn) {
 
-                </div>
+        btn.onclick = function() {
 
-            </div>
+            document.body.classList.toggle("dark-mode");
 
-        </div>
-
-        <div class="row mt-4">
-
-            <div class="col-lg-12">
-
-                <div class="card dashboard-card">
-
-                    <div class="card-header">
-
-                        Dashboard Statistics
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row text-center">
-
-                            <div class="col">
-
-                                <h2 class="fw-bold">
-
-                                    {{ $totalFields }}
-
-                                </h2>
-
-                                <p class="text-muted">
-
-                                    Sân
-
-                                </p>
-
-                            </div>
-
-                            <div class="col">
-
-                                <h2 class="fw-bold">
-
-                                    {{ $todayBookings }}
-
-                                </h2>
-
-                                <p class="text-muted">
-
-                                    Booking
-
-                                </p>
-
-                            </div>
-
-                            <div class="col">
-
-                                <h2 class="fw-bold">
-
-                                    {{ $totalCustomers }}
-
-                                </h2>
-
-                                <p class="text-muted">
-
-                                    Khách
-
-                                </p>
-
-                            </div>
-
-                            <div class="col">
-
-                                <h2 class="fw-bold">
-
-                                    {{ number_format($monthlyRevenue) }}
-
-                                </h2>
-
-                                <p class="text-muted">
-
-                                    Doanh thu
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-        @endsection
-        @push('scripts')
-        <script>
-        const sparkData = {
-
-            "#spark1": @json($fieldSpark),
-
-            "#spark2": @json($bookingSpark),
-
-            "#spark3": @json($revenueSpark),
-
-            "#spark4": @json($customerSpark)
+            localStorage.setItem(
+                "theme",
+                document.body.classList.contains("dark-mode")
+            );
 
         };
 
-        console.log(sparkData);
+    }
 
-        function sparkline(id, color) {
+    if (localStorage.getItem("theme") == "true") {
 
-            new ApexCharts(document.querySelector(id), {
+        document.body.classList.add("dark-mode");
 
-                chart: {
-                    height: 55,
-                    type: 'area',
-                    sparkline: {
-                        enabled: true
-                    },
-                    toolbar: {
-                        show: false
-                    }
-                },
+    }
+    </script>
 
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
+    <script>
+    // ===== Counter Animation =====
 
-                fill: {
-                    opacity: .2
-                },
+    document.querySelectorAll(".stat-value").forEach(function(el) {
 
-                colors: [color],
+        let target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
 
-                series: [{
-                    data: sparkData[id] ?? []
-                }]
+        let current = 0;
 
-            }).render();
+        let step = Math.ceil(target / 50);
 
-        }
+        let timer = setInterval(function() {
 
-        sparkline("#spark1", "#206bc4");
-        sparkline("#spark2", "#2fb344");
-        sparkline("#spark3", "#f59f00");
-        sparkline("#spark4", "#d63939");
-        </script>
-        <script>
-        let revenueChart = new ApexCharts(
-            document.querySelector("#revenueChart"), {
+            current += step;
 
-                chart: {
-                    height: 360,
-                    type: "area",
-                    toolbar: {
-                        show: false
-                    },
-                    zoom: {
-                        enabled: false
-                    }
-                },
+            if (current >= target) {
 
-                colors: ["#206bc4"],
+                current = target;
 
-                stroke: {
-                    curve: "smooth",
-                    width: 4
-                },
-
-                fill: {
-                    type: "gradient",
-                    gradient: {
-                        opacityFrom: .45,
-                        opacityTo: .05
-                    }
-                },
-
-                series: [{
-                    name: "Doanh thu",
-                    data: @json($revenue30Days['series'])
-                }],
-
-                xaxis: {
-                    categories: @json($revenue30Days['labels'])
-                }
-
-            }
-        );
-
-        revenueChart.render();
-
-        document.getElementById("btn30").onclick = function() {
-
-            revenueChart.updateOptions({
-
-                series: [{
-                    name: "Doanh thu",
-                    data: @json($revenue30Days['series'])
-                }],
-
-                xaxis: {
-                    categories: @json($revenue30Days['labels'])
-                }
-
-            });
-
-        }
-
-        document.getElementById("btn7").onclick = function() {
-
-            revenueChart.updateOptions({
-
-                series: [{
-                    name: "Doanh thu",
-                    data: @json($revenue7Days['series'])
-                }],
-
-                xaxis: {
-                    categories: @json($revenue7Days['labels'])
-                }
-
-            });
-
-        }
-        </script>
-        <script>
-        new ApexCharts(
-
-            document.querySelector("#bookingChart"),
-
-            {
-
-                chart: {
-
-                    type: "donut",
-
-                    height: 280
-
-                },
-
-                series: @json($bookingStatusChart),
-
-                labels: [
-                    "Hoàn thành",
-                    "Chờ xác nhận",
-                    "Đã huỷ"
-                ],
-
-                colors: [
-
-                    "#2fb344",
-
-                    "#f59f00",
-
-                    "#d63939"
-
-                ],
-
-                legend: {
-
-                    position: "bottom"
-
-                },
-
-                dataLabels: {
-
-                    enabled: false
-
-                }
+                clearInterval(timer);
 
             }
 
-        ).render();
-        </script>
-        <script>
-        // ===== DARK MODE =====
+            el.innerText = current.toLocaleString('vi-VN');
 
-        const btn = document.getElementById("themeToggle");
+        }, 20);
 
-        if (btn) {
+    });
+    </script>
+    <script>
+    new ApexCharts(
+        document.querySelector("#goalChart"), {
+            chart: {
+                type: "radialBar",
+                height: 280
+            },
 
-            btn.onclick = function() {
+           series: [{{ $monthlyPercent }}],
 
-                document.body.classList.toggle("dark-mode");
+            labels: ["Hoàn thành"],
 
-                localStorage.setItem(
-                    "theme",
-                    document.body.classList.contains("dark-mode")
-                );
+            colors: ["#206bc4"],
 
-            };
-
-        }
-
-        if (localStorage.getItem("theme") == "true") {
-
-            document.body.classList.add("dark-mode");
-
-        }
-        </script>
-
-        <script>
-        // ===== Counter Animation =====
-
-        document.querySelectorAll(".stat-value").forEach(function(el) {
-
-            let target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
-
-            let current = 0;
-
-            let step = Math.ceil(target / 50);
-
-            let timer = setInterval(function() {
-
-                current += step;
-
-                if (current >= target) {
-
-                    current = target;
-
-                    clearInterval(timer);
-
-                }
-
-                el.innerText = current.toLocaleString('vi-VN');
-
-            }, 20);
-
-        });
-        </script>
-        <script>
-        new ApexCharts(
-            document.querySelector("#goalChart"), {
-                chart: {
-                    type: "radialBar",
-                    height: 280
-                },
-
-                series: [76],
-
-                labels: ["Hoàn thành"],
-
-                colors: ["#206bc4"],
-
-                plotOptions: {
-                    radialBar: {
-                        hollow: {
-                            size: "65%"
+            plotOptions: {
+                radialBar: {
+                    hollow: {
+                        size: "65%"
+                    },
+                    track: {
+                        background: "#edf2f7"
+                    },
+                    dataLabels: {
+                        name: {
+                            fontSize: "16px"
                         },
-                        track: {
-                            background: "#edf2f7"
-                        },
-                        dataLabels: {
-                            name: {
-                                fontSize: "16px"
-                            },
-                            value: {
-                                fontSize: "32px",
-                                fontWeight: 700
-                            }
+                        value: {
+                            fontSize: "32px",
+                            fontWeight: 700
                         }
                     }
                 }
             }
-        ).render();
-        </script>
+        }
+    ).render();
+    </script>
 
-        <script>
-        new ApexCharts(
+    <script>
+    new ApexCharts(
 
-            document.querySelector("#occupancyChart"),
+        document.querySelector("#occupancyChart"),
 
-            {
+        {
 
-                chart: {
+            chart: {
 
-                    type: "bar",
+                type: "bar",
 
-                    height: 320,
+                height: 320,
 
-                    toolbar: {
+                toolbar: {
 
-                        show: false
+                    show: false
 
-                    }
+                }
 
-                },
+            },
 
-                series: [{
+            series: [{
 
-                    name: "Booking",
+                name: "Booking",
 
-                    data: @json($fieldOccupancy->pluck('total'))
+                data: @json($fieldOccupancy->pluck('total'))
 
-                }],
+            }],
 
-                xaxis: {
+            xaxis: {
 
-                    categories: @json($fieldOccupancy->pluck('name'))
+                categories: @json($fieldOccupancy->pluck('name'))
 
-                },
+            },
 
-                plotOptions: {
+            plotOptions: {
 
-                    bar: {
+                bar: {
 
-                        borderRadius: 8,
+                    borderRadius: 8,
 
-                        columnWidth: "45%"
+                    columnWidth: "45%"
 
-                    }
+                }
 
-                },
+            },
 
-                colors: ["#206bc4"]
+            colors: ["#206bc4"]
 
-            }
+        }
 
-        ).render();
-        </script>
+    ).render();
+    </script>
 
-        @endpush
+    @endpush
