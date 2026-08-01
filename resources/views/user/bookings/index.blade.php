@@ -301,10 +301,15 @@
                                             ?? $booking->end_time
                                             ?? null;
 
-                                        $depositAmount = (float)($booking->deposit_amount ?? ($totalMoneyRow * 0.3));
+                                        $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
+                                        
+                                        // Đơn tháng cọc 50%, đơn lẻ cọc 30%
+                                        $defaultDepositPercent = $isMonthly ? 0.50 : 0.30;
+                                        $depositAmount = (float)($booking->deposit_amount ?? ($totalMoneyRow * $defaultDepositPercent));
+                                        $depositLabel = $isMonthly ? 'Đã cọc 50%' : 'Đã cọc 30%';
+
                                         $rfStatus = $booking->refund_status ?? 'none';
 
-                                        // KIỂM TRA CHÍNH XÁC THANH TOÁN 100%
                                         $pType = strtolower((string)($booking->payment_type ?? ''));
                                         $pStatus = strtolower((string)($booking->payment_status ?? ''));
                                         $paidAmt = (float)($booking->paid_amount ?? 0);
@@ -334,6 +339,10 @@
                                                 </div>
                                             @endif
 
+                                            @if($isMonthly)
+                                                <span class="badge bg-success text-white ms-1" style="font-size: 0.65rem;">Lịch tháng</span>
+                                            @endif
+
                                             @if(!empty($booking->booking_code))
                                                 <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
                                                     <i class="bi bi-qr-code me-1"></i>{{ $booking->booking_code }}
@@ -347,7 +356,7 @@
                                                     </small>
                                                 @else
                                                     <small class="text-primary d-block mt-1 fw-bold" style="font-size: 0.72rem;">
-                                                        <i class="bi bi-shield-check me-1"></i>Đã cọc 30%: {{ number_format($depositAmount, 0, ',', '.') }}đ
+                                                        <i class="bi bi-shield-check me-1"></i>{{ $depositLabel }}: {{ number_format($depositAmount, 0, ',', '.') }}đ
                                                     </small>
                                                 @endif
                                             @else
@@ -443,7 +452,6 @@
                                                     </a>
                                                 @endif
 
-                                                {{-- 🔥 NÚT CHECK-IN / VÉ ĐIỆN TỬ (MỚI THÊM) --}}
                                                 @if($status !== 'cancelled')
                                                     <button type="button" 
                                                             class="btn btn-sm btn-outline-success rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
@@ -454,7 +462,6 @@
                                                     </button>
                                                 @endif
 
-                                                {{-- NÚT XEM CHI TIẾT --}}
                                                 <button type="button" 
                                                         class="btn btn-sm btn-outline-info rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
                                                         data-bs-toggle="modal" 
@@ -471,143 +478,149 @@
                                                     </a>
                                                 @endif
 
+                                                {{-- NÚT HỦY ĐƠN --}}
                                                 @if(in_array($status, ['pending', 'confirmed']))
-                                                    @php
-                                                        $mDate = \Carbon\Carbon::parse(($bookingDate ?? now()->format('Y-m-d')) . ' ' . ($startTime ?? '00:00:00'));
-                                                        $hrs = \Carbon\Carbon::now()->diffInHours($mDate, false);
-                                                        $totMoney = $totalMoneyRow;
-                                                        $depMoney = $depositAmount;
+                                                    @if(!$isMonthly)
+                                                        @php
+                                                            $mDate = \Carbon\Carbon::parse(($bookingDate ?? now()->format('Y-m-d')) . ' ' . ($startTime ?? '00:00:00'));
+                                                            $hrs = \Carbon\Carbon::now()->diffInHours($mDate, false);
+                                                            $totMoney = $totalMoneyRow;
+                                                            $depMoney = $depositAmount;
 
-                                                        $estRefund = 0;
-                                                        $policyText = '';
+                                                            $estRefund = 0;
+                                                            $policyText = '';
 
-                                                        if ($status === 'pending') {
-                                                            $policyText = 'Đơn chưa cọc, hủy không mất phí.';
-                                                        } elseif ($hrs >= 24) {
-                                                            if ($isPaidFull) {
-                                                                $estRefund = $totMoney * 0.70;
-                                                                $policyText = 'Hủy trước 24h bóng lăn (Đã trả 100%): Hoàn 70% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                            if ($status === 'pending') {
+                                                                $policyText = 'Đơn chưa cọc, hủy không mất phí.';
+                                                            } elseif ($hrs >= 24) {
+                                                                if ($isPaidFull) {
+                                                                    $estRefund = $totMoney * 0.70;
+                                                                    $policyText = 'Hủy trước 24h bóng lăn (Đã trả 100%): Hoàn 70% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                } else {
+                                                                    $estRefund = $depMoney * 0.50;
+                                                                    $policyText = 'Hủy trước 24h bóng lăn (Đã cọc 30%): Hoàn 50% tiền cọc (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                }
                                                             } else {
-                                                                $estRefund = $depMoney * 0.50;
-                                                                $policyText = 'Hủy trước 24h bóng lăn (Đã cọc 30%): Hoàn 50% tiền cọc (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                if ($isPaidFull) {
+                                                                    $estRefund = $totMoney * 0.30;
+                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã trả 100%): Nhận lại 30% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                } else {
+                                                                    $estRefund = 0;
+                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã cọc 30%): Mất 100% tiền cọc (Hoàn 0đ)';
+                                                                }
                                                             }
-                                                        } else {
-                                                            if ($isPaidFull) {
-                                                                $estRefund = $totMoney * 0.30;
-                                                                $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã trả 100%): Nhận lại 30% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
-                                                            } else {
-                                                                $estRefund = 0;
-                                                                $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã cọc 30%): Mất 100% tiền cọc (Hoàn 0đ)';
-                                                            }
-                                                        }
-                                                    @endphp
+                                                        @endphp
 
-                                                    <button type="button" 
-                                                            class="btn btn-sm btn-outline-danger rounded-3 d-inline-flex align-items-center py-1.5"
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#cancelModal{{ $booking->id }}"
-                                                            title="Hủy đơn đặt sân">
-                                                        <i class="bi bi-trash3-fill"></i>
-                                                    </button>
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-danger rounded-3 d-inline-flex align-items-center py-1.5"
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#cancelModal{{ $booking->id }}"
+                                                                title="Hủy đơn đặt sân">
+                                                            <i class="bi bi-trash3-fill"></i>
+                                                        </button>
 
-                                                    <!-- MODAL XÁC NHẬN HỦY SÂN -->
-                                                    <div class="modal fade text-start" id="cancelModal{{ $booking->id }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                                                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                                                                <form action="{{ route('user.bookings.destroy', $booking->id) }}" method="POST">
-                                                                    @csrf
-                                                                    @method('DELETE')
+                                                        <!-- MODAL XÁC NHẬN HỦY SÂN -->
+                                                        <div class="modal fade text-start" id="cancelModal{{ $booking->id }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                                                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                                                    <form action="{{ route('user.bookings.destroy', $booking->id) }}" method="POST">
+                                                                        @csrf
+                                                                        @method('DELETE')
 
-                                                                    <div class="modal-header border-0 bg-danger-subtle p-4 pb-3">
-                                                                        <div class="d-flex align-items-center gap-3">
-                                                                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" 
-                                                                                 style="width: 44px; height: 44px;">
-                                                                                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                                                                            </div>
-                                                                            <div>
-                                                                                <h5 class="modal-title fw-bold text-danger mb-0">Xác nhận hủy đặt sân</h5>
-                                                                                <small class="text-danger-emphasis">Đơn đặt sân #{{ $booking->id }}</small>
-                                                                            </div>
-                                                                        </div>
-                                                                        <button type="button" class="btn-close align-self-start" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                    </div>
-
-                                                                    <div class="modal-body p-4">
-                                                                        <div class="rounded-4 p-3.5 border {{ $estRefund > 0 ? 'bg-success-subtle border-success-subtle' : 'bg-light border-secondary-subtle' }} mb-3">
-                                                                            <div class="d-flex align-items-start gap-2.5">
-                                                                                <i class="bi {{ $estRefund > 0 ? 'bi-check-circle-fill text-success' : 'bi-info-circle-fill text-secondary' }} fs-5 mt-0.5"></i>
+                                                                        <div class="modal-header border-0 bg-danger-subtle p-4 pb-3">
+                                                                            <div class="d-flex align-items-center gap-3">
+                                                                                <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" 
+                                                                                     style="width: 44px; height: 44px;">
+                                                                                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                                                                                </div>
                                                                                 <div>
-                                                                                    <span class="d-block text-muted small fw-medium mb-1" style="font-size: 0.78rem;">Quy định hoàn tiền áp dụng:</span>
-                                                                                    <div class="fw-bold fs-6 {{ $estRefund > 0 ? 'text-success-emphasis' : 'text-dark' }}">
-                                                                                        {{ $policyText }}
-                                                                                    </div>
+                                                                                    <h5 class="modal-title fw-bold text-danger mb-0">Xác nhận hủy đặt sân</h5>
+                                                                                    <small class="text-danger-emphasis">Đơn đặt sân #{{ $booking->id }}</small>
                                                                                 </div>
                                                                             </div>
+                                                                            <button type="button" class="btn-close align-self-start" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                         </div>
 
-                                                                        @if($estRefund > 0)
-                                                                            <div class="alert alert-success d-flex align-items-center justify-content-between p-3 rounded-3 mb-3 shadow-sm border-0">
-                                                                                <span class="small fw-medium"><i class="bi bi-wallet2 me-1.5"></i> Số tiền Admin sẽ chuyển hoàn lại:</span>
-                                                                                <strong class="fs-5">{{ number_format($estRefund, 0, ',', '.') }}đ</strong>
-                                                                            </div>
-
-                                                                            <div class="card border rounded-4 p-3 mb-2 bg-body-tertiary">
-                                                                                <h6 class="fw-bold text-dark mb-3">
-                                                                                    <i class="bi bi-bank me-1.5 text-primary"></i> Nhập thông tin tài khoản nhận tiền hoàn:
-                                                                                </h6>
-
-                                                                                <div class="row g-3">
-                                                                                    <div class="col-md-6">
-                                                                                        <label class="form-label small fw-semibold text-secondary">Tên ngân hàng <span class="text-danger">*</span></label>
-                                                                                        <input type="text" name="bank_name" class="form-control rounded-3" placeholder="Ví dụ: MB Bank, Vietcombank, Techcombank..." required>
-                                                                                    </div>
-
-                                                                                    <div class="col-md-6">
-                                                                                        <label class="form-label small fw-semibold text-secondary">Số tài khoản <span class="text-danger">*</span></label>
-                                                                                        <input type="text" name="bank_account_number" class="form-control rounded-3" placeholder="Nhập số tài khoản ngân hàng" required>
-                                                                                    </div>
-
-                                                                                    <div class="col-md-12">
-                                                                                        <label class="form-label small fw-semibold text-secondary">Tên chủ tài khoản (Viết hoa không dấu) <span class="text-danger">*</span></label>
-                                                                                        <input type="text" name="bank_account_holder" class="form-control rounded-3 text-uppercase" placeholder="NGUYEN VAN A" required>
-                                                                                    </div>
-
-                                                                                    <div class="col-md-12">
-                                                                                        <label class="form-label small fw-semibold text-secondary">Lý do hủy sân (Không bắt buộc)</label>
-                                                                                        <textarea name="cancel_reason" class="form-control rounded-3" rows="2" placeholder="Nhập lý do hủy sân để Admin hỗ trợ tốt hơn..."></textarea>
+                                                                        <div class="modal-body p-4">
+                                                                            <div class="rounded-4 p-3.5 border {{ $estRefund > 0 ? 'bg-success-subtle border-success-subtle' : 'bg-light border-secondary-subtle' }} mb-3">
+                                                                                <div class="d-flex align-items-start gap-2.5">
+                                                                                    <i class="bi {{ $estRefund > 0 ? 'bi-check-circle-fill text-success' : 'bi-info-circle-fill text-secondary' }} fs-5 mt-0.5"></i>
+                                                                                    <div>
+                                                                                        <span class="d-block text-muted small fw-medium mb-1" style="font-size: 0.78rem;">Quy định hoàn tiền áp dụng:</span>
+                                                                                        <div class="fw-bold fs-6 {{ $estRefund > 0 ? 'text-success-emphasis' : 'text-dark' }}">
+                                                                                            {{ $policyText }}
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                        @else
-                                                                            <p class="fs-6 text-dark mb-1">
-                                                                                Bạn có chắc chắn muốn hủy đơn đặt sân này không? Do đã sát giờ đá nên đơn này sẽ <strong class="text-danger">không được hoàn lại tiền</strong>.
-                                                                            </p>
-                                                                        @endif
-                                                                    </div>
 
-                                                                    <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-end gap-2">
-                                                                        <button type="button" class="btn btn-light rounded-3 px-4 fw-medium border" data-bs-dismiss="modal">
-                                                                            Bỏ qua
-                                                                        </button>
-                                                                        <button type="submit" class="btn btn-danger rounded-3 px-4 fw-medium shadow-sm">
-                                                                            <i class="bi bi-trash3-fill me-1"></i> {{ $estRefund > 0 ? 'Gửi yêu cầu hủy & Hoàn tiền' : 'Xác nhận Hủy' }}
-                                                                        </button>
-                                                                    </div>
-                                                                </form>
+                                                                            @if($estRefund > 0)
+                                                                                <div class="alert alert-success d-flex align-items-center justify-content-between p-3 rounded-3 mb-3 shadow-sm border-0">
+                                                                                    <span class="small fw-medium"><i class="bi bi-wallet2 me-1.5"></i> Số tiền Admin sẽ chuyển hoàn lại:</span>
+                                                                                    <strong class="fs-5">{{ number_format($estRefund, 0, ',', '.') }}đ</strong>
+                                                                                </div>
+
+                                                                                <div class="card border rounded-4 p-3 mb-2 bg-body-tertiary">
+                                                                                    <h6 class="fw-bold text-dark mb-3">
+                                                                                        <i class="bi bi-bank me-1.5 text-primary"></i> Nhập thông tin tài khoản nhận tiền hoàn:
+                                                                                    </h6>
+
+                                                                                    <div class="row g-3">
+                                                                                        <div class="col-md-6">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Tên ngân hàng <span class="text-danger">*</span></label>
+                                                                                            <input type="text" name="bank_name" class="form-control rounded-3" placeholder="Ví dụ: MB Bank, Vietcombank..." required>
+                                                                                        </div>
+
+                                                                                        <div class="col-md-6">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Số tài khoản <span class="text-danger">*</span></label>
+                                                                                            <input type="text" name="bank_account_number" class="form-control rounded-3" placeholder="Nhập số tài khoản ngân hàng" required>
+                                                                                        </div>
+
+                                                                                        <div class="col-md-12">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Tên chủ tài khoản (Viết hoa không dấu) <span class="text-danger">*</span></label>
+                                                                                            <input type="text" name="bank_account_holder" class="form-control rounded-3 text-uppercase" placeholder="NGUYEN VAN A" required>
+                                                                                        </div>
+
+                                                                                        <div class="col-md-12">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Lý do hủy sân (Không bắt buộc)</label>
+                                                                                            <textarea name="cancel_reason" class="form-control rounded-3" rows="2" placeholder="Nhập lý do hủy sân..."></textarea>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            @else
+                                                                                <p class="fs-6 text-dark mb-1">
+                                                                                    Bạn có chắc chắn muốn hủy đơn đặt sân này không? Do đã sát giờ đá nên đơn này sẽ <strong class="text-danger">không được hoàn lại tiền</strong>.
+                                                                                </p>
+                                                                            @endif
+                                                                        </div>
+
+                                                                        <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-end gap-2">
+                                                                            <button type="button" class="btn btn-light rounded-3 px-4 fw-medium border" data-bs-dismiss="modal">
+                                                                                Bỏ qua
+                                                                            </button>
+                                                                            <button type="submit" class="btn btn-danger rounded-3 px-4 fw-medium shadow-sm">
+                                                                                <i class="bi bi-trash3-fill me-1"></i> {{ $estRefund > 0 ? 'Gửi yêu cầu hủy & Hoàn tiền' : 'Xác nhận Hủy' }}
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        {{-- KHÓA HỦY NẾU LÀ ĐƠN THÁNG --}}
+                                                        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1.5 rounded-3 fw-normal" 
+                                                              title="Đơn đặt lịch cố định tháng không hỗ trợ hủy hay hoàn tiền">
+                                                            <i class="bi bi-lock-fill text-danger me-1"></i> Đơn tháng
+                                                        </span>
+                                                    @endif
                                                 @endif
                                             </div>
 
-                                            <!-- ======================================================= -->
-                                            <!-- 🔥 MODAL THẺ CHECK-IN / VÉ ĐIỆN TỬ DÀNH CHO KHÁCH HÀNG -->
-                                            <!-- ======================================================= -->
+                                            <!-- MODAL THẺ CHECK-IN / VÉ ĐIỆN TỬ -->
                                             <div class="modal fade text-start" id="checkinModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" id="printableTicket{{ $booking->id }}">
                                                         
-                                                        {{-- HEADER THẺ VÉ --}}
                                                         <div class="modal-header border-0 text-white p-4" style="background: linear-gradient(135deg, #198754 0%, #0d5132 100%);">
                                                             <div class="d-flex align-items-center justify-content-between w-100 me-2">
                                                                 <div class="d-flex align-items-center gap-2">
@@ -621,12 +634,10 @@
                                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
 
-                                                        {{-- BODY THẺ VÉ --}}
                                                         <div class="modal-body p-4 bg-light">
                                                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
                                                                 <div class="card-body p-4 text-center bg-white">
                                                                     
-                                                                    {{-- MÃ QR CHUYÊN NGHIỆP --}}
                                                                     <div class="d-inline-block p-3 bg-light rounded-4 border mb-2 shadow-sm">
                                                                         <img src="{{ $qrUrl }}" alt="Mã QR Checkin" class="img-fluid rounded-3" style="width: 160px; height: 180px;">
                                                                     </div>
@@ -638,11 +649,11 @@
 
                                                                     <hr class="my-3 border-dashed">
 
-                                                                    {{-- THÔNG TIN VÉ --}}
                                                                     <div class="text-start">
                                                                         <div class="row g-3">
                                                                             <div class="col-6">
-                                                                                <small class="text-muted d-block">Tên sân:</small>                                                                                <strong class="text-dark fs-6">{{ $booking->field_name ?? 'Sân bóng' }}</strong>
+                                                                                <small class="text-muted d-block">Tên sân:</small>
+                                                                                <strong class="text-dark fs-6">{{ $booking->field_name ?? 'Sân bóng' }}</strong>
                                                                             </div>
                                                                             <div class="col-6">
                                                                                 <small class="text-muted d-block">Khung giờ đá:</small>
@@ -663,18 +674,16 @@
                                                                                 @elseif($isPaidFull)
                                                                                     <span class="badge bg-success text-white px-3 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Đã thanh toán 100% ({{ number_format($totalMoneyRow, 0, ',', '.') }}đ)</span>
                                                                                 @else
-                                                                                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-pill"><i class="bi bi-shield-check me-1"></i>Đã cọc 30% ({{ number_format($depositAmount, 0, ',', '.') }}đ)</span>
+                                                                                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-pill"><i class="bi bi-shield-check me-1"></i>{{ $depositLabel }} ({{ number_format($depositAmount, 0, ',', '.') }}đ)</span>
                                                                                     <span class="small text-danger ms-1 fw-bold">Còn thiếu tại sân: {{ number_format($totalMoneyRow - $depositAmount, 0, ',', '.') }}đ</span>
                                                                                 @endif
                                                                             </div>
                                                                         </div>
                                                                     </div>
-
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        {{-- FOOTER VÉ: NÚT IN VÉ HÓA ĐƠN --}}
                                                         <div class="modal-footer border-0 p-3 bg-white justify-content-between">
                                                             <button type="button" class="btn btn-light rounded-3 border" data-bs-dismiss="modal">Đóng</button>
                                                             <button type="button" class="btn btn-success rounded-3 px-4 shadow-sm" onclick="printCheckinPass('printableTicket{{ $booking->id }}')">
@@ -699,6 +708,12 @@
                                                         </div>
 
                                                         <div class="modal-body p-4">
+                                                            @if($isMonthly)
+                                                                <div class="alert alert-success border-0 rounded-3 small mb-3">
+                                                                    <i class="bi bi-lock-fill me-1"></i> <strong>Lịch cố định theo tháng:</strong> Đơn hàng đã được đặt giữ sân cả tháng và không áp dụng hủy/hoàn tiền.
+                                                                </div>
+                                                            @endif
+
                                                             @if($status === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
                                                                 <div class="card border-danger-subtle bg-danger-subtle bg-opacity-10 rounded-4 p-3 mb-4">
                                                                     <div class="d-flex align-items-center justify-content-between mb-2 border-bottom border-danger-subtle pb-2">
@@ -742,7 +757,7 @@
                                                                         </div>
                                                                     @elseif($rfStatus === 'disputed')
                                                                         <div class="alert alert-danger border-0 rounded-3 py-2 px-3 small mb-0 fw-medium">
-                                                                            <i class="bi bi-exclamation-octagon-fill me-1"></i> Đã gửi phản hồi khiếu nại chưa nhận tiền tới Admin. Ban quản lý đang rà soát lại sao kê!
+                                                                            <i class="bi bi-exclamation-octagon-fill me-1"></i> Đã gửi phản hồi khiếu nại chưa nhận tiền tới Admin.
                                                                         </div>
                                                                     @elseif($rfStatus === 'confirmed_by_user')
                                                                         <div class="alert alert-primary border-0 rounded-3 py-2 px-3 small mb-0 fw-bold text-center">
@@ -773,8 +788,7 @@
                                                                         @elseif($isPaidFull)
                                                                             <strong class="text-success fs-6">Đã trả đủ 100%: {{ number_format($totalMoneyRow, 0, ',', '.') }}đ</strong>
                                                                         @else
-                                                                            <strong class="text-primary fs-6">Đã cọc 30%: {{ number_format($depositAmount, 0, ',', '.') }}đ</strong>
-                                                                            <small class="text-muted d-block mt-0.5" style="font-size:0.7rem;">(Tổng tiền sân: {{ number_format($totalMoneyRow, 0, ',', '.') }}đ)</small>
+                                                                            <strong class="text-primary fs-6">{{ $depositLabel }}: {{ number_format($depositAmount, 0, ',', '.') }}đ</strong>
                                                                         @endif
                                                                     </div>
                                                                 </div>
@@ -819,9 +833,6 @@
                                                                     <div class="col-md-6"><strong>SĐT:</strong> {{ Auth::user()->phone ?? 'Chưa cập nhật' }}</div>
                                                                     <div class="col-md-6"><strong>Email:</strong> {{ Auth::user()->email }}</div>
                                                                     <div class="col-md-6"><strong>Ngày đặt:</strong> {{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</div>
-                                                                    @if(!empty($booking->note))
-                                                                        <div class="col-12 mt-2 pt-2 border-top"><strong>Ghi chú:</strong> {{ $booking->note }}</div>
-                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -829,33 +840,6 @@
                                                         <div class="modal-footer border-0 p-3 pt-0">
                                                             <button type="button" class="btn btn-secondary btn-sm rounded-3 px-4" data-bs-dismiss="modal">Đóng</button>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- MODAL KHIẾU NẠI -->
-                                            <div class="modal fade text-start" id="disputeModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered">
-                                                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                                                        <form action="{{ route('user.bookings.disputeRefund', $booking->id) }}" method="POST">
-                                                            @csrf
-                                                            <div class="modal-header border-0 bg-danger-subtle p-3.5">
-                                                                <h6 class="modal-title fw-bold text-danger mb-0">
-                                                                    <i class="bi bi-headset me-1"></i> Báo cáo sự cố hoàn tiền đơn #{{ $booking->id }}
-                                                                </h6>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                            </div>
-                                                            <div class="modal-body p-4">
-                                                                <p class="small text-muted mb-2">
-                                                                    Vui lòng nhập lý do bạn chưa nhận được tiền hoặc số tiền hoàn chưa đúng:
-                                                                </p>
-                                                                <textarea name="dispute_reason" class="form-control rounded-3" rows="3" placeholder="Ví dụ: Tôi kiểm tra STK nhưng chưa thấy báo có tiền..." required></textarea>
-                                                            </div>
-                                                            <div class="modal-footer border-0 p-3 pt-0">
-                                                                <button type="button" class="btn btn-light rounded-3 btn-sm" data-bs-dismiss="modal">Đóng</button>
-                                                                <button type="submit" class="btn btn-danger rounded-3 btn-sm fw-medium">Gửi Phản Hồi Cho Admin</button>
-                                                            </div>
-                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
@@ -892,7 +876,6 @@
     </div>
 </div>
 
-{{-- SCRIPT HỖ TRỢ IN THẺ VÉ CHECK-IN --}}
 <script>
 function printCheckinPass(elementId) {
     var printContents = document.getElementById(elementId).innerHTML;

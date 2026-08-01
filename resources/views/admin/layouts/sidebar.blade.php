@@ -6,123 +6,240 @@
 
     <div class="sidebar-menu">
         <a href="{{ route('admin.dashboard') }}"
-           class="sidebar-link {{ request()->is('admin/dashboard') ? 'active' : '' }}">
+            class="sidebar-link {{ request()->is('admin/dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i>
             <span>Dashboard</span>
         </a>
 
-        <div class="sidebar-title">Quản lý hệ thống</div>
+        <div class="sidebar-title">
+            Quản lý hệ thống
+        </div>
 
-        <a href="{{ url('/admin/roles') }}"
-           class="sidebar-link {{ request()->is('admin/roles*') ? 'active' : '' }}">
-            <i class="bi bi-shield-lock"></i>
-            <span>Vai trò</span>
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#systemMenu" role="button">
+
+            <i class="bi bi-gear-fill"></i>
+
+            <span class="flex-grow-1">
+                Hệ thống
+            </span>
+
+            <i class="bi bi-chevron-down small"></i>
+
         </a>
 
-        <a href="{{ url('/admin/users') }}"
-           class="sidebar-link {{ request()->is('admin/users*') ? 'active' : '' }}">
-            <i class="bi bi-people"></i>
-            <span>Người dùng</span>
-        </a>
+        <div class="collapse show" id="systemMenu">
 
-        <div class="sidebar-title">Quản lý sân bóng</div>
+            <a href="{{ url('/admin/roles') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/roles*') ? 'active' : '' }}">
 
-        <a href="{{ route('admin.stadiums.index') }}"
-           class="sidebar-link {{ request()->routeIs('admin.stadiums.*') ? 'active' : '' }}">
-            <i class="bi bi-building"></i>
-            <span>Cơ sở sân bóng</span>
-        </a>
+                <i class="bi bi-shield-lock"></i>
 
-        <a href="{{ url('/admin/field-types') }}"
-           class="sidebar-link {{ request()->is('admin/field-types*') ? 'active' : '' }}">
-            <i class="bi bi-grid-3x3-gap"></i>
-            <span>Loại sân</span>
-        </a>
+                Vai trò
 
-        <a href="{{ url('/admin/fields') }}"
-           class="sidebar-link {{ request()->is('admin/fields*') ? 'active' : '' }}">
-            <i class="bi bi-map"></i>
-            <span>Sân bóng</span>
-        </a>
-
-        <a href="{{ url('/admin/field-images') }}"
-           class="sidebar-link {{ request()->is('admin/field-images*') ? 'active' : '' }}">
-            <i class="bi bi-images"></i>
-            <span>Hình ảnh sân</span>
-        </a>
-
-        <a href="{{ url('/admin/time-slots') }}"
-           class="sidebar-link {{ request()->is('admin/time-slots*') ? 'active' : '' }}">
-            <i class="bi bi-clock"></i>
-            <span>Khung giờ</span>
-        </a>
-
-        <div class="sidebar-title">Đặt sân</div>
-
-        <a href="{{ url('/admin/bookings') }}"
-           class="sidebar-link {{ request()->is('admin/bookings*') ? 'active' : '' }}">
-            <i class="bi bi-calendar-check"></i>
-            <span>Đơn đặt sân</span>
-        </a>
-
-        <a href="{{ url('/admin/booking-details') }}"
-           class="sidebar-link {{ request()->is('admin/booking-details*') ? 'active' : '' }}">
-            <i class="bi bi-card-list"></i>
-            <span>Chi tiết đặt sân</span>
-        </a>
-
-        <a href="{{ url('/admin/services') }}"
-           class="sidebar-link {{ request()->is('admin/services*') ? 'active' : '' }}">
-            <i class="bi bi-cup-straw"></i>
-            <span>Dịch vụ</span>
-        </a>
-
-        <a href="{{ url('/admin/booking-services') }}"
-           class="sidebar-link {{ request()->is('admin/booking-services*') ? 'active' : '' }}">
-            <i class="bi bi-bag-check"></i>
-            <span>Dịch vụ đặt sân</span>
-        </a>
-
-        <div class="sidebar-title">Thanh toán</div>
-
-        <a href="{{ url('/admin/payment-methods') }}"
-           class="sidebar-link {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
-            <i class="bi bi-credit-card"></i>
-            <span>Phương thức thanh toán</span>
-        </a>
-
-        <a href="{{ url('/admin/payments') }}"
-           class="sidebar-link {{ request()->is('admin/payments*') ? 'active' : '' }}">
-            <i class="bi bi-cash-coin"></i>
-            <span>Thanh toán</span>
-        </a>
-
-        <div class="sidebar-title">Marketing</div>
-
-        <a href="{{ url('/admin/promotions') }}"
-           class="sidebar-link {{ request()->is('admin/promotions*') ? 'active' : '' }}">
-            <i class="bi bi-ticket-perforated"></i>
-            <span>Khuyến mãi</span>
-        </a>
-
-        @if(Auth::check() && Auth::user()->role === 'admin')
-            <a href="{{ url('/admin/news') }}"
-               class="sidebar-link {{ request()->is('admin/news*') ? 'active' : '' }}">
-                <i class="bi bi-newspaper"></i>
-                <span>Tin tức</span>
             </a>
-        @endif
 
-        <a href="{{ url('/admin/reviews') }}"
-           class="sidebar-link {{ request()->is('admin/reviews*') ? 'active' : '' }}">
-            <i class="bi bi-star"></i>
-            <span>Đánh giá</span>
+            <a href="{{ url('/admin/users') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/users*') ? 'active' : '' }}">
+
+                <i class="bi bi-people"></i>
+
+                Người dùng
+
+            </a>
+
+        </div>
+
+        <div class="sidebar-title">
+
+            Quản lý sân
+
+        </div>
+
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#fieldMenu">
+
+            <i class="bi bi-building"></i>
+
+            <span class="flex-grow-1">
+
+                Sân bóng
+
+            </span>
+
+            <i class="bi bi-chevron-down"></i>
+
         </a>
 
-        <a href="{{ url('/admin/notifications') }}"
-           class="sidebar-link {{ request()->is('admin/notifications*') ? 'active' : '' }}">
-            <i class="bi bi-bell"></i>
-            <span>Thông báo</span>
+        <div class="collapse show" id="fieldMenu">
+
+            <a href="{{ route('admin.stadiums.index') }}"
+                class="sidebar-link ps-5 {{ request()->routeIs('admin.stadiums.*') ? 'active':'' }}">
+
+                <i class="bi bi-building"></i>
+
+                Cơ sở
+
+            </a>
+
+            <a href="{{ url('/admin/field-types') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/field-types*') ? 'active':'' }}">
+
+                <i class="bi bi-grid"></i>
+
+                Loại sân
+
+            </a>
+
+            <a href="{{ url('/admin/fields') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/fields*') ? 'active':'' }}">
+
+                <i class="bi bi-map"></i>
+
+                Sân bóng
+
+            </a>
+
+            <a href="{{ url('/admin/field-images') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/field-images*') ? 'active':'' }}">
+
+                <i class="bi bi-images"></i>
+
+                Hình ảnh
+
+            </a>
+
+            <a href="{{ url('/admin/time-slots') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/time-slots*') ? 'active':'' }}">
+
+                <i class="bi bi-clock"></i>
+
+                Khung giờ
+
+            </a>
+
+        </div>
+
+        <div class="sidebar-title">            Dịch vụ
+        </div>
+
+        <a href="{{ route('admin.services.index') }}"
+            class="sidebar-link ps-5 {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+
+            <i class="bi bi-box-seam"></i>
+
+            Quản lý dịch vụ
+
         </a>
+
+        <div class="sidebar-title">            Thanh toán
+        </div>
+
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#paymentMenu">
+
+            <i class="bi bi-credit-card"></i>
+
+            <span class="flex-grow-1">
+                Thanh toán
+            </span>
+
+            <i class="bi bi-chevron-down"></i>
+
+        </a>
+
+        <div class="collapse show" id="paymentMenu">
+
+            <a href="{{ url('/admin/payment-methods') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
+                <i class="bi bi-wallet2"></i>
+                Phương thức
+            </a>
+
+            <a href="{{ url('/admin/payments') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/payments*') ? 'active' : '' }}">
+                <i class="bi bi-cash-coin"></i>
+                Lịch sử thanh toán
+            </a>
+
+        </div>
+
+        <div class="sidebar-title">
+            Thanh toán
+        </div>
+
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#paymentMenu">
+
+            <i class="bi bi-credit-card"></i>
+
+            <span class="flex-grow-1">
+                Thanh toán
+            </span>
+
+            <i class="bi bi-chevron-down"></i>
+
+        </a>
+
+        <div class="collapse show" id="paymentMenu">
+
+            <a href="{{ url('/admin/payment-methods') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
+                <i class="bi bi-wallet2"></i>
+                Phương thức
+            </a>
+
+            <a href="{{ url('/admin/payments') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/payments*') ? 'active' : '' }}">
+                <i class="bi bi-cash-coin"></i>
+                Lịch sử thanh toán
+            </a>
+
+        </div>
+
+
+        <div class="sidebar-title">
+            Marketing
+        </div>
+
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#marketingMenu">
+
+            <i class="bi bi-megaphone"></i>
+
+            <span class="flex-grow-1">
+                Marketing
+            </span>
+
+            <i class="bi bi-chevron-down"></i>
+
+        </a>
+
+        <div class="collapse show" id="marketingMenu">
+
+            <a href="{{ url('/admin/promotions') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/promotions*') ? 'active' : '' }}">
+                <i class="bi bi-ticket-perforated"></i>
+                Khuyến mãi
+            </a>
+
+            @if(Auth::check() && Auth::user()->role==='admin')
+
+            <a href="{{ url('/admin/news') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/news*') ? 'active' : '' }}">
+                <i class="bi bi-newspaper"></i>
+                Tin tức
+            </a>
+
+            @endif
+
+            <a href="{{ url('/admin/reviews') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/reviews*') ? 'active' : '' }}">
+                <i class="bi bi-star"></i>
+                Đánh giá
+            </a>
+
+            <a href="{{ url('/admin/notifications') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/notifications*') ? 'active' : '' }}">
+                <i class="bi bi-bell"></i>
+                Thông báo
+            </a>
+
+        </div>
     </div>
 </aside>

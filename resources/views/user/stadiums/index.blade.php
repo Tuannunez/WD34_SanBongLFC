@@ -41,6 +41,7 @@
                             $fieldName = $field->name ?: 'Sân bóng';
                             $address = data_get($stadium, 'address', 'Đang cập nhật địa chỉ');
                             $price = $field->display_price;
+                            $stadiumId = $field->stadium_id ?? $stadium?->id;
                         @endphp
 
                         <div class="col-lg-4 col-md-6">
@@ -56,16 +57,69 @@
                                                 <div class="h5 mb-0 text-success">{{ number_format((float) $price, 0, ',', '.') }}đ</div>
                                                 <small class="text-muted">Giá tham khảo</small>
                                             </div>
-                                            <a href="{{ route('stadiums.show', ['id' => $stadium->id, 'field' => $field->id]) }}" class="btn btn-success rounded-3">Đặt sân</a>
+                                            
+                                            {{-- NÚT NỔI POP-UP CHỌN HÌNH THỨC ĐẶT --}}
+                                            <button type="button" 
+                                                    class="btn btn-success rounded-3 px-3 py-2 fw-bold shadow-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#chooseBookingTypeModal{{ $field->id }}">
+                                                <i class="bi bi-calendar-plus me-1"></i> Đặt sân
+                                            </button>
                                         </div>
                                         <div class="d-flex flex-wrap gap-2">
                                             <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $field->fieldType?->number_of_players ? $field->fieldType->number_of_players . ' người' : 'Số người chưa rõ' }}</span>
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $stadium->name }}</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $stadium?->name ?? 'LFC Center' }}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {{-- MODAL POP-UP HỎI CHỌN ĐẶT THEO NGÀY HOẶC THEO THÁNG --}}
+                        <div class="modal fade text-start" id="chooseBookingTypeModal{{ $field->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                    <div class="modal-header border-0 bg-success text-white p-4 pb-3">
+                                        <div>
+                                            <h5 class="modal-title fw-bold mb-0 text-white">Chọn Hình Thức Đặt Sân</h5>
+                                            <small class="text-white-50">{{ $fieldName }} - {{ $stadium?->name }}</small>
+                                        </div>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    
+                                    <div class="modal-body p-4 bg-light">
+                                        <p class="text-secondary small mb-3 text-center">Vui lòng chọn hình thức đặt sân phù hợp với nhu cầu của bạn:</p>
+
+                                        <div class="d-grid gap-3">
+                                            {{-- 1. ĐẶT LẺ: DẪN ĐẾN TRANG CHI TIẾT SÂN BÌNH THƯỜNG --}}
+                                            <a href="{{ route('stadiums.show', ['id' => $stadiumId, 'field' => $field->id]) }}" 
+                                               class="btn btn-white border border-2 border-primary-subtle rounded-4 p-3 text-start shadow-sm d-flex align-items-center justify-content-between text-decoration-none">
+                                                <div>
+                                                    <div class="fw-bold text-primary fs-6 mb-1">
+                                                        <i class="bi bi-calendar-event me-2"></i> 1. Đặt Lịch Theo Buổi (Lẻ)
+                                                    </div>
+                                                    <small class="text-muted d-block">Xem chi tiết giờ trống và đặt 1 buổi đá. Hỗ trợ hủy/hoàn tiền 24h.</small>
+                                                </div>
+                                                <i class="bi bi-chevron-right text-primary fs-5 ms-2"></i>
+                                            </a>
+
+                                            {{-- 2. ĐẶT THÁNG: DẪN ĐẾN TRANG THIẾT KẾ RIÊNG BÊN DƯỚI --}}
+                                            <a href="{{ route('user.bookings.createMonthly', ['stadium' => $stadiumId, 'field' => $field->id]) }}" 
+                                               class="btn btn-white border border-2 border-success-subtle rounded-4 p-3 text-start shadow-sm d-flex align-items-center justify-content-between text-decoration-none">
+                                                <div>
+                                                    <div class="fw-bold text-success fs-6 mb-1">
+                                                        <i class="bi bi-calendar-range-fill me-2"></i> 2. Đặt Cố Định Theo Tháng
+                                                    </div>
+                                                    <small class="text-muted d-block">Giữ lịch cố định cả tháng (Ví dụ: Mọi Chủ Nhật). Không hủy/hoàn tiền.</small>
+                                                </div>
+                                                <i class="bi bi-chevron-right text-success fs-5 ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     @endforeach
                 </div>
             </div>
@@ -282,6 +336,7 @@
                 {{ $fields->links() }}
             </div>
         @endif
+        
         <div class="container-fluid bg-light py-4 mt-4" id="services-full">
             <div class="container">
                 <div class="mb-3">

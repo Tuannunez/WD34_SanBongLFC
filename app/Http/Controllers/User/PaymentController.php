@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class PaymentController extends Controller
@@ -46,7 +47,6 @@ class PaymentController extends Controller
         return DB::table('payment_methods')->where('status', 1)->get();
     }
 
-    // 1. Hiển thị trang chọn phương thức thanh toán
     public function showPaymentPage(int $booking_id)
     {
         $booking = DB::table('bookings')
@@ -61,7 +61,6 @@ class PaymentController extends Controller
         return view('user.payment.index', compact('booking', 'paymentMethods'));
     }
 
-    // 2. Xử lý tạo liên kết thanh toán VNPay gửi đi
     public function processPayment(Request $request)
     {
         $bookingId = $request->input('booking_id');
@@ -75,9 +74,6 @@ class PaymentController extends Controller
             return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
         }
 
-        // =========================================================================
-        // KIỂM TRA THỜI GIAN GIỮ SÂN 5 PHÚT (ĐỒNG BỘ MÚI GIỜ) TRƯỚC KHI SANG VNPAY
-        // =========================================================================
         $createdAt = Carbon::parse($booking->created_at);
         $now = Carbon::now();
 
@@ -90,34 +86,36 @@ class PaymentController extends Controller
                 ->with('error', 'Đơn đặt sân đã quá hạn 5 phút giữ sân và đã bị hủy tự động. Vui lòng đặt lại lịch mới!');
         }
 
-        $methodId = $request->input('payment_method_id');
-        $method = DB::table('payment_methods')->where('id', $methodId)->first();
+        $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
 
-        if (!$method) {
-            return back()->withErrors(['error' => 'Vui lòng chọn phương thức thanh toán hợp lệ.']);
-        }
-
-        // =========================================================================
-        // PHÂN CHIA SỐ TIỀN THEO total_price CHUẨN TRONG DB CỦA BẠN
-        // =========================================================================
-        $totalPrice = $booking->total_price ?? $booking->total_amount ?? 0;
-        $depositPrice = $booking->deposit_amount ?? ($totalPrice * 0.3);
-
-        $methodCode = strtoupper($method->code ?? '');
-
-        if ($methodCode !== 'BANK_TRANSFER' && $methodCode !== 'VNPAY_QR') {
-            $amountToPay = $depositPrice;
-            $vnp_OrderInfo = "Thanh toan coc 30 phan tram don dat san " . $booking->booking_code;
+        if ($isMonthly) {
+            $amountToPay = $booking->deposit_amount ?? $booking->total_amount;
+            $vnp_OrderInfo = "Thanh toan lich co dinh thang don " . $booking->booking_code;
         } else {
-            $amountToPay = $totalPrice;
-            $vnp_OrderInfo = "Thanh toan 100 phan tram don dat san " . $booking->booking_code;
+            $methodId = $request->input('payment_method_id');
+            $method = DB::table('payment_methods')->where('id', $methodId)->first();
+
+            if (!$method) {
+                return back()->withErrors(['error' => 'Vui lòng chọn phương thức thanh toán hợp lệ.']);
+            }
+
+            $totalPrice = $booking->total_price ?? $booking->total_amount ?? 0;
+            $depositPrice = $booking->deposit_amount ?? ($totalPrice * 0.3);
+            $methodCode = strtoupper($method->code ?? '');
+
+            if ($methodCode !== 'BANK_TRANSFER' && $methodCode !== 'VNPAY_QR') {
+                $amountToPay = $depositPrice;
+                $vnp_OrderInfo = "Thanh toan coc 30% don dat san " . $booking->booking_code;
+            } else {
+                $amountToPay = $totalPrice;
+                $vnp_OrderInfo = "Thanh toan 100% don dat san " . $booking->booking_code;
+            }
         }
 
         if (!empty($booking->promotion_code) && (float) ($booking->discount_amount ?? 0) > 0) {
-            $vnp_OrderInfo .= " ma KM " . $booking->promotion_code . " giam " . number_format((float) $booking->discount_amount, 0, '.', '');
+            $vnp_OrderInfo .= " ma KM " . $booking->promotion_code;
         }
 
-        // TÍCH HỢP VNPAY (Sử dụng cấu hình của Nhật)
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         $vnp_TmnCode = "WFWAS3FC"; 
         $vnp_HashSecret = "KLUI7YPP5B9RNXCO2QIYLRKMFZI44CHX"; 
@@ -170,7 +168,6 @@ class PaymentController extends Controller
         return redirect($vnp_Url);
     }
 
-    // 3. Xử lý kết quả VNPay trả về sau khi khách thao tác xong
     public function vnpayReturn(Request $request)
     {
         $vnp_SecureHash = $request->input('vnp_SecureHash');
@@ -204,9 +201,6 @@ class PaymentController extends Controller
             $booking = DB::table('bookings')->where('booking_code', $bookingCode)->first();
 
             if ($booking) {
-                // =========================================================================
-                // CHẶN THANH TOÁN QUÁ HẠN: Kiểm tra nếu thời gian thanh toán quá 5 phút
-                // =========================================================================
                 $createdAt = Carbon::parse($booking->created_at);
                 $now = Carbon::now();
 
@@ -221,53 +215,24 @@ class PaymentController extends Controller
                 }
 
                 if ($request->input('vnp_ResponseCode') == '00') {
-                    $vnpAmountPaid = $request->input('vnp_Amount') / 100;
-                    
-                    $totalPrice = $booking->total_price ?? $booking->total_amount ?? 0;
-                    $depositPrice = $booking->deposit_amount ?? ($totalPrice * 0.3);
+                    $updateData = [
+                        'status' => 'confirmed',
+                        'is_deposit_paid' => true,
+                        'payment_status' => 'paid',
+                        'updated_at' => now()
+                    ];
 
-                    // =========================================================================
-                    // PHÂN BIỆT THEO SỐ TIỀN THỰC TRẢ ĐỂ TRÁNH LỖI CỘT PAYMENT_STATUS TRONG DB
-                    // =========================================================================
-                    if (abs($vnpAmountPaid - $depositPrice) < 100) {
-                        DB::table('bookings')->where('booking_code', $bookingCode)->update([
-                            'status' => 'confirmed',
-                            'is_deposit_paid' => true,
-                            'updated_at' => now()
-                        ]);
-
-                        DB::table('notifications')->insert([
-                            'user_id' => $booking->user_id,
-                            'title' => 'Đã cọc 30%',
-                            'content' => 'Khách hàng ' . ($booking->customer_name ?? 'Khách hàng') . ' đã thanh toán cọc 30% cho đơn ' . $bookingCode . '.',
-                            'type' => 'payment',
-                            'is_read' => false,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        return redirect()->route('user.bookings.index')
-                            ->with('success', 'Tuyệt vời! Bạn đã thanh toán thành công 30% tiền cọc. Đơn đặt sân đã được xác nhận!');
-                    } else {
-                        DB::table('bookings')->where('booking_code', $bookingCode)->update([
-                            'status' => 'confirmed',
-                            'is_deposit_paid' => true,
-                            'updated_at' => now()
-                        ]);
-
-                        DB::table('notifications')->insert([
-                            'user_id' => $booking->user_id,
-                            'title' => 'Đã thanh toán 100%',
-                            'content' => 'Khách hàng ' . ($booking->customer_name ?? 'Khách hàng') . ' đã thanh toán trọn 100% cho đơn ' . $bookingCode . '.',
-                            'type' => 'payment',
-                            'is_read' => false,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        return redirect()->route('user.bookings.index')
-                            ->with('success', 'Tuyệt vời! Bạn đã hoàn tất thanh toán 100% qua cổng VNPay. Đơn đặt sân đã được xác nhận!');
+                    $filtered = [];
+                    foreach ($updateData as $col => $val) {
+                        if (Schema::hasColumn('bookings', $col)) {
+                            $filtered[$col] = $val;
+                        }
                     }
+
+                    DB::table('bookings')->where('booking_code', $bookingCode)->update($filtered);
+
+                    return redirect()->route('user.bookings.index')
+                        ->with('success', 'Tuyệt vời! Thanh toán qua cổng VNPay thành công. Đơn đặt sân đã được xác nhận!');
                 } else {
                     return redirect()->route('user.bookings.index')
                         ->with('error', 'Thanh toán không thành công hoặc giao dịch đã bị hủy.');
@@ -278,7 +243,7 @@ class PaymentController extends Controller
             }
         } else {
             return redirect()->route('user.bookings.index')
-                ->with('error', 'Chữ ký phản hồi không hợp lệ (Lỗi bảo mật bảo mật).');
+                ->with('error', 'Chữ ký phản hồi không hợp lệ.');
         }
     }
 }
