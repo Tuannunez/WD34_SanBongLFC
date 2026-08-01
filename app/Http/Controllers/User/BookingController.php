@@ -267,7 +267,7 @@ class BookingController extends Controller
                 ->withInput()
                 ->withErrors([
                     'booking_date' => 'Ngày đặt sân không hợp lệ.',
-                ]);     
+                ]);    
         }
 
         $timeSlotText = $request->input('time_slot');
@@ -607,7 +607,6 @@ class BookingController extends Controller
         }
     }
 
-    // 🔥 HÀM XỬ LÝ ĐẶT LỊCH CỐ ĐỊNH THEO THÁNG (CỌC 50% HOẶC 100%)
     public function storeMonthly(Request $request)
     {
         if (!Auth::check()) {
@@ -669,7 +668,6 @@ class BookingController extends Controller
         $totalSlots = count($datesInMonth);
         $totalAmount = $pricePerSlot * $totalSlots;
         
-        // Đơn tháng: cọc 50% nếu chọn deposit_50, ngược lại trả đủ 100%
         $depositAmount = ($paymentType === 'deposit_50') ? ($totalAmount * 0.50) : $totalAmount;
 
         $bookingCode = 'BKMONTH' . now()->format('YmdHis') . Str::upper(Str::random(2));
@@ -695,7 +693,7 @@ class BookingController extends Controller
                 'total_amount' => $totalAmount,
                 'total_price' => $totalAmount,
                 'final_amount' => $totalAmount,
-                'deposit_amount' => $depositAmount, // Lưu đúng 50% hoặc 100%
+                'deposit_amount' => $depositAmount,
                 'is_deposit_paid' => false,
                 'discount_amount' => 0,
                 'status' => 'pending',
@@ -745,6 +743,7 @@ class BookingController extends Controller
         }
     }
 
+    // 🔥 HÀM HỦY ĐƠN & GỬI YÊU CẦU HOÀN TIỀN VỀ CHO ADMIN
     public function destroy(Request $request, int $booking)
     {
         $bookingData = DB::table('bookings')
@@ -778,6 +777,57 @@ class BookingController extends Controller
             ]);
         }
 
+        // Tính toán số tiền được hoàn dựa trên thời gian và số tiền đã thanh toán
+        $totalMoneyRow = (float)($bookingData->total_amount ?? $bookingData->total_price ?? $bookingData->final_amount ?? 0);
+        $paidAmt = (float)($bookingData->paid_amount ?? 0);
+        $depositAmt = (float)($bookingData->deposit_amount ?? 0);
+
+        $pType = strtolower((string)($bookingData->payment_type ?? ''));
+        $pStatus = strtolower((string)($bookingData->payment_status ?? ''));
+        $isPaidFull = ($pType === 'full' || in_array($pStatus, ['paid', 'completed']) || ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0));
+
+        $estRefund = 0;
+        $bookingDate = $bookingData->detail_booking_date ?? $bookingData->booking_date ?? now()->format('Y-m-d');
+        $startTime = $bookingData->slot_start_time ?? $bookingData->start_time ?? '00:00:00';
+
+        $mDate = Carbon::parse($bookingDate . ' ' . $startTime);
+        $hrs = Carbon::now()->diffInHours($mDate, false);
+
+        if ($status === 'pending') {
+            $estRefund = 0; // Đơn chưa thanh toán thì không có tiền hoàn
+        } elseif ($hrs >= 24) {
+            if ($isPaidFull) {
+                $estRefund = $totalMoneyRow * 0.70;
+            } else {
+                $estRefund = $depositAmt * 0.50;
+            }
+        } else {
+            if ($isPaidFull) {
+                $estRefund = $totalMoneyRow * 0.30;
+            } else {
+                $estRefund = 0;
+            }
+        }
+
+        // Gom thông tin ngân hàng khách nhập từ modal
+        $bankName = trim($request->input('bank_name', ''));
+        $bankAccount = trim($request->input('bank_account_number', ''));
+        $bankHolder = trim($request->input('bank_account_holder', ''));
+        $cancelReason = trim($request->input('cancel_reason', 'Không có lý do'));
+
+        $bankInfoSummary = "";
+        if ($estRefund > 0) {
+            if (!$bankName || !$bankAccount || !$bankHolder) {
+                return back()->withErrors(['delete_booking' => 'Vui lòng điền đầy đủ thông tin tài khoản ngân hàng để nhận tiền hoàn.']);
+            }
+            $bankInfoSummary = "\nNgân hàng: {$bankName}\nSố STK: {$bankAccount}\nChủ STK: {$bankHolder}\nLý do hủy: {$cancelReason}";
+        } else {
+            $bankInfoSummary = "\nLý do hủy: {$cancelReason} (Đơn không hoàn tiền)";
+        }
+
+        $existingNote = $bookingData->note ?? '';
+        $finalNote = trim($existingNote . "\n--- THÔNG TIN HỦY SÂN & HOÀN TIỀN ---" . $bankInfoSummary);
+
         try {
             DB::beginTransaction();
 
@@ -786,6 +836,9 @@ class BookingController extends Controller
                 ->where('user_id', Auth::id())
                 ->update([
                     'status' => 'cancelled',
+                    'refund_amount' => $estRefund,
+                    'refund_status' => ($estRefund > 0) ? 'pending' : 'none',
+                    'note' => $finalNote,
                     'updated_at' => now(),
                 ]);
 
@@ -798,11 +851,22 @@ class BookingController extends Controller
                     ]);
             }
 
+            // Gửi thông báo về cho Admin
+            DB::table('notifications')->insert([
+                'user_id' => Auth::id(),
+                'title' => 'Yêu cầu hủy đơn & hoàn tiền',
+                'content' => 'Khách hàng vừa hủy đơn #' . $bookingData->id . ($estRefund > 0 ? " và yêu cầu hoàn tiền số tiền " . number_format($estRefund, 0, ',', '.') . "đ." : "."),
+                'type' => 'booking',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             DB::commit();
 
             return redirect()
                 ->route('user.bookings.index')
-                ->with('success', 'Hủy đơn đặt sân thành công.');
+                ->with('success', $estRefund > 0 ? 'Đã gửi yêu cầu hủy đơn và hoàn tiền tới hệ thống thành công. Vui lòng chờ Admin xử lý chuyển khoản.' : 'Hủy đơn đặt sân thành công.');
 
         } catch (\Throwable $e) {
             DB::rollBack();

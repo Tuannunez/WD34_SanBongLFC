@@ -303,7 +303,6 @@
 
                                         $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
                                         
-                                        // Đơn tháng cọc 50%, đơn lẻ cọc 30%
                                         $defaultDepositPercent = $isMonthly ? 0.50 : 0.30;
                                         $depositAmount = (float)($booking->deposit_amount ?? ($totalMoneyRow * $defaultDepositPercent));
                                         $depositLabel = $isMonthly ? 'Đã cọc 50%' : 'Đã cọc 30%';
@@ -589,7 +588,7 @@
                                                                                 </div>
                                                                             @else
                                                                                 <p class="fs-6 text-dark mb-1">
-                                                                                    Bạn có chắc chắn muốn hủy đơn đặt sân này không? Do đã sát giờ đá nên đơn này sẽ <strong class="text-danger">không được hoàn lại tiền</strong>.
+                                                                                    Bạn có chắc chắn muốn hủy đơn đặt sân này không? Do đơn chưa thanh toán hoặc đã sát giờ nên sẽ <strong class="text-danger">không có tiền hoàn lại</strong>.
                                                                                 </p>
                                                                             @endif
                                                                         </div>
