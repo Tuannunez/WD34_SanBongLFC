@@ -59,6 +59,12 @@
             @endif
         </div>
 
+        @php
+            if (!isset($sidebarItems)) {
+                $sidebarItems = $news->count() ? $news->getCollection()->slice(0, 5) : collect();
+            }
+        @endphp
+
         <div class="col-xl-4">
             <div class="sticky-top" style="top: 100px;">
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
