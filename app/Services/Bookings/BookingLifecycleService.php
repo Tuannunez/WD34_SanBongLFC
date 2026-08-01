@@ -369,6 +369,38 @@ final class BookingLifecycleService
                 return ['actions' => $actions, 'missing_schedule' => false];
             }
 
+            // Tự chữa dữ liệu lệch: đã check-out nhưng trạng thái đơn vẫn confirmed.
+            if (
+                $usageStatus === Booking::USAGE_CHECKED_OUT
+                && $now->greaterThanOrEqualTo($window->endsAt)
+            ) {
+                $completeAction = $this->actionRow(
+                    $booking,
+                    self::ACTION_COMPLETED,
+                    'status',
+                    Booking::STATUS_CONFIRMED,
+                    Booking::STATUS_COMPLETED,
+                    'repair_completed_after_existing_check_out',
+                    $window->endsAt,
+                    $window,
+                );
+                $actions[] = $completeAction;
+
+                if (! $dryRun) {
+                    $booking->forceFill([
+                        'status' => Booking::STATUS_COMPLETED,
+                        'completed_at' => $booking->completed_at
+                            ?? $booking->checked_out_at
+                            ?? $window->endsAt,
+                    ])->save();
+
+                    $this->recordHistory($completeAction);
+                    $this->syncDetailStatus($booking, Booking::STATUS_COMPLETED);
+                }
+
+                return ['actions' => $actions, 'missing_schedule' => false];
+            }
+
             // Chỉ đơn đã được khách check-in mới được tự check-out và hoàn tất.
             if (
                 $usageStatus === Booking::USAGE_CHECKED_IN
@@ -490,30 +522,64 @@ final class BookingLifecycleService
      */
     private function noShowMoney(Booking $booking): array
     {
+        $paymentStatus = strtolower((string) (
+            $booking->payment_status
+            ?? Booking::PAYMENT_UNPAID
+        ));
+
         $recordedPaid = max(0, (float) ($booking->paid_amount ?? 0));
         $deposit = max(0, (float) ($booking->deposit_amount ?? 0));
 
-        $effectivePaid = max(
-            $recordedPaid,
-            (bool) ($booking->is_deposit_paid ?? false) ? $deposit : 0,
+        $totalPayable = max(
+            0,
+            (float) (
+                $booking->final_amount
+                ?? $booking->total_amount
+                ?? $booking->total_price
+                ?? $booking->total
+                ?? 0
+            ),
         );
+
+        /*
+         * Một số callback VNPay cũ chỉ cập nhật payment_status mà chưa cập nhật
+         * paid_amount. Khi đó vẫn phải nhận diện được số cọc đã thực thu.
+         */
+        $effectivePaid = $recordedPaid;
+
+        if (
+            $paymentStatus === Booking::PAYMENT_DEPOSIT_PAID
+            || (bool) ($booking->is_deposit_paid ?? false)
+        ) {
+            $effectivePaid = max($effectivePaid, $deposit);
+        }
+
+        if (in_array($paymentStatus, [
+            Booking::PAYMENT_PAID,
+            'completed',
+            'paid_full',
+        ], true)) {
+            $effectivePaid = max($effectivePaid, $totalPayable, $deposit);
+        }
 
         if (! (bool) config('booking_lifecycle.forfeit_deposit_on_no_show', true)) {
             return [
-                'paid' => $effectivePaid,
+                'paid' => round($effectivePaid, 2),
                 'forfeited' => 0,
-                'refundable' => $effectivePaid,
+                'refundable' => round($effectivePaid, 2),
             ];
         }
 
-        // Chỉ được giữ đúng phần tiền cọc đã cấu hình. Nếu đơn không có tiền cọc,
-        // không được tự ý giữ toàn bộ số tiền khách đã thanh toán.
+        /*
+         * Chỉ giữ tối đa số tiền cọc đã cấu hình. Không tự ý giữ toàn bộ tiền
+         * nếu booking không có deposit_amount.
+         */
         $forfeited = $deposit > 0
             ? min($effectivePaid, $deposit)
             : 0;
 
         return [
-            'paid' => $effectivePaid,
+            'paid' => round($effectivePaid, 2),
             'forfeited' => round($forfeited, 2),
             'refundable' => round(max(0, $effectivePaid - $forfeited), 2),
         ];

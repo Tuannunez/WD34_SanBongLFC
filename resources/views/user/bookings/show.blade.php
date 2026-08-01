@@ -33,6 +33,14 @@
         </div>
     @endif
 
+    @if($errors->has('check_in'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ $errors->first('check_in') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    @endif
+
     @php
         $status = $booking->status ?? 'pending';
 
@@ -140,10 +148,14 @@
 
                 $startTime = $detail->slot_start_time
                     ?? $detail->start_time
+                    ?? data_get($detail, 'timeSlot.start_time')
+                    ?? data_get($detail, 'time_slot.start_time')
                     ?? null;
 
                 $endTime = $detail->slot_end_time
                     ?? $detail->end_time
+                    ?? data_get($detail, 'timeSlot.end_time')
+                    ?? data_get($detail, 'time_slot.end_time')
                     ?? null;
 
                 if (!$date || !$startTime || !$endTime) {
@@ -201,7 +213,7 @@
 
         $isPaid = in_array(
             $paymentStatus,
-            ['deposit_paid', 'paid'],
+            ['deposit_paid', 'paid', 'completed', 'paid_full'],
             true
         )
             || (float) ($booking->paid_amount ?? 0) > 0
@@ -513,10 +525,14 @@
 
                                 $startTime = $detail->slot_start_time
                                     ?? $detail->start_time
+                                    ?? data_get($detail, 'timeSlot.start_time')
+                                    ?? data_get($detail, 'time_slot.start_time')
                                     ?? null;
 
                                 $endTime = $detail->slot_end_time
                                     ?? $detail->end_time
+                                    ?? data_get($detail, 'timeSlot.end_time')
+                                    ?? data_get($detail, 'time_slot.end_time')
                                     ?? null;
                             @endphp
 

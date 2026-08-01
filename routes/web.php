@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\BookingDetailController;
 use App\Http\Controllers\Admin\BookingServiceController;
 use App\Http\Controllers\Admin\FieldController;
@@ -217,7 +218,7 @@ Route::prefix('admin')
     ->group(function (): void {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
-        Route::view('/dashboard', 'admin.dashboard')
+        Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 
         /*

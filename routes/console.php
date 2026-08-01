@@ -10,4 +10,8 @@ Artisan::command('inspire', function () {
 
 Schedule::command('bookings:sync-lifecycle')
     ->everyMinute()
+    ->timezone((string) config(
+        'booking_lifecycle.timezone',
+        config('app.timezone', 'Asia/Ho_Chi_Minh'),
+    ))
     ->withoutOverlapping(5);
