@@ -1,7 +1,108 @@
 @extends('admin.layouts.app')
 
-@section('content')
+@section('title', 'Chi tiết đơn đặt sân')
 
+@push('styles')
+<style>
+    .detail-card {
+        border: 0;
+        border-radius: 20px;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
+    }
+
+    .summary-box {
+        min-height: 122px;
+        border: 1px solid #e9eef5;
+        border-radius: 17px;
+        background: #fff;
+    }
+
+    .lifecycle-track {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .lifecycle-track::before {
+        content: "";
+        position: absolute;
+        top: 24px;
+        left: 14%;
+        right: 14%;
+        height: 3px;
+        background: #e2e8f0;
+        z-index: 0;
+    }
+
+    .lifecycle-step {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+    }
+
+    .lifecycle-icon {
+        width: 50px;
+        height: 50px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #e2e8f0;
+        color: #64748b;
+        font-size: 20px;
+        border: 5px solid #fff;
+    }
+
+    .lifecycle-step.done .lifecycle-icon {
+        color: #fff;
+        background: #16a34a;
+    }
+
+    .lifecycle-step.current .lifecycle-icon {
+        color: #fff;
+        background: #0d6efd;
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, .12);
+    }
+
+    .lifecycle-step.failed .lifecycle-icon {
+        color: #fff;
+        background: #dc3545;
+        box-shadow: 0 0 0 6px rgba(220, 53, 69, .12);
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 11px 0;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        .lifecycle-track {
+            grid-template-columns: 1fr;
+        }
+
+        .lifecycle-track::before {
+            display: none;
+        }
+
+        .lifecycle-step {
+            text-align: left;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+    }
+</style>
+@endpush
+
+@section('content')
 @php
     $bookingDetails = $bookingDetails
         ?? $booking->bookingDetails
@@ -15,522 +116,613 @@
         ?? $booking->payments
         ?? collect();
 
-    $bookingReview = $bookingReview
-        ?? $booking->review
-        ?? null;
+    $statusHistories = $statusHistories ?? collect();
+
+    $status = strtolower((string) ($booking->status ?? 'pending'));
+    $usageStatus = strtolower((string) ($booking->usage_status ?? 'not_checked_in'));
+    $paymentStatus = strtolower((string) ($booking->payment_status ?? 'unpaid'));
+
+    $statusMeta = [
+        'pending' => ['Chờ thanh toán', 'warning'],
+        'confirmed' => ['Đã xác nhận', 'primary'],
+        'completed' => ['Hoàn thành', 'success'],
+        'cancelled' => ['Đã hủy', 'danger'],
+    ];
+
+    $usageMeta = [
+        'not_checked_in' => ['Chưa check-in', 'secondary'],
+        'checked_in' => ['Đang sử dụng sân', 'info'],
+        'checked_out' => ['Đã check-out', 'success'],
+    ];
+
+    $paymentMeta = [
+        'unpaid' => ['Chưa thanh toán', 'secondary'],
+        'deposit_paid' => ['Đã thanh toán cọc', 'warning'],
+        'paid' => ['Đã thanh toán', 'success'],
+        'partially_refunded' => ['Hoàn một phần', 'info'],
+        'refunded' => ['Đã hoàn tiền', 'primary'],
+    ];
+
+    [$statusText, $statusColor] = $statusMeta[$status]
+        ?? [ucfirst($status), 'secondary'];
+
+    [$usageText, $usageColor] = $usageMeta[$usageStatus]
+        ?? [ucfirst($usageStatus), 'secondary'];
+
+    [$paymentText, $paymentColor] = $paymentMeta[$paymentStatus]
+        ?? [ucfirst($paymentStatus), 'secondary'];
+
+    $checkedInAt = !empty($booking->checked_in_at)
+        ? \Carbon\Carbon::parse($booking->checked_in_at)
+        : null;
+
+    $checkedOutAt = !empty($booking->checked_out_at)
+        ? \Carbon\Carbon::parse($booking->checked_out_at)
+        : null;
+
+    $noShowAt = !empty($booking->no_show_at)
+        ? \Carbon\Carbon::parse($booking->no_show_at)
+        : null;
+
+    $firstDetail = $bookingDetails->first();
+    $lastDetail = $bookingDetails->last();
+
+    $bookingDate = data_get($firstDetail, 'booking_date')
+        ?? data_get($firstDetail, 'date')
+        ?? data_get($booking, 'booking_date');
+
+    $startTime = data_get($firstDetail, 'slot_start_time')
+        ?? data_get($firstDetail, 'start_time')
+        ?? data_get($firstDetail, 'timeSlot.start_time');
+
+    $endTime = data_get($lastDetail, 'slot_end_time')
+        ?? data_get($lastDetail, 'end_time')
+        ?? data_get($lastDetail, 'timeSlot.end_time');
+
+    $totalMoney = $booking->final_amount
+        ?? $booking->total_amount
+        ?? $booking->total_price
+        ?? $booking->total
+        ?? 0;
+
+    $depositAmount = (float) ($booking->deposit_amount ?? 0);
+    $forfeitedAmount = (float) ($booking->deposit_forfeited_amount ?? 0);
+    $refundAmount = (float) ($booking->refund_amount ?? 0);
+
+    $customerName = data_get($booking, 'user.name')
+        ?? $booking->customer_name
+        ?? $booking->name
+        ?? 'Khách hàng';
+
+    $customerEmail = data_get($booking, 'user.email')
+        ?? $booking->customer_email
+        ?? $booking->email
+        ?? '-';
+
+    $customerPhone = $booking->customer_phone
+        ?? $booking->phone
+        ?? data_get($booking, 'user.phone')
+        ?? '-';
+
+    $isNoShow = $noShowAt !== null;
+    $isCheckedIn = $usageStatus === 'checked_in';
+    $isCheckedOut = $usageStatus === 'checked_out';
 @endphp
-<style>
-    .refund-card {
-        border: 1px solid #fee2e2;
-        border-radius: 16px;
-        background: #ffffff;
-        box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.08);
-        overflow: hidden;
-    }
-    .refund-header {
-        background: linear-gradient(135deg, #fef2f2 0%, #ffe4e6 100%);
-        border-bottom: 1px solid #fecdd3;
-        padding: 24px 28px;
-    }
-    .bank-info-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 20px;
-    }
-    .bank-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px dashed #e2e8f0;
-    }
-    .bank-item:last-child {
-        border-bottom: none;
-    }
-    .card-equal-height {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-</style>
 
-<div class="container-fluid py-4">
-
-    @php
-        /*
-        |--------------------------------------------------------------------------
-        | Trạng thái check-in / check-out
-        |--------------------------------------------------------------------------
-        */
-        $checkedInAt = null;
-        $checkedOutAt = null;
-
-        if (!empty($booking->checked_in_at)) {
-            try {
-                $checkedInAt = \Carbon\Carbon::parse($booking->checked_in_at);
-            } catch (\Throwable $exception) {
-                $checkedInAt = null;
-            }
-        }
-
-        if (!empty($booking->checked_out_at)) {
-            try {
-                $checkedOutAt = \Carbon\Carbon::parse($booking->checked_out_at);
-            } catch (\Throwable $exception) {
-                $checkedOutAt = null;
-            }
-        }
-
-        $usageStatus = strtolower((string) ($booking->usage_status ?? ''));
-
-        if ($usageStatus === '') {
-            if ($checkedOutAt) {
-                $usageStatus = 'checked_out';
-            } elseif ($checkedInAt) {
-                $usageStatus = 'checked_in';
-            } else {
-                $usageStatus = 'not_checked_in';
-            }
-        }
-
-        $usageText = match ($usageStatus) {
-            'checked_in', 'in_use' => 'Đã check-in',
-            'checked_out' => 'Đã check-out',
-            'waiting' => 'Chờ check-in',
-            default => 'Chưa check-in',
-        };
-
-        $usageClass = match ($usageStatus) {
-            'checked_in', 'in_use' => 'bg-info-subtle text-info-emphasis',
-            'checked_out' => 'bg-success-subtle text-success',
-            'waiting' => 'bg-warning-subtle text-warning',
-            default => 'bg-secondary-subtle text-secondary',
-        };
-    @endphp
-
-    {{-- HEADER TRANG --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <div class="d-flex align-items-center gap-2">
-                <h3 class="fw-bold text-dark mb-0">Đơn đặt sân #{{ $booking->id }}</h3>
-                @if(!empty($booking->booking_code) || !empty($booking->code))
-                    <span class="badge bg-secondary-subtle text-secondary px-3 py-1.5 rounded-pill small">
-                        {{ $booking->booking_code ?? $booking->code }}
-                    </span>
-                @endif
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <h3 class="fw-bold mb-0">
+                    Đơn đặt sân #{{ $booking->id }}
+                </h3>
 
-                <span class="badge {{ $usageClass }} px-3 py-1.5 rounded-pill small">
-                    @if(in_array($usageStatus, ['checked_in', 'in_use'], true))
-                        <i class="bi bi-box-arrow-in-right me-1"></i>
-                    @elseif($usageStatus === 'checked_out')
-                        <i class="bi bi-box-arrow-right me-1"></i>
-                    @else
-                        <i class="bi bi-clock me-1"></i>
-                    @endif
+                <span class="badge bg-{{ $statusColor }}-subtle text-{{ $statusColor }}">
+                    {{ $statusText }}
+                </span>
 
+                <span class="badge bg-{{ $usageColor }}-subtle text-{{ $usageColor }}">
                     {{ $usageText }}
                 </span>
             </div>
-            <p class="text-muted small mb-0 mt-1">Quản lý thông tin chi tiết và xử lý yêu cầu hủy hoàn tiền</p>
+
+            <div class="text-muted mt-1">
+                {{ $booking->booking_code ?? $booking->code ?? 'Không có mã đơn' }}
+            </div>
         </div>
-        <a href="{{ route('admin.bookings.index') }}" class="btn btn-white border rounded-3 shadow-sm px-3 fw-medium">
-            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
-        </a>
+
+        <div class="d-flex gap-2">
+            @if(\Illuminate\Support\Facades\Route::has('admin.bookings.invoice'))
+                <a
+                    href="{{ route('admin.bookings.invoice', $booking->id) }}"
+                    class="btn btn-outline-primary"
+                    target="_blank"
+                >
+                    <i class="bi bi-receipt me-1"></i>
+                    Hóa đơn
+                </a>
+            @endif
+
+            <a
+                href="{{ route('admin.bookings.index') }}"
+                class="btn btn-light border"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Quay lại
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3" style="background: #f0fdf4; color: #166534;">
-            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
-            <div class="fw-medium">{{ session('success') }}</div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success rounded-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
         </div>
     @endif
 
-    {{-- ========================================================================= --}}
-    {{-- 🔥 1. KHUNG HOÀN TIỀN CÓ PADDING RỘNG RÃI - KHÔNG BỊ DÍNH SÁT KHUNG --}}
-    {{-- ========================================================================= --}}
-    @if(($booking->status ?? '') === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
-        
-        @php
-            $rawNote = $booking->cancel_note ?? $booking->note ?? '';
-            
-            preg_match('/Ngân hàng:\s*([^\n]+)/u', $rawNote, $mBank);
-            preg_match('/Số STK:\s*([^\n]+)/u', $rawNote, $mStk);
-            preg_match('/Chủ STK:\s*([^\n]+)/u', $rawNote, $mHolder);
-            preg_match('/Lý do hủy:\s*([^\n]+)/u', $rawNote, $mReason);
+    @if($errors->any())
+        <div class="alert alert-danger rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ $errors->first() }}
+        </div>
+    @endif
 
-            $bankName = trim($mBank[1] ?? 'Chưa xác định');
-            $stk = trim($mStk[1] ?? 'Chưa có STK');
-            $holder = trim($mHolder[1] ?? 'Chưa có tên');
-            $reason = trim($mReason[1] ?? 'Không có lý do');
-            $rfStatus = $booking->refund_status ?? 'pending';
-        @endphp
-
-        <div class="refund-card mb-4">
-            {{-- HEADER KHUNG REDUND (ĐÃ TĂNG PADDING) --}}
-            <div class="refund-header d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 46px; height: 46px;">
-                        <i class="bi bi-arrow-counterclockwise fs-4"></i>
+    @if($isNoShow)
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4">
+            <div class="d-flex gap-3">
+                <i class="bi bi-person-x-fill fs-3"></i>
+                <div>
+                    <div class="fw-bold fs-5">
+                        Khách không check-in trong vòng 15 phút
                     </div>
                     <div>
-                        <h5 class="fw-bold text-danger mb-0 fs-6">Yêu cầu chuyển khoản hoàn tiền</h5>
-                        <small class="text-danger-emphasis">Khách hàng đã gửi thông tin tài khoản nhận tiền hoàn</small>
+                        Hệ thống đã tự động hủy đơn lúc
+                        <strong>{{ $noShowAt->format('H:i d/m/Y') }}</strong>
+                        và giữ lại tiền cọc
+                        <strong>{{ number_format($forfeitedAmount, 0, ',', '.') }}đ</strong>.
                     </div>
-                </div>
-                <div class="text-end pe-2">
-                    <span class="small text-muted d-block mb-1">Số tiền Cần Hoàn:</span>
-                    <span class="fs-3 fw-bold text-danger">{{ number_format($booking->refund_amount, 0, ',', '.') }}đ</span>
-                </div>
-            </div>
-
-            {{-- BODY KHUNG REFUND (THÊM THONG THA PADDING 28PX) --}}
-            <div class="p-4 p-md-4 px-lg-5 py-lg-4">
-                <div class="row g-4 align-items-stretch">
-                    
-                    {{-- CỘT TRÁI: TÀI KHOẢN NGÂN HÀNG KHÁCH --}}
-                    <div class="col-lg-6">
-                        <div class="bank-info-box h-100">
-                            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
-                                <i class="bi bi-bank text-primary fs-5"></i>
-                                Tài khoản ngân hàng nhận tiền
-                            </h6>
-
-                            <div class="bank-item">
-                                <span class="text-muted small">Ngân hàng:</span>
-                                <span class="fw-bold text-dark">{{ $bankName }}</span>
-                            </div>
-
-                            <div class="bank-item">
-                                <span class="text-muted small">Số tài khoản:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold fs-6 text-primary">{{ $stk }}</span>
-                                    <button class="btn btn-sm btn-light border py-0 px-2" onclick="navigator.clipboard.writeText('{{ $stk }}'); alert('Đã sao chép STK!');" title="Copy STK">
-                                        <i class="bi bi-copy small"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="bank-item">
-                                <span class="text-muted small">Chủ tài khoản:</span>
-                                <span class="fw-bold text-dark text-uppercase">{{ $holder }}</span>
-                            </div>
-
-                            <div class="bank-item">
-                                <span class="text-muted small">Lý do hủy sân:</span>
-                                <span class="fw-medium text-secondary text-end style-italic" style="max-width: 65%;">"{{ $reason }}"</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- CỘT PHẢI: TẢI BILL --}}
-                    <div class="col-lg-6">
-                        @if($rfStatus === 'pending')
-                            <div class="bg-light rounded-4 p-4 border h-100 d-flex flex-column justify-content-between">
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-1">
-                                        <i class="bi bi-cloud-arrow-up text-danger me-1"></i> Tải ảnh hóa đơn đã chuyển khoản
-                                    </h6>
-                                    <p class="small text-muted mb-3">Sau khi chuyển khoản <strong>{{ number_format($booking->refund_amount, 0, ',', '.') }}đ</strong>, tải ảnh Bill chụp màn hình vào đây:</p>
-                                </div>
-
-                                <form action="{{ route('admin.bookings.processRefund', $booking->id) }}" method="POST" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="mb-3">
-                                        <input type="file" name="refund_proof_image" class="form-control rounded-3" accept="image/*" required>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <input type="text" name="refund_proof_note" class="form-control rounded-3" placeholder="Ghi chú thêm (VD: Đã CK từ MB Bank lúc 15:30)">
-                                    </div>
-
-                                    <button type="submit" class="btn btn-danger w-100 rounded-3 fw-bold py-2.5 shadow-sm">
-                                        <i class="bi bi-send me-1"></i> Xác Nhận Đã CK & Gửi Bill Cho Khách
-                                    </button>
-                                </form>
-                            </div>
-
-                        @elseif($rfStatus === 'completed')
-                            <div class="bg-success-subtle rounded-4 p-4 text-center border border-success-subtle h-100 d-flex flex-column align-items-center justify-content-center">
-                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px;">
-                                    <i class="bi bi-check-lg fs-4"></i>
-                                </div>
-                                <h6 class="fw-bold text-success mb-1">ĐÃ TẢI BILL CHUYỂN KHOẢN</h6>
-                                <p class="small text-muted mb-3">Đã gửi bằng chứng hoàn tiền cho khách. Đang chờ khách bấm xác nhận.</p>
-                                
-                                @if(!empty($booking->refund_proof_image))
-                                    <a href="{{ asset($booking->refund_proof_image) }}" target="_blank" class="btn btn-sm btn-white border rounded-3 shadow-sm fw-medium">
-                                        <i class="bi bi-image me-1"></i> Xem ảnh Bill đã gửi
-                                    </a>
-                                @endif
-                            </div>
-
-                        @elseif($rfStatus === 'disputed')
-                            <div class="bg-danger-subtle rounded-4 p-4 border border-danger h-100">
-                                <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-octagon-fill me-1"></i> KHÁCH BÁO CHƯA NHẬN ĐƯỢC TIỀN</h6>
-                                <p class="small text-dark mb-2">Khách phản hồi:</p>
-                                <div class="p-3 bg-white rounded-3 border text-danger fw-bold small mb-3">
-                                    "{{ $booking->user_dispute_reason }}"
-                                </div>
-                                <p class="small text-muted mb-0">👉 Vui lòng gọi điện hỗ trợ khách: <strong>{{ $booking->customer_phone ?? $booking->phone }}</strong></p>
-                            </div>
-
-                        @elseif($rfStatus === 'confirmed_by_user')
-                            <div class="bg-primary-subtle rounded-4 p-4 text-center border border-primary-subtle h-100 d-flex flex-column align-items-center justify-content-center">
-                                <i class="bi bi-patch-check-fill text-primary fs-1 mb-1"></i>
-                                <h6 class="fw-bold text-primary mb-1">HOÀN TẤT GIAO DỊCH</h6>
-                                <p class="small text-primary-emphasis mb-0">Khách hàng đã bấm xác nhận nhận đủ tiền.</p>
-                            </div>
-                        @endif
-                    </div>
-
                 </div>
             </div>
         </div>
     @endif
 
-    {{-- ========================================================================= --}}
-    {{-- 📑 2. BỐ CỤC 2 CỘT BẰNG NHAU (CARD-EQUAL-HEIGHT) --}}
-    {{-- ========================================================================= --}}
-    <div class="row g-4 align-items-stretch">
-        {{-- CỘT TRÁI: DANH SÁCH SÂN ĐẶT --}}
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 card-equal-height">
-                <div class="card-header bg-white border-0 py-3">
-                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i> Khung giờ & Sân bóng đã đặt</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="summary-box p-3 h-100">
+                <div class="text-muted small">Trạng thái đơn</div>
+                <div class="mt-2">
+                    <span class="badge bg-{{ $statusColor }}-subtle text-{{ $statusColor }} px-3 py-2">
+                        {{ $statusText }}
+                    </span>
                 </div>
-                <div class="card-body p-0 flex-grow-1">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4 py-3">TÊN SÂN</th>
-                                    <th class="py-3">NGÀY ĐÁ</th>
-                                    <th class="py-3">KHUNG GIỜ</th>
-                                    <th class="text-end pe-4 py-3">GIÁ TIỀN</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($bookingDetails as $detail)
-                                    <tr>
-                                        <td class="ps-4 fw-bold text-dark">{{ $detail->field_name ?? 'Sân mặc định' }}</td>
-                                        <td>{{ !empty($detail->booking_date) ? \Carbon\Carbon::parse($detail->booking_date)->format('d/m/Y') : '-' }}</td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border px-3 py-1.5 fw-semibold">
-                                                {{ $detail->slot_start_time ?? '-' }} - {{ $detail->slot_end_time ?? '-' }}
-                                            </span>
-                                        </td>
-                                        <td class="text-end pe-4 fw-bold text-success">
-                                            {{ number_format($detail->price ?? $detail->field_price_per_hour ?? 0, 0, ',', '.') }}đ
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-center py-4 text-muted">Chưa có thông tin sân.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="small text-muted mt-3">
+                    Tạo lúc:
+                    {{ !empty($booking->created_at)
+                        ? \Carbon\Carbon::parse($booking->created_at)->format('H:i d/m/Y')
+                        : '-' }}
                 </div>
             </div>
         </div>
 
-        {{-- CỘT PHẢI: THÔNG TIN KHÁCH HÀNG --}}
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 card-equal-height">
-                <div class="card-header bg-white border-0 py-3">
-                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-vcard me-2 text-primary"></i> Thông tin khách đặt</h6>
+        <div class="col-md-6 col-xl-3">
+            <div class="summary-box p-3 h-100">
+                <div class="text-muted small">Check-in / Check-out</div>
+                <div class="mt-2">
+                    <span class="badge bg-{{ $usageColor }}-subtle text-{{ $usageColor }} px-3 py-2">
+                        {{ $usageText }}
+                    </span>
                 </div>
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Họ và tên:</small>
-                            <span class="fw-bold text-dark fs-6">{{ $booking->user_name ?? $booking->customer_name ?? 'Khách hàng' }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Số điện thoại:</small>
-                            <span class="fw-bold text-dark fs-6">{{ $booking->customer_phone ?? $booking->phone ?? 'Chưa có' }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Email:</small>
-                            <span class="fw-medium text-dark">{{ $booking->user_email ?? $booking->customer_email ?? '-' }}</span>
-                        </div>
+                <div class="small text-muted mt-3">
+                    Vào: {{ $checkedInAt?->format('H:i d/m/Y') ?? 'Chưa có' }}
+                </div>
+                <div class="small text-muted">
+                    Ra: {{ $checkedOutAt?->format('H:i d/m/Y') ?? 'Chưa có' }}
+                </div>
+            </div>
+        </div>
 
-                        <div class="bg-light border rounded-3 p-3 mt-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                <small class="text-muted fw-bold">Trạng thái sử dụng sân:</small>
+        <div class="col-md-6 col-xl-3">
+            <div class="summary-box p-3 h-100">
+                <div class="text-muted small">Thanh toán</div>
+                <div class="mt-2">
+                    <span class="badge bg-{{ $paymentColor }}-subtle text-{{ $paymentColor }} px-3 py-2">
+                        {{ $paymentText }}
+                    </span>
+                </div>
+                <div class="small text-muted mt-3">
+                    Cọc: {{ number_format($depositAmount, 0, ',', '.') }}đ
+                </div>
+                <div class="small text-muted">
+                    Đã trả:
+                    {{ number_format((float) ($booking->paid_amount ?? 0), 0, ',', '.') }}đ
+                </div>
+            </div>
+        </div>
 
-                                <span class="badge {{ $usageClass }} px-3 py-2">
-                                    {{ $usageText }}
-                                </span>
-                            </div>
-
-                            @if($checkedInAt)
-                                <div class="small text-muted">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i>
-                                    Check-in: <strong>{{ $checkedInAt->format('H:i d/m/Y') }}</strong>
-                                </div>
-                            @endif
-
-                            @if($checkedOutAt)
-                                <div class="small text-muted mt-1">
-                                    <i class="bi bi-box-arrow-right me-1"></i>
-                                    Check-out: <strong>{{ $checkedOutAt->format('H:i d/m/Y') }}</strong>
-                                </div>
-                            @endif
-
-                            @if(!$checkedInAt && !$checkedOutAt)
-                                <div class="small text-muted">
-                                    Khách chưa thực hiện check-in.
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="mt-3">
-                        <hr class="my-3">
-
-
-                        {{-- Admin chỉ theo dõi; trạng thái được hệ thống tự động xử lý --}}
-                        @php
-                            $orderStatus = strtolower((string) ($booking->status ?? 'pending'));
-                            $paymentStatus = strtolower((string) ($booking->payment_status ?? 'unpaid'));
-
-                            $orderStatusText = match ($orderStatus) {
-                                'confirmed' => 'Đã xác nhận',
-                                'completed' => 'Hoàn thành',
-                                'cancelled' => 'Đã hủy',
-                                default => 'Chờ xác nhận',
-                            };
-
-                            $orderStatusClass = match ($orderStatus) {
-                                'confirmed' => 'bg-success-subtle text-success',
-                                'completed' => 'bg-primary-subtle text-primary',
-                                'cancelled' => 'bg-danger-subtle text-danger',
-                                default => 'bg-warning-subtle text-warning',
-                            };
-
-                            $paymentStatusText = match ($paymentStatus) {
-                                'deposit_paid' => 'Đã thanh toán cọc',
-                                'paid' => 'Đã thanh toán',
-                                'partially_refunded' => 'Đã hoàn một phần',
-                                'refunded' => 'Đã hoàn tiền',
-                                default => 'Chưa thanh toán',
-                            };
-
-                            $paymentStatusClass = match ($paymentStatus) {
-                                'deposit_paid' => 'bg-info-subtle text-info-emphasis',
-                                'paid' => 'bg-success-subtle text-success',
-                                'partially_refunded' => 'bg-warning-subtle text-warning',
-                                'refunded' => 'bg-secondary-subtle text-secondary',
-                                default => 'bg-danger-subtle text-danger',
-                            };
-
-                            $noShowAt = null;
-
-                            if (!empty($booking->no_show_at)) {
-                                try {
-                                    $noShowAt = \Carbon\Carbon::parse($booking->no_show_at);
-                                } catch (\Throwable $exception) {
-                                    $noShowAt = null;
-                                }
-                            }
-
-                            $forfeitedDeposit = (float) (
-                                $booking->deposit_forfeited_amount
-                                ?? ($noShowAt ? ($booking->deposit_amount ?? 0) : 0)
-                            );
-                        @endphp
-
-                        <div class="border rounded-4 p-3 bg-light">
-                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-                                <div>
-                                    <div class="fw-bold text-dark">
-                                        <i class="bi bi-cpu text-primary me-1"></i>
-                                        Trạng thái tự động
-                                    </div>
-                                    <div class="small text-muted mt-1">
-                                        Khách tự check-in. Hệ thống tự check-out khi hết giờ và tự xử lý no-show.
-                                    </div>
-                                </div>
-
-                                <span class="badge bg-white text-secondary border px-3 py-2">
-                                    Admin chỉ xem
-                                </span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center gap-2">
-                                        <span class="small text-muted">Trạng thái đơn</span>
-                                        <span class="badge {{ $orderStatusClass }} px-3 py-2">
-                                            {{ $orderStatusText }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center gap-2">
-                                        <span class="small text-muted">Thanh toán</span>
-                                        <span class="badge {{ $paymentStatusClass }} px-3 py-2">
-                                            {{ $paymentStatusText }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            @if($noShowAt)
-                                <div class="alert alert-danger border-0 rounded-3 mt-3 mb-0">
-                                    <div class="fw-bold mb-1">
-                                        <i class="bi bi-person-x-fill me-1"></i>
-                                        Khách không đến đúng hạn
-                                    </div>
-
-                                    <div class="small">
-                                        Hệ thống ghi nhận no-show lúc
-                                        <strong>{{ $noShowAt->format('H:i d/m/Y') }}</strong>.
-                                        Đơn đã tự động hủy do khách không check-in trong vòng 15 phút.
-                                    </div>
-
-                                    <div class="small mt-2">
-                                        Tiền cọc bị giữ:
-                                        <strong>{{ number_format($forfeitedDeposit, 0, ',', '.') }}đ</strong>
-                                    </div>
-
-                                    @if((float) ($booking->refund_amount ?? 0) > 0)
-                                        <div class="small mt-1">
-                                            Số tiền còn lại cần hoàn:
-                                            <strong>{{ number_format((float) $booking->refund_amount, 0, ',', '.') }}đ</strong>
-                                        </div>
-                                    @endif
-                                </div>
-                            @elseif(in_array($usageStatus, ['checked_in', 'in_use'], true))
-                                <div class="alert alert-info border-0 rounded-3 mt-3 mb-0">
-                                    <i class="bi bi-play-circle-fill me-1"></i>
-                                    Khách đang sử dụng sân. Hệ thống sẽ tự động check-out khi hết giờ.
-                                </div>
-                            @elseif($usageStatus === 'checked_out')
-                                <div class="alert alert-success border-0 rounded-3 mt-3 mb-0">
-                                    <i class="bi bi-check-circle-fill me-1"></i>
-                                    Phiên sử dụng sân đã hoàn tất và được tự động check-out.
-                                </div>
-                            @elseif($orderStatus === 'confirmed')
-                                <div class="alert alert-warning border-0 rounded-3 mt-3 mb-0">
-                                    <i class="bi bi-clock-history me-1"></i>
-                                    Đang chờ khách check-in. Admin không cần thao tác.
-                                </div>
-                            @elseif($orderStatus === 'pending')
-                                <div class="alert alert-secondary border-0 rounded-3 mt-3 mb-0">
-                                    <i class="bi bi-hourglass-split me-1"></i>
-                                    Đơn đang chờ hoàn tất thanh toán hoặc xác nhận tự động.
-                                </div>
-                            @endif
-                        </div>
-</div>
+        <div class="col-md-6 col-xl-3">
+            <div class="summary-box p-3 h-100">
+                <div class="text-muted small">Tổng tiền</div>
+                <div class="fs-3 fw-bold text-success mt-2">
+                    {{ number_format((float) $totalMoney, 0, ',', '.') }}đ
+                </div>
+                <div class="small text-muted mt-3">
+                    Hoàn lại: {{ number_format($refundAmount, 0, ',', '.') }}đ
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="card detail-card mb-4">
+        <div class="card-header bg-white border-0 p-4">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        <i class="bi bi-diagram-3 text-primary me-2"></i>
+                        Vòng đời sử dụng sân
+                    </h5>
+                    <div class="text-muted small">
+                        Khách tự check-in; Scheduler tự check-out và xử lý no-show.
+                    </div>
+                </div>
+
+                <span class="badge bg-light text-secondary border align-self-start">
+                    Tự cập nhật mỗi 20 giây
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="lifecycle-track">
+                <div class="lifecycle-step {{ in_array($status, ['confirmed', 'completed'], true) || $isCheckedIn || $isCheckedOut ? 'done' : ($status === 'pending' ? 'current' : '') }}">
+                    <span class="lifecycle-icon">
+                        <i class="bi bi-patch-check"></i>
+                    </span>
+                    <div class="fw-bold mt-2">Xác nhận đơn</div>
+                    <div class="small text-muted">
+                        {{ !empty($booking->confirmed_at)
+                            ? \Carbon\Carbon::parse($booking->confirmed_at)->format('H:i d/m/Y')
+                            : $statusText }}
+                    </div>
+                </div>
+
+                <div class="lifecycle-step {{ $isNoShow ? 'failed' : ($isCheckedIn || $isCheckedOut ? 'done' : ($status === 'confirmed' ? 'current' : '')) }}">
+                    <span class="lifecycle-icon">
+                        <i class="bi {{ $isNoShow ? 'bi-person-x' : 'bi-box-arrow-in-right' }}"></i>
+                    </span>
+                    <div class="fw-bold mt-2">
+                        {{ $isNoShow ? 'Không đến sân' : 'Check-in' }}
+                    </div>
+                    <div class="small text-muted">
+                        @if($isNoShow)
+                            {{ $noShowAt->format('H:i d/m/Y') }}
+                        @elseif($checkedInAt)
+                            {{ $checkedInAt->format('H:i d/m/Y') }}
+                        @else
+                            Chờ khách check-in
+                        @endif
+                    </div>
+                </div>
+
+                <div class="lifecycle-step {{ $isCheckedOut ? 'done' : ($isCheckedIn ? 'current' : '') }}">
+                    <span class="lifecycle-icon">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </span>
+                    <div class="fw-bold mt-2">Check-out</div>
+                    <div class="small text-muted">
+                        {{ $checkedOutAt
+                            ? $checkedOutAt->format('H:i d/m/Y')
+                            : ($isCheckedIn ? 'Sẽ tự động khi hết giờ' : 'Chưa bắt đầu') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+            <div class="card detail-card h-100">
+                <div class="card-header bg-white border-0 p-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-calendar-event text-primary me-2"></i>
+                        Sân và khung giờ
+                    </h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Sân</th>
+                                <th>Ngày đá</th>
+                                <th>Khung giờ</th>
+                                <th class="text-end pe-4">Giá sân</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse($bookingDetails as $detail)
+                                @php
+                                    $detailDate = data_get($detail, 'booking_date')
+                                        ?? data_get($detail, 'date')
+                                        ?? $bookingDate;
+
+                                    $detailStart = data_get($detail, 'slot_start_time')
+                                        ?? data_get($detail, 'start_time')
+                                        ?? data_get($detail, 'timeSlot.start_time');
+
+                                    $detailEnd = data_get($detail, 'slot_end_time')
+                                        ?? data_get($detail, 'end_time')
+                                        ?? data_get($detail, 'timeSlot.end_time');
+
+                                    $detailPrice = data_get($detail, 'price')
+                                        ?? data_get($detail, 'field_price')
+                                        ?? data_get($detail, 'field_price_per_hour')
+                                        ?? 0;
+
+                                    $fieldName = data_get($detail, 'field.name')
+                                        ?? data_get($detail, 'field.field_name')
+                                        ?? data_get($detail, 'field_name')
+                                        ?? 'Sân chưa xác định';
+                                @endphp
+
+                                <tr>
+                                    <td class="ps-4 fw-semibold">{{ $fieldName }}</td>
+                                    <td>
+                                        {{ $detailDate
+                                            ? \Carbon\Carbon::parse($detailDate)->format('d/m/Y')
+                                            : '-' }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ $detailStart ?? '-' }} – {{ $detailEnd ?? '-' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold text-success">
+                                        {{ number_format((float) $detailPrice, 0, ',', '.') }}đ
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        Chưa có chi tiết sân.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card detail-card h-100">
+                <div class="card-header bg-white border-0 p-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-person-vcard text-primary me-2"></i>
+                        Khách hàng
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="info-row">
+                        <span class="text-muted">Họ tên</span>
+                        <strong class="text-end">{{ $customerName }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted">Điện thoại</span>
+                        <strong class="text-end">{{ $customerPhone }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted">Email</span>
+                        <strong class="text-end text-break">{{ $customerEmail }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted">Ngày đặt</span>
+                        <strong class="text-end">
+                            {{ $bookingDate
+                                ? \Carbon\Carbon::parse($bookingDate)->format('d/m/Y')
+                                : '-' }}
+                        </strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted">Giờ sân</span>
+                        <strong class="text-end">
+                            {{ $startTime ?? '-' }} – {{ $endTime ?? '-' }}
+                        </strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted">Ghi chú</span>
+                        <strong class="text-end">
+                            {{ $booking->note ?? '-' }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if($bookingServices->isNotEmpty())
+        <div class="card detail-card mb-4">
+            <div class="card-header bg-white border-0 p-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-basket text-primary me-2"></i>
+                    Dịch vụ đi kèm
+                </h5>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Dịch vụ</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th class="text-end pe-4">Thành tiền</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach($bookingServices as $item)
+                            @php
+                                $quantity = (int) ($item->quantity ?? 0);
+                                $price = (float) ($item->price ?? 0);
+                                $lineTotal = (float) (
+                                    $item->total_price
+                                    ?? $item->total
+                                    ?? ($quantity * $price)
+                                );
+                            @endphp
+
+                            <tr>
+                                <td class="ps-4 fw-semibold">
+                                    {{ data_get($item, 'service.name')
+                                        ?? data_get($item, 'service.service_name')
+                                        ?? $item->service_name
+                                        ?? 'Dịch vụ' }}
+                                </td>
+                                <td>{{ $quantity }}</td>
+                                <td>{{ number_format($price, 0, ',', '.') }}đ</td>
+                                <td class="text-end pe-4 fw-bold">
+                                    {{ number_format($lineTotal, 0, ',', '.') }}đ
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    @if($status === 'cancelled' && $refundAmount > 0)
+        <div class="card detail-card mb-4">
+            <div class="card-header bg-white border-0 p-4">
+                <h5 class="fw-bold mb-1 text-danger">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>
+                    Xử lý hoàn tiền
+                </h5>
+                <div class="text-muted small">
+                    Tiền cọc bị giữ:
+                    <strong>{{ number_format($forfeitedAmount, 0, ',', '.') }}đ</strong>.
+                    Số tiền cần hoàn:
+                    <strong>{{ number_format($refundAmount, 0, ',', '.') }}đ</strong>.
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                @if(in_array((string) ($booking->refund_status ?? 'pending'), ['pending', 'disputed'], true))
+                    <form
+                        action="{{ route('admin.bookings.processRefund', $booking->id) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        data-refund-form
+                    >
+                        @csrf
+
+                        <div class="row g-3">
+                            <div class="col-lg-7">
+                                <label class="form-label fw-semibold">
+                                    Ảnh chứng từ chuyển khoản
+                                </label>
+                                <input
+                                    type="file"
+                                    name="refund_proof_image"
+                                    class="form-control"
+                                    accept="image/*"
+                                    required
+                                >
+                            </div>
+
+                            <div class="col-lg-5">
+                                <label class="form-label fw-semibold">
+                                    Ghi chú
+                                </label>
+                                <input
+                                    type="text"
+                                    name="refund_proof_note"
+                                    class="form-control"
+                                    placeholder="Ví dụ: Đã chuyển khoản lúc 15:30"
+                                >
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-cloud-arrow-up me-1"></i>
+                                    Xác nhận đã hoàn tiền
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                @else
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Chứng từ hoàn tiền đã được ghi nhận.
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if($statusHistories->isNotEmpty())
+        <div class="card detail-card">
+            <div class="card-header bg-white border-0 p-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i>
+                    Lịch sử trạng thái
+                </h5>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Thời gian</th>
+                            <th>Nhóm</th>
+                            <th>Thay đổi</th>
+                            <th>Nguồn</th>
+                            <th class="pe-4">Lý do</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach($statusHistories as $history)
+                            <tr>
+                                <td class="ps-4">
+                                    {{ !empty($history->occurred_at)
+                                        ? \Carbon\Carbon::parse($history->occurred_at)->format('H:i:s d/m/Y')
+                                        : '-' }}
+                                </td>
+                                <td>{{ $history->category ?? '-' }}</td>
+                                <td>
+                                    <span class="text-muted">
+                                        {{ $history->from_status ?? '-' }}
+                                    </span>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    <strong>{{ $history->to_status ?? '-' }}</strong>
+                                </td>
+                                <td>{{ $history->source ?? '-' }}</td>
+                                <td class="pe-4">{{ $history->reason ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const hasRefundForm = document.querySelector('[data-refund-form]');
+
+        if (hasRefundForm) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            window.location.reload();
+        }, 20000);
+    });
+</script>
+@endpush
