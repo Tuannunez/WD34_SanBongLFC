@@ -4,56 +4,78 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\User\StadiumController;
-use App\Http\Controllers\User\ServiceController as UserServiceController;
-use App\Http\Controllers\User\BookingController as UserBookingController;
-use App\Http\Controllers\User\ProfileController;
-use App\Http\Controllers\User\PaymentController;
-
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\StadiumsController;
-use App\Http\Controllers\Admin\TimeSlotsController;
-use App\Http\Controllers\Admin\FieldController;
-use App\Http\Controllers\Admin\FieldTypeController;
-use App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Admin\BookingServiceController;
+use App\Http\Controllers\User\BookingCheckInController;
+use App\Http\Controllers\User\BookingController as UserBookingController;
+use App\Http\Controllers\User\NewsController as UserNewsController;
+use App\Http\Controllers\User\NotificationController as UserNotificationController;
+use App\Http\Controllers\User\PaymentController;
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
+use App\Http\Controllers\User\ServiceController as UserServiceController;
+use App\Http\Controllers\User\StadiumController;
+
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\BookingDetailController;
+use App\Http\Controllers\Admin\BookingServiceController;
+use App\Http\Controllers\Admin\FieldController;
+use App\Http\Controllers\Admin\FieldTypeController;
+use App\Http\Controllers\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\User\ReviewController as UserReviewController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\StadiumsController;
+use App\Http\Controllers\Admin\TimeSlotsController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Middleware\EnsureUserIsAdmin;
 
-Route::middleware(['web'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| Public routes
+|--------------------------------------------------------------------------
+*/
 
-    Route::get('/', [StadiumController::class, 'index'])
-        ->name('home');
+Route::get('/', [StadiumController::class, 'index'])
+    ->name('home');
 
-    Route::view('/gioi-thieu', 'user.about')
-        ->name('about');
+Route::view('/gioi-thieu', 'user.about')
+    ->name('about');
 
-    // Public news listing and detail
-    Route::get('/tin-tuc', [App\Http\Controllers\User\NewsController::class, 'index'])
-        ->name('news.index');
-    Route::get('/tin-tuc/{news}', [App\Http\Controllers\User\NewsController::class, 'show'])
-        ->name('news.show');
+Route::get('/tin-tuc', [UserNewsController::class, 'index'])
+    ->name('news.index');
 
-    Route::get('/stadiums', [StadiumController::class, 'list'])
-        ->name('stadiums.index');
+Route::get('/tin-tuc/{news}', [UserNewsController::class, 'show'])
+    ->name('news.show');
 
-    Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
-        ->name('stadiums.show');
+Route::get('/stadiums', [StadiumController::class, 'list'])
+    ->name('stadiums.index');
 
-    Route::get('/services', [UserServiceController::class, 'index'])
-        ->name('services.index');
+Route::get('/stadiums/{id}', [StadiumController::class, 'show'])
+    ->whereNumber('id')
+    ->name('stadiums.show');
 
-    Route::get('/services/{service}', [UserServiceController::class, 'show'])
-        ->name('services.show');
+Route::get('/stadiums/{stadium}/availability', [UserBookingController::class, 'availability'])
+    ->whereNumber('stadium')
+    ->name('user.bookings.availability');
 
+Route::get('/services', [UserServiceController::class, 'index'])
+    ->name('services.index');
+
+Route::get('/services/{service}', [UserServiceController::class, 'show'])
+    ->whereNumber('service')
+    ->name('services.show');
+
+/*
+|--------------------------------------------------------------------------
+| Authentication routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
@@ -65,174 +87,255 @@ Route::middleware(['web'])->group(function () {
 
     Route::post('/login', [LoginController::class, 'store'])
         ->name('login.store');
-    
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated user routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function (): void {
+    Route::post('/logout', function (Request $request) {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('home');
+    })->name('logout');
+
+    // Đặt sân.
+    Route::get('/dat-san/{stadium}', [UserBookingController::class, 'create'])
+        ->whereNumber('stadium')
+        ->name('user.bookings.create');
+
+    Route::post('/dat-san', [UserBookingController::class, 'store'])
+        ->name('user.bookings.store');
+
     Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
+        ->whereNumber('stadium')
         ->name('user.bookings.store.from-stadium');
 
-    Route::get('/stadiums/{stadium}/availability', [UserBookingController::class, 'availability'])
-        ->name('user.bookings.availability');
+    // Đơn đặt sân của người dùng.
+    Route::get('/don-dat-san-cua-toi', [UserBookingController::class, 'index'])
+        ->name('user.bookings.index');
 
-    Route::middleware(['auth'])->group(function () {
+    Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
+        ->whereNumber('booking')
+        ->name('user.bookings.show');
 
-        Route::get('/dat-san/{stadium}', [UserBookingController::class, 'create'])
-            ->name('user.bookings.create');
+    /*
+     * Người dùng tự check-in.
+     * Không có route check-out: Scheduler tự check-out khi hết giờ sân.
+     */
+    Route::post(
+        '/don-dat-san-cua-toi/{booking}/check-in',
+        [BookingCheckInController::class, 'store']
+    )
+        ->whereNumber('booking')
+        ->middleware('throttle:10,1')
+        ->name('user.bookings.check-in');
 
-        Route::post('/dat-san', [UserBookingController::class, 'store'])
-            ->name('user.bookings.store');
+    Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
+        ->whereNumber('booking')
+        ->name('user.bookings.destroy');
 
-        Route::get('/don-dat-san-cua-toi', [UserBookingController::class, 'index'])
-            ->name('user.bookings.index');
+    Route::post('/don-dat-san-cua-toi/{booking}/review', [UserReviewController::class, 'storeBooking'])
+        ->whereNumber('booking')
+        ->name('user.bookings.review.store');
 
-        Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
-            ->name('user.bookings.show');
+    // Phản hồi hoàn tiền.
+    Route::post('/don-dat-san-cua-toi/{booking}/confirm-refund', [UserBookingController::class, 'confirmRefund'])
+        ->whereNumber('booking')
+        ->name('user.bookings.confirmRefund');
 
-        Route::post('/don-dat-san-cua-toi/{booking}/review', [UserReviewController::class, 'storeBooking'])
-            ->name('user.bookings.review.store');
-            
-        Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
-            ->name('user.bookings.destroy');
+    Route::post('/don-dat-san-cua-toi/{booking}/dispute-refund', [UserBookingController::class, 'disputeRefund'])
+        ->whereNumber('booking')
+        ->name('user.bookings.disputeRefund');
 
-        // =========================================================================
-        // TUYẾN ĐƯỜNG PHẢN HỒI HOÀN TIỀN DÀNH CHO USER
-        // =========================================================================
-        Route::post('/don-dat-san-cua-toi/{booking}/confirm-refund', [UserBookingController::class, 'confirmRefund'])
-            ->name('user.bookings.confirmRefund');
+    // Hồ sơ cá nhân.
+    Route::get('/ho-so-ca-nhan', [ProfileController::class, 'index'])
+        ->name('user.profile.index');
 
-        Route::post('/don-dat-san-cua-toi/{booking}/dispute-refund', [UserBookingController::class, 'disputeRefund'])
-            ->name('user.bookings.disputeRefund');
+    Route::put('/ho-so-ca-nhan', [ProfileController::class, 'update'])
+        ->name('user.profile.update');
 
-        Route::get('/ho-so-ca-nhan', [ProfileController::class, 'index'])
-            ->name('user.profile.index');
+    Route::put('/ho-so-ca-nhan/mat-khau', [ProfileController::class, 'updatePassword'])
+        ->name('user.profile.password');
 
-        // User notifications
-        Route::get('/thong-bao', [App\Http\Controllers\User\NotificationController::class, 'index'])
-            ->name('user.notifications.index');
-        Route::get('/thong-bao/{id}', [App\Http\Controllers\User\NotificationController::class, 'show'])
-            ->name('user.notifications.show');
+    // Thông báo người dùng.
+    Route::get('/thong-bao', [UserNotificationController::class, 'index'])
+        ->name('user.notifications.index');
 
-        Route::put('/ho-so-ca-nhan', [ProfileController::class, 'update'])
-            ->name('user.profile.update');
+    Route::get('/thong-bao/{id}', [UserNotificationController::class, 'show'])
+        ->whereNumber('id')
+        ->name('user.notifications.show');
 
-        Route::put('/ho-so-ca-nhan/mat-khau', [ProfileController::class, 'updatePassword'])
-            ->name('user.profile.password');
+    // Đánh giá cơ sở sân.
+    Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
+        ->whereNumber('stadium')
+        ->name('stadiums.reviews.store');
 
-        Route::post('/logout', function (Request $request) {
-            Auth::logout();
+    // Thanh toán VNPay.
+    Route::get('/thanh-toan/{booking_id}', [PaymentController::class, 'showPaymentPage'])
+        ->whereNumber('booking_id')
+        ->name('user.payment.show');
 
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+    Route::post('/thanh-toan/process', [PaymentController::class, 'processPayment'])
+        ->name('user.payment.process');
 
-            return redirect('/');
-        })->name('logout');
+    Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])
+        ->name('vnpay.return');
+});
 
-        Route::post('/stadiums/{stadium}/reviews', [UserReviewController::class, 'store'])
-            ->name('stadiums.reviews.store');
+/*
+|--------------------------------------------------------------------------
+| Admin routes
+|--------------------------------------------------------------------------
+|
+| Admin chỉ quản lý dữ liệu và xử lý ngoại lệ. Admin không có route chỉnh
+| check-in/check-out thủ công. Trạng thái sử dụng sân do user + Scheduler xử lý.
+|
+*/
 
-        // =========================================================================
-        // CẤU HÌNH CÁC TUYẾN ĐƯỜNG THANH TOÁN VNPAY CHO USER
-        // =========================================================================
-        
-        // 1. Hiển thị trang lựa chọn phương thức thanh toán
-        Route::get('/thanh-toan/{booking_id}', [PaymentController::class, 'showPaymentPage'])
-            ->name('user.payment.show');
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', EnsureUserIsAdmin::class])
+    ->group(function (): void {
+        Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
-        // 2. Xử lý biểu mẫu khi người dùng bấm xác nhận thanh toán (Tạo link chuyển tiếp sang VNPay)
-        Route::post('/thanh-toan/process', [PaymentController::class, 'processPayment'])
-            ->name('user.payment.process');
+        Route::view('/dashboard', 'admin.dashboard')
+            ->name('dashboard');
 
-        // 3. Đường dẫn tiếp nhận phản hồi kết quả giao dịch từ cổng VNPay trả về
-        Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])
-            ->name('vnpay.return');
-    });
-
-    Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
-
-        Route::get('/', function () {
-            if (Auth::user()->role !== 'admin') {
-                return redirect('/');
-            }
-
-            return redirect()->route('admin.dashboard');
-        });
-
-        Route::get('/dashboard', function () {
-            if (Auth::user()->role !== 'admin') {
-                return redirect('/');
-            }
-
-            return view('admin.dashboard');
-        })->name('dashboard');
-
-        Route::get('/notifications', [NotificationController::class, 'index'])
+        // Thông báo.
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])
             ->name('notifications.index');
-        Route::get('/notifications/create', [NotificationController::class, 'create'])
+
+        Route::get('/notifications/create', [AdminNotificationController::class, 'create'])
             ->name('notifications.create');
-        Route::post('/notifications', [NotificationController::class, 'store'])
+
+        Route::post('/notifications', [AdminNotificationController::class, 'store'])
             ->name('notifications.store');
 
+        // Vai trò và người dùng.
         Route::resource('roles', RoleController::class);
 
         Route::resource('users', UserController::class)
             ->except(['show']);
 
-        Route::match(['get', 'post', 'patch'], 'users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+        Route::match(
+            ['get', 'post', 'patch'],
+            'users/{user}/toggle-status',
+            [UserController::class, 'toggleStatus']
+        )
+            ->whereNumber('user')
             ->name('users.toggle-status');
 
+        // Cơ sở sân và sân con.
         Route::resource('stadiums', StadiumsController::class);
+
         Route::post('stadiums/{stadium}/fields', [StadiumsController::class, 'storeField'])
+            ->whereNumber('stadium')
             ->name('stadiums.fields.store');
+
         Route::put('stadiums/{stadium}/fields/{field}', [StadiumsController::class, 'updateField'])
+            ->whereNumber('stadium')
+            ->whereNumber('field')
             ->name('stadiums.fields.update');
+
         Route::delete('stadiums/{stadium}/fields/{field}', [StadiumsController::class, 'destroyField'])
+            ->whereNumber('stadium')
+            ->whereNumber('field')
             ->name('stadiums.fields.destroy');
 
+        // Khung giờ.
         Route::get('time-slots', [TimeSlotsController::class, 'index'])
             ->name('time-slots.index');
+
         Route::get('time-slots/{stadium}', [TimeSlotsController::class, 'show'])
+            ->whereNumber('stadium')
             ->name('time-slots.show');
+
         Route::post('time-slots/{stadium}', [TimeSlotsController::class, 'storeForStadium'])
+            ->whereNumber('stadium')
             ->name('time-slots.store');
-        Route::put('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'update'])
-            ->name('time-slots.update');
+
         Route::post('time-slots/{stadium}/add', [TimeSlotsController::class, 'addForStadium'])
+            ->whereNumber('stadium')
             ->name('time-slots.add');
+
+        Route::put('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'update'])
+            ->whereNumber('stadium')
+            ->whereNumber('timeSlot')
+            ->name('time-slots.update');
+
         Route::delete('time-slots/{stadium}/{timeSlot}', [TimeSlotsController::class, 'destroy'])
+            ->whereNumber('stadium')
+            ->whereNumber('timeSlot')
             ->name('time-slots.destroy');
 
-        // Per-stadium price manager (fixed slots + custom special ranges)
-        Route::get('stadiums/{stadium}/prices', [StadiumsController::class, 'prices']);
-        Route::post('stadiums/{stadium}/prices', [StadiumsController::class, 'storePrices']);
-        Route::post('stadiums/{stadium}/prices/custom', [StadiumsController::class, 'storeCustom']);
-        Route::delete('stadiums/{stadium}/prices/custom/{slot}', [StadiumsController::class, 'destroyCustom']);
+        // Giá theo cơ sở sân.
+        Route::get('stadiums/{stadium}/prices', [StadiumsController::class, 'prices'])
+            ->whereNumber('stadium')
+            ->name('stadiums.prices.index');
 
+        Route::post('stadiums/{stadium}/prices', [StadiumsController::class, 'storePrices'])
+            ->whereNumber('stadium')
+            ->name('stadiums.prices.store');
+
+        Route::post('stadiums/{stadium}/prices/custom', [StadiumsController::class, 'storeCustom'])
+            ->whereNumber('stadium')
+            ->name('stadiums.prices.custom.store');
+
+        Route::delete('stadiums/{stadium}/prices/custom/{slot}', [StadiumsController::class, 'destroyCustom'])
+            ->whereNumber('stadium')
+            ->whereNumber('slot')
+            ->name('stadiums.prices.custom.destroy');
+
+        // Loại sân, sân, dịch vụ.
         Route::resource('field-types', FieldTypeController::class);
 
-        Route::get('fields', [FieldController::class, 'index'])->name('fields.index');
-        Route::post('fields', [FieldController::class, 'store'])->name('fields.store');
-        Route::put('fields/{field}', [FieldController::class, 'update'])->name('fields.update');
-        Route::delete('fields/{field}', [FieldController::class, 'destroy'])->name('fields.destroy');
+        Route::get('fields', [FieldController::class, 'index'])
+            ->name('fields.index');
 
-        Route::resource('services', ServiceController::class);
+        Route::post('fields', [FieldController::class, 'store'])
+            ->name('fields.store');
 
+        Route::put('fields/{field}', [FieldController::class, 'update'])
+            ->whereNumber('field')
+            ->name('fields.update');
+
+        Route::delete('fields/{field}', [FieldController::class, 'destroy'])
+            ->whereNumber('field')
+            ->name('fields.destroy');
+
+        Route::resource('services', AdminServiceController::class);
         Route::resource('booking-services', BookingServiceController::class);
 
+        // Đơn đặt sân: admin chỉ xem, in hóa đơn và xử lý hoàn tiền.
         Route::resource('bookings', AdminBookingController::class)
-            ->only(['index', 'show', 'update', 'destroy']);
+            ->only(['index', 'show']);
 
-        // =========================================================================
-        // TUYẾN ĐƯỜNG UPLOAD BILL CHUYỂN KHOẢN CHO ADMIN
-        // =========================================================================
         Route::post('bookings/{id}/process-refund', [AdminBookingController::class, 'processRefund'])
+            ->whereNumber('id')
             ->name('bookings.processRefund');
 
-        Route::resource('promotions', PromotionController::class);
-        Route::resource('news', App\Http\Controllers\Admin\NewsController::class);
-        Route::resource('reviews', AdminReviewController::class)->only(['index', 'destroy']);
+        Route::get('bookings/{id}/invoice', [AdminBookingController::class, 'invoice'])
+            ->whereNumber('id')
+            ->name('bookings.invoice');
 
+        // Khuyến mãi, tin tức, đánh giá.
+        Route::resource('promotions', PromotionController::class);
+        Route::resource('news', AdminNewsController::class);
+        Route::resource('reviews', AdminReviewController::class)
+            ->only(['index', 'destroy']);
+
+        // Chi tiết booking.
         Route::get('booking-details', [BookingDetailController::class, 'index'])
             ->name('booking-details.index');
 
         Route::get('booking-details/{bookingDetail}', [BookingDetailController::class, 'show'])
+            ->whereNumber('bookingDetail')
             ->name('booking-details.show');
     });
-});

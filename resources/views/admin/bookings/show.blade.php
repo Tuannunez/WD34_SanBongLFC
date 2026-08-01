@@ -1,6 +1,24 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
+@php
+    $bookingDetails = $bookingDetails
+        ?? $booking->bookingDetails
+        ?? collect();
+
+    $bookingServices = $bookingServices
+        ?? $booking->bookingServices
+        ?? collect();
+
+    $payments = $payments
+        ?? $booking->payments
+        ?? collect();
+
+    $bookingReview = $bookingReview
+        ?? $booking->review
+        ?? null;
+@endphp
 <style>
     .refund-card {
         border: 1px solid #fee2e2;
@@ -39,6 +57,58 @@
 
 <div class="container-fluid py-4">
 
+    @php
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái check-in / check-out
+        |--------------------------------------------------------------------------
+        */
+        $checkedInAt = null;
+        $checkedOutAt = null;
+
+        if (!empty($booking->checked_in_at)) {
+            try {
+                $checkedInAt = \Carbon\Carbon::parse($booking->checked_in_at);
+            } catch (\Throwable $exception) {
+                $checkedInAt = null;
+            }
+        }
+
+        if (!empty($booking->checked_out_at)) {
+            try {
+                $checkedOutAt = \Carbon\Carbon::parse($booking->checked_out_at);
+            } catch (\Throwable $exception) {
+                $checkedOutAt = null;
+            }
+        }
+
+        $usageStatus = strtolower((string) ($booking->usage_status ?? ''));
+
+        if ($usageStatus === '') {
+            if ($checkedOutAt) {
+                $usageStatus = 'checked_out';
+            } elseif ($checkedInAt) {
+                $usageStatus = 'checked_in';
+            } else {
+                $usageStatus = 'not_checked_in';
+            }
+        }
+
+        $usageText = match ($usageStatus) {
+            'checked_in', 'in_use' => 'Đã check-in',
+            'checked_out' => 'Đã check-out',
+            'waiting' => 'Chờ check-in',
+            default => 'Chưa check-in',
+        };
+
+        $usageClass = match ($usageStatus) {
+            'checked_in', 'in_use' => 'bg-info-subtle text-info-emphasis',
+            'checked_out' => 'bg-success-subtle text-success',
+            'waiting' => 'bg-warning-subtle text-warning',
+            default => 'bg-secondary-subtle text-secondary',
+        };
+    @endphp
+
     {{-- HEADER TRANG --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -49,6 +119,18 @@
                         {{ $booking->booking_code ?? $booking->code }}
                     </span>
                 @endif
+
+                <span class="badge {{ $usageClass }} px-3 py-1.5 rounded-pill small">
+                    @if(in_array($usageStatus, ['checked_in', 'in_use'], true))
+                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                    @elseif($usageStatus === 'checked_out')
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                    @else
+                        <i class="bi bi-clock me-1"></i>
+                    @endif
+
+                    {{ $usageText }}
+                </span>
             </div>
             <p class="text-muted small mb-0 mt-1">Quản lý thông tin chi tiết và xử lý yêu cầu hủy hoàn tiền</p>
         </div>
@@ -273,28 +355,178 @@
                             <small class="text-muted d-block">Email:</small>
                             <span class="fw-medium text-dark">{{ $booking->user_email ?? $booking->customer_email ?? '-' }}</span>
                         </div>
+
+                        <div class="bg-light border rounded-3 p-3 mt-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                <small class="text-muted fw-bold">Trạng thái sử dụng sân:</small>
+
+                                <span class="badge {{ $usageClass }} px-3 py-2">
+                                    {{ $usageText }}
+                                </span>
+                            </div>
+
+                            @if($checkedInAt)
+                                <div class="small text-muted">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>
+                                    Check-in: <strong>{{ $checkedInAt->format('H:i d/m/Y') }}</strong>
+                                </div>
+                            @endif
+
+                            @if($checkedOutAt)
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-box-arrow-right me-1"></i>
+                                    Check-out: <strong>{{ $checkedOutAt->format('H:i d/m/Y') }}</strong>
+                                </div>
+                            @endif
+
+                            @if(!$checkedInAt && !$checkedOutAt)
+                                <div class="small text-muted">
+                                    Khách chưa thực hiện check-in.
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="mt-3">
                         <hr class="my-3">
 
-                        <form action="{{ route('admin.bookings.update', $booking->id) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-secondary">Cập nhật trạng thái đơn</label>
-                                <select name="status" class="form-select rounded-3 fw-bold">
-                                    <option value="pending" @selected($booking->status === 'pending')>Chờ xác nhận</option>
-                                    <option value="confirmed" @selected($booking->status === 'confirmed')>Đã xác nhận</option>
-                                    <option value="completed" @selected($booking->status === 'completed')>Hoàn thành</option>
-                                    <option value="cancelled" @selected($booking->status === 'cancelled')>Đã hủy</option>
-                                </select>
+
+                        {{-- Admin chỉ theo dõi; trạng thái được hệ thống tự động xử lý --}}
+                        @php
+                            $orderStatus = strtolower((string) ($booking->status ?? 'pending'));
+                            $paymentStatus = strtolower((string) ($booking->payment_status ?? 'unpaid'));
+
+                            $orderStatusText = match ($orderStatus) {
+                                'confirmed' => 'Đã xác nhận',
+                                'completed' => 'Hoàn thành',
+                                'cancelled' => 'Đã hủy',
+                                default => 'Chờ xác nhận',
+                            };
+
+                            $orderStatusClass = match ($orderStatus) {
+                                'confirmed' => 'bg-success-subtle text-success',
+                                'completed' => 'bg-primary-subtle text-primary',
+                                'cancelled' => 'bg-danger-subtle text-danger',
+                                default => 'bg-warning-subtle text-warning',
+                            };
+
+                            $paymentStatusText = match ($paymentStatus) {
+                                'deposit_paid' => 'Đã thanh toán cọc',
+                                'paid' => 'Đã thanh toán',
+                                'partially_refunded' => 'Đã hoàn một phần',
+                                'refunded' => 'Đã hoàn tiền',
+                                default => 'Chưa thanh toán',
+                            };
+
+                            $paymentStatusClass = match ($paymentStatus) {
+                                'deposit_paid' => 'bg-info-subtle text-info-emphasis',
+                                'paid' => 'bg-success-subtle text-success',
+                                'partially_refunded' => 'bg-warning-subtle text-warning',
+                                'refunded' => 'bg-secondary-subtle text-secondary',
+                                default => 'bg-danger-subtle text-danger',
+                            };
+
+                            $noShowAt = null;
+
+                            if (!empty($booking->no_show_at)) {
+                                try {
+                                    $noShowAt = \Carbon\Carbon::parse($booking->no_show_at);
+                                } catch (\Throwable $exception) {
+                                    $noShowAt = null;
+                                }
+                            }
+
+                            $forfeitedDeposit = (float) (
+                                $booking->deposit_forfeited_amount
+                                ?? ($noShowAt ? ($booking->deposit_amount ?? 0) : 0)
+                            );
+                        @endphp
+
+                        <div class="border rounded-4 p-3 bg-light">
+                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        <i class="bi bi-cpu text-primary me-1"></i>
+                                        Trạng thái tự động
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        Khách tự check-in. Hệ thống tự check-out khi hết giờ và tự xử lý no-show.
+                                    </div>
+                                </div>
+
+                                <span class="badge bg-white text-secondary border px-3 py-2">
+                                    Admin chỉ xem
+                                </span>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100 rounded-3 fw-bold py-2">
-                                Cập Nhật Trạng Thái
-                            </button>
-                        </form>
-                    </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <span class="small text-muted">Trạng thái đơn</span>
+                                        <span class="badge {{ $orderStatusClass }} px-3 py-2">
+                                            {{ $orderStatusText }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <span class="small text-muted">Thanh toán</span>
+                                        <span class="badge {{ $paymentStatusClass }} px-3 py-2">
+                                            {{ $paymentStatusText }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($noShowAt)
+                                <div class="alert alert-danger border-0 rounded-3 mt-3 mb-0">
+                                    <div class="fw-bold mb-1">
+                                        <i class="bi bi-person-x-fill me-1"></i>
+                                        Khách không đến đúng hạn
+                                    </div>
+
+                                    <div class="small">
+                                        Hệ thống ghi nhận no-show lúc
+                                        <strong>{{ $noShowAt->format('H:i d/m/Y') }}</strong>.
+                                        Đơn đã tự động hủy do khách không check-in trong vòng 15 phút.
+                                    </div>
+
+                                    <div class="small mt-2">
+                                        Tiền cọc bị giữ:
+                                        <strong>{{ number_format($forfeitedDeposit, 0, ',', '.') }}đ</strong>
+                                    </div>
+
+                                    @if((float) ($booking->refund_amount ?? 0) > 0)
+                                        <div class="small mt-1">
+                                            Số tiền còn lại cần hoàn:
+                                            <strong>{{ number_format((float) $booking->refund_amount, 0, ',', '.') }}đ</strong>
+                                        </div>
+                                    @endif
+                                </div>
+                            @elseif(in_array($usageStatus, ['checked_in', 'in_use'], true))
+                                <div class="alert alert-info border-0 rounded-3 mt-3 mb-0">
+                                    <i class="bi bi-play-circle-fill me-1"></i>
+                                    Khách đang sử dụng sân. Hệ thống sẽ tự động check-out khi hết giờ.
+                                </div>
+                            @elseif($usageStatus === 'checked_out')
+                                <div class="alert alert-success border-0 rounded-3 mt-3 mb-0">
+                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                    Phiên sử dụng sân đã hoàn tất và được tự động check-out.
+                                </div>
+                            @elseif($orderStatus === 'confirmed')
+                                <div class="alert alert-warning border-0 rounded-3 mt-3 mb-0">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    Đang chờ khách check-in. Admin không cần thao tác.
+                                </div>
+                            @elseif($orderStatus === 'pending')
+                                <div class="alert alert-secondary border-0 rounded-3 mt-3 mb-0">
+                                    <i class="bi bi-hourglass-split me-1"></i>
+                                    Đơn đang chờ hoàn tất thanh toán hoặc xác nhận tự động.
+                                </div>
+                            @endif
+                        </div>
+</div>
                 </div>
             </div>
         </div>
