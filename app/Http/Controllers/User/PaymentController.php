@@ -87,10 +87,12 @@ class PaymentController extends Controller
         }
 
         $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
+        $paymentTypeToSave = 'deposit'; // Mặc định là cọc
 
         if ($isMonthly) {
             $amountToPay = $booking->deposit_amount ?? $booking->total_amount;
             $vnp_OrderInfo = "Thanh toan lich co dinh thang don " . $booking->booking_code;
+            $paymentTypeToSave = 'deposit';
         } else {
             $methodId = $request->input('payment_method_id');
             $method = DB::table('payment_methods')->where('id', $methodId)->first();
@@ -106,11 +108,19 @@ class PaymentController extends Controller
             if ($methodCode !== 'BANK_TRANSFER' && $methodCode !== 'VNPAY_QR') {
                 $amountToPay = $depositPrice;
                 $vnp_OrderInfo = "Thanh toan coc 30% don dat san " . $booking->booking_code;
+                $paymentTypeToSave = 'deposit'; // Thanh toán tại sân -> Cọc 30%
             } else {
                 $amountToPay = $totalPrice;
                 $vnp_OrderInfo = "Thanh toan 100% don dat san " . $booking->booking_code;
+                $paymentTypeToSave = 'full'; // Thanh toán qua VNPay/QR -> 100% (Full)
             }
         }
+
+        // Tạm lưu payment_type định hình trước khi sang VNPay
+        DB::table('bookings')->where('id', $booking->id)->update([
+            'payment_type' => $paymentTypeToSave,
+            'updated_at' => now()
+        ]);
 
         if (!empty($booking->promotion_code) && (float) ($booking->discount_amount ?? 0) > 0) {
             $vnp_OrderInfo .= " ma KM " . $booking->promotion_code;
@@ -215,10 +225,17 @@ class PaymentController extends Controller
                 }
 
                 if ($request->input('vnp_ResponseCode') == '00') {
+                    $totalAmountVal = $booking->total_price ?? $booking->total_amount ?? 0;
+                    $depositAmountVal = $booking->deposit_amount ?? ($totalAmountVal * 0.3);
+
+                    // Nếu loại thanh toán là full thì paid_amount = tổng tiền, ngược lại bằng tiền cọc
+                    $actualPaid = ($booking->payment_type === 'full') ? $totalAmountVal : $depositAmountVal;
+
                     $updateData = [
                         'status' => 'confirmed',
                         'is_deposit_paid' => true,
                         'payment_status' => 'paid',
+                        'paid_amount' => $actualPaid,
                         'updated_at' => now()
                     ];
 

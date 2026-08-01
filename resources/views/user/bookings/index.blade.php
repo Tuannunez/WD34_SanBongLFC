@@ -302,24 +302,30 @@
                                             ?? null;
 
                                         $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
-                                        
-                                        $defaultDepositPercent = $isMonthly ? 0.50 : 0.30;
-                                        $depositAmount = (float)($booking->deposit_amount ?? ($totalMoneyRow * $defaultDepositPercent));
-                                        $depositLabel = $isMonthly ? 'Đã cọc 50%' : 'Đã cọc 30%';
 
-                                        $rfStatus = $booking->refund_status ?? 'none';
-
-                                        $pType = strtolower((string)($booking->payment_type ?? ''));
-                                        $pStatus = strtolower((string)($booking->payment_status ?? ''));
+                                        $pType = strtolower(trim((string)($booking->payment_type ?? '')));
+                                        $pStatus = strtolower(trim((string)($booking->payment_status ?? '')));
                                         $paidAmt = (float)($booking->paid_amount ?? 0);
 
+                                        // NHẬN DIỆN THÔNG MINH: Đã thanh toán 100% nếu type là full, status là paid, hoặc đơn đã confirmed và có trạng thái thanh toán thành công
                                         $isPaidFull = (
                                             $pType === 'full' || 
                                             $pType === 'full_payment' || 
                                             in_array($pStatus, ['paid', 'completed', 'paid_full']) ||
-                                            ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0)
+                                            ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0) ||
+                                            ($status === 'confirmed' && $pStatus === 'paid')
                                         );
 
+                                        if ($isPaidFull) {
+                                            $depositAmount = $totalMoneyRow;
+                                            $depositLabel = 'Đã thanh toán 100%';
+                                        } else {
+                                            $defaultDepositPercent = $isMonthly ? 0.50 : 0.30;
+                                            $depositAmount = (float)($booking->deposit_amount ?? ($totalMoneyRow * $defaultDepositPercent));
+                                            $depositLabel = $isMonthly ? 'Đã cọc 50%' : 'Đã cọc 30%';
+                                        }
+
+                                        $rfStatus = $booking->refund_status ?? 'none';
                                         $bookingCodeText = $booking->booking_code ?? $booking->code ?? '#'.$booking->id;
                                         $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" . urlencode($bookingCodeText);
                                     @endphp
@@ -351,7 +357,7 @@
                                             @if($status !== 'pending')
                                                 @if($isPaidFull)
                                                     <small class="text-success d-block mt-1 fw-bold" style="font-size: 0.72rem;">
-                                                        <i class="bi bi-shield-check me-1"></i>Đã trả 100%: {{ number_format($totalMoneyRow, 0, ',', '.') }}đ
+                                                        <i class="bi bi-shield-check me-1"></i>Đã thanh toán 100%: {{ number_format($totalMoneyRow, 0, ',', '.') }}đ
                                                     </small>
                                                 @else
                                                     <small class="text-primary d-block mt-1 fw-bold" style="font-size: 0.72rem;">
@@ -484,28 +490,27 @@
                                                             $mDate = \Carbon\Carbon::parse(($bookingDate ?? now()->format('Y-m-d')) . ' ' . ($startTime ?? '00:00:00'));
                                                             $hrs = \Carbon\Carbon::now()->diffInHours($mDate, false);
                                                             $totMoney = $totalMoneyRow;
-                                                            $depMoney = $depositAmount;
 
                                                             $estRefund = 0;
                                                             $policyText = '';
 
                                                             if ($status === 'pending') {
-                                                                $policyText = 'Đơn chưa cọc, hủy không mất phí.';
+                                                                $policyText = 'Đơn chưa thanh toán, hủy không mất phí.';
                                                             } elseif ($hrs >= 24) {
                                                                 if ($isPaidFull) {
                                                                     $estRefund = $totMoney * 0.70;
-                                                                    $policyText = 'Hủy trước 24h bóng lăn (Đã trả 100%): Hoàn 70% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                    $policyText = 'Hủy trước 24h bóng lăn (Đã thanh toán 100%): Hoàn 70% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
                                                                 } else {
-                                                                    $estRefund = $depMoney * 0.50;
-                                                                    $policyText = 'Hủy trước 24h bóng lăn (Đã cọc 30%): Hoàn 50% tiền cọc (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                    $estRefund = $depositAmount * 0.50;
+                                                                    $policyText = 'Hủy trước 24h bóng lăn (' . $depositLabel . '): Hoàn 50% số tiền đã cọc (' . number_format($estRefund, 0, ',', '.') . 'đ)';
                                                                 }
                                                             } else {
                                                                 if ($isPaidFull) {
                                                                     $estRefund = $totMoney * 0.30;
-                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã trả 100%): Nhận lại 30% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
+                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã thanh toán 100%): Nhận lại 30% tổng tiền sân (' . number_format($estRefund, 0, ',', '.') . 'đ)';
                                                                 } else {
                                                                     $estRefund = 0;
-                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (Đã cọc 30%): Mất 100% tiền cọc (Hoàn 0đ)';
+                                                                    $policyText = 'Hủy sát giờ < 24h bóng lăn (' . $depositLabel . '): Mất 100% số tiền đã cọc (Hoàn 0đ)';
                                                                 }
                                                             }
                                                         @endphp
