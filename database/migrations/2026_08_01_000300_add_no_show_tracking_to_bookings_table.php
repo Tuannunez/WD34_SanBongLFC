@@ -2,50 +2,67 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        $database = DB::connection()->getDatabaseName();
+        if (! Schema::hasTable('bookings')) {
+            throw new RuntimeException(
+                'Không tìm thấy bảng bookings. Hãy chạy migration tạo bảng bookings trước.'
+            );
+        }
 
-        $columnExists = static function (string $column) use ($database): bool {
-            return DB::table('information_schema.columns')
-                ->where('table_schema', $database)
-                ->where('table_name', 'bookings')
-                ->where('column_name', $column)
-                ->exists();
-        };
+        $addNoShowAt = ! Schema::hasColumn('bookings', 'no_show_at');
+        $addDepositForfeitedAmount = ! Schema::hasColumn(
+            'bookings',
+            'deposit_forfeited_amount'
+        );
+        $addCheckInSource = ! Schema::hasColumn(
+            'bookings',
+            'check_in_source'
+        );
 
-        $missing = [
-            'no_show_at' => ! $columnExists('no_show_at'),
-            'deposit_forfeited_amount' => ! $columnExists('deposit_forfeited_amount'),
-            'check_in_source' => ! $columnExists('check_in_source'),
-        ];
-
-        if (! in_array(true, $missing, true)) {
+        if (
+            ! $addNoShowAt
+            && ! $addDepositForfeitedAmount
+            && ! $addCheckInSource
+        ) {
             return;
         }
 
-        Schema::table('bookings', function (Blueprint $table) use ($missing): void {
-            if ($missing['no_show_at']) {
-                $table->timestamp('no_show_at')->nullable();
+        Schema::table('bookings', function (Blueprint $table) use (
+            $addNoShowAt,
+            $addDepositForfeitedAmount,
+            $addCheckInSource
+        ): void {
+            if ($addNoShowAt) {
+                $table->timestamp('no_show_at')
+                    ->nullable()
+                    ->after('cancelled_at');
             }
 
-            if ($missing['deposit_forfeited_amount']) {
-                $table->decimal('deposit_forfeited_amount', 15, 2)->default(0);
+            if ($addDepositForfeitedAmount) {
+                $table->decimal(
+                    'deposit_forfeited_amount',
+                    15,
+                    2
+                )
+                    ->default(0)
+                    ->after('no_show_at');
             }
 
-            if ($missing['check_in_source']) {
-                $table->string('check_in_source', 32)->nullable();
+            if ($addCheckInSource) {
+                $table->string('check_in_source', 32)
+                    ->nullable()
+                    ->after('checked_in_at');
             }
         });
     }
 
     public function down(): void
     {
-        // Không tự drop để tránh mất dữ liệu đối soát no-show và tiền cọc đã giữ.
+        // Không tự xóa các cột đối soát để tránh mất dữ liệu no-show.
     }
 };

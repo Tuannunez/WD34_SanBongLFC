@@ -282,8 +282,12 @@
                                 ?? [ucfirst($orderStatus), 'secondary'];
 
                             $usageStatus = strtolower((string) ($booking->usage_status ?? 'not_checked_in'));
-                            [$usageText, $usageColor] = $usageStatusMeta[$usageStatus]
-                                ?? [ucfirst($usageStatus), 'secondary'];
+
+                            $adminLifecycle = (array) ($booking->admin_lifecycle ?? []);
+                            $usageText = (string) ($adminLifecycle['label'] ?? 'Chưa xác định');
+                            $usageColor = (string) ($adminLifecycle['color'] ?? 'secondary');
+                            $usageDescription = (string) ($adminLifecycle['description'] ?? '');
+                            $usageDeadline = $adminLifecycle['deadline_at'] ?? null;
 
                             $paymentStatus = strtolower((string) ($booking->payment_status ?? 'unpaid'));
                             [$paymentText, $paymentColor] = $paymentStatusMeta[$paymentStatus]
@@ -381,23 +385,36 @@
                                 @endif
                             </td>
 
-                            <td>
+                            <td style="min-width: 230px;">
                                 <span class="badge bg-{{ $usageColor }}-subtle text-{{ $usageColor }}">
                                     <span class="usage-dot bg-{{ $usageColor }}"></span>
                                     {{ $usageText }}
                                 </span>
 
-                                @if(!empty($booking->checked_in_at))
+                                @if($usageDescription !== '')
                                     <div class="small text-muted mt-1">
-                                        Vào:
-                                        {{ \Carbon\Carbon::parse($booking->checked_in_at)->format('H:i d/m') }}
+                                        {{ $usageDescription }}
+                                    </div>
+                                @endif
+
+                                @if($usageDeadline)
+                                    <div class="small text-danger mt-1">
+                                        Hạn:
+                                        {{ $usageDeadline->format('H:i d/m/Y') }}
+                                    </div>
+                                @endif
+
+                                @if(!empty($booking->checked_in_at))
+                                    <div class="small text-success mt-1">
+                                        Check-in:
+                                        {{ \Carbon\Carbon::parse($booking->checked_in_at)->format('H:i d/m/Y') }}
                                     </div>
                                 @endif
 
                                 @if(!empty($booking->checked_out_at))
-                                    <div class="small text-muted">
-                                        Ra:
-                                        {{ \Carbon\Carbon::parse($booking->checked_out_at)->format('H:i d/m') }}
+                                    <div class="small text-primary">
+                                        Check-out:
+                                        {{ \Carbon\Carbon::parse($booking->checked_out_at)->format('H:i d/m/Y') }}
                                     </div>
                                 @endif
                             </td>
