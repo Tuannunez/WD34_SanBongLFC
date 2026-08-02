@@ -70,6 +70,10 @@ class UserController extends Controller
             'status' => ['nullable'],
         ]);
 
+        if (in_array($user->role, ['admin', 'super_admin'], true) && $data['role'] !== $user->role) {
+            return redirect()->back()->withErrors(['role' => 'Vai trò của tài khoản quản trị viên không thể thay đổi.']);
+        }
+
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
@@ -85,6 +89,10 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        if (in_array($user->role, ['admin', 'super_admin'], true)) {
+            return redirect()->route('admin.users.index')->with('error', 'Không thể xóa tài khoản quản trị viên.');
+        }
+
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'Người dùng đã bị xóa.');

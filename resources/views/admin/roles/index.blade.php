@@ -37,11 +37,13 @@
                                 <td>{{ $role->status ? 'Hoạt động' : 'Không hoạt động' }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-secondary">Sửa</a>
-                                    <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Xóa vai trò này?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-danger">Xóa</button>
-                                    </form>
+                                    @if($role->slug !== 'admin')
+                                        <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Xóa vai trò này?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-danger">Xóa</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

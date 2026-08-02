@@ -13,6 +13,10 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body">
             <div class="table-responsive">
@@ -40,15 +44,19 @@
                                 <td>{{ $user->status ? 'Kích hoạt' : 'Khóa' }}</td>
                                 <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
                                 <td class="text-end">
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-secondary">Sửa</a>
-                                    <a href="{{ route('admin.users.toggle-status', $user) }}" class="btn btn-sm {{ $user->status ? 'btn-warning' : 'btn-success' }}">
-                                        {{ $user->status ? 'Khóa' : 'Mở' }}
-                                    </a>
-                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa người dùng này?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
-                                    </form>
+                                    @if(!in_array($user->role, ['admin', 'super_admin'], true))
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-secondary">Sửa</a>
+                                        <a href="{{ route('admin.users.toggle-status', $user) }}" class="btn btn-sm {{ $user->status ? 'btn-warning' : 'btn-success' }}">
+                                            {{ $user->status ? 'Khóa' : 'Mở' }}
+                                        </a>
+                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa người dùng này?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

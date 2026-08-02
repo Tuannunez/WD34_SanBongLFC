@@ -40,11 +40,17 @@
 
                 <div class="mb-3">
                     <label class="form-label">Vai trò</label>
-                    <select name="role" class="form-select" required>
-                        @foreach($roles as $slug => $name)
-                            <option value="{{ $slug }}" {{ old('role', $user->role) === $slug ? 'selected' : '' }}>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    @if(in_array($user->role, ['admin', 'super_admin'], true))
+                        <input type="text" class="form-control" value="{{ ucfirst($user->role) }}" readonly>
+                        <input type="hidden" name="role" value="{{ $user->role }}">
+                        <div class="form-text">Vai trò của tài khoản quản trị viên không thể thay đổi.</div>
+                    @else
+                        <select name="role" class="form-select" required>
+                            @foreach($roles as $slug => $name)
+                                <option value="{{ $slug }}" {{ old('role', $user->role) === $slug ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
 
                 <div class="form-check mb-3">
