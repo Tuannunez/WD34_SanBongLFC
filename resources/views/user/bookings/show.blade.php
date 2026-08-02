@@ -183,6 +183,38 @@
             flex: 0 0 52px;
         }
     }
+
+    .booking-header-actions .btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding-inline: 16px;
+        font-weight: 700;
+        box-shadow: 0 7px 18px rgba(15, 23, 42, .055);
+    }
+
+    .booking-invoice-button {
+        border-color: #334155;
+        color: #334155;
+        background: #fff;
+    }
+
+    .booking-invoice-button:hover {
+        border-color: #0f172a;
+        color: #fff;
+        background: #0f172a;
+    }
+
+    .booking-card {
+        border: 1px solid rgba(226, 232, 240, .72);
+        transition: box-shadow .18s ease;
+    }
+
+    .booking-card:hover {
+        box-shadow: 0 16px 42px rgba(15, 23, 42, .085);
+    }
+
 </style>
 @endpush
 
@@ -551,13 +583,26 @@
             </div>
         </div>
 
-        <a
-            href="{{ route('user.bookings.index') }}"
-            class="btn btn-light border rounded-3"
-        >
-            <i class="bi bi-arrow-left me-1"></i>
-            Đơn của tôi
-        </a>
+        <div class="d-flex flex-wrap gap-2 booking-header-actions">
+            @if(\Illuminate\Support\Facades\Route::has('user.bookings.invoice'))
+                <a
+                    href="{{ route('user.bookings.invoice', $booking->id) }}"
+                    class="btn booking-invoice-button rounded-3"
+                    target="_blank"
+                >
+                    <i class="bi bi-receipt-cutoff me-2"></i>
+                    Xem hóa đơn
+                </a>
+            @endif
+
+            <a
+                href="{{ route('user.bookings.index') }}"
+                class="btn btn-light border rounded-3"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Đơn của tôi
+            </a>
+        </div>
     </div>
 
     @if(session('success'))

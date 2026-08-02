@@ -176,7 +176,7 @@ final class BookingLifecycleService
             }
 
             $opensAt = $window->startsAt->subMinutes($this->checkInEarlyMinutes());
-            $deadline = $this->noShowDeadline($window);
+            $deadline = $this->noShowDeadline($booking, $window);
 
             if ($now->lessThan($opensAt)) {
                 return [
@@ -187,11 +187,21 @@ final class BookingLifecycleService
             }
 
             if ($now->greaterThanOrEqualTo($deadline)) {
-                $this->applyNoShowCancellation($booking, $window, $deadline, false);
+                $action = $this->applyNoShowCancellation(
+                    $booking,
+                    $window,
+                    $deadline,
+                    false,
+                );
+
+                $metadata = (array) ($action['metadata'] ?? []);
 
                 return [
                     'result' => self::RESULT_NO_SHOW,
                     'deadline_at' => $deadline,
+                    'grace_minutes' => (int) ($metadata['grace_minutes'] ?? 15),
+                    'payment_type' => (string) ($metadata['payment_type'] ?? 'deposit'),
+                    'forfeited_amount' => (float) ($metadata['forfeited_amount'] ?? 0),
                 ];
             }
 
@@ -356,9 +366,9 @@ final class BookingLifecycleService
             }
 
             $usageStatus = strtolower((string) ($booking->usage_status ?: Booking::USAGE_NOT_CHECKED_IN));
-            $deadline = $this->noShowDeadline($window);
+            $deadline = $this->noShowDeadline($booking, $window);
 
-            // Khách chưa chủ động check-in sau 15 phút: hủy no-show và giữ cọc.
+            // Áp dụng hạn 15 phút cho đặt cọc, 30 phút cho thanh toán đủ.
             if (
                 $usageStatus === Booking::USAGE_NOT_CHECKED_IN
                 && $now->greaterThanOrEqualTo($deadline)
@@ -459,6 +469,7 @@ final class BookingLifecycleService
         bool $dryRun,
     ): array {
         $money = $this->noShowMoney($booking);
+        $isFullPayment = $money['payment_type'] === 'full';
 
         $action = $this->actionRow(
             booking: $booking,
@@ -466,13 +477,18 @@ final class BookingLifecycleService
             category: 'status',
             from: Booking::STATUS_CONFIRMED,
             to: Booking::STATUS_CANCELLED,
-            reason: 'no_show_check_in_timeout',
+            reason: $isFullPayment
+                ? 'full_payment_no_show_timeout'
+                : 'deposit_no_show_timeout',
             occurredAt: $deadline,
             window: $window,
         );
 
         $action['metadata'] = array_merge($action['metadata'] ?? [], [
             'check_in_deadline_at' => $deadline->toDateTimeString(),
+            'payment_type' => $money['payment_type'],
+            'grace_minutes' => $money['grace_minutes'],
+            'forfeited_amount' => $money['forfeited'],
             'deposit_forfeited_amount' => $money['forfeited'],
             'refund_amount' => $money['refundable'],
         ]);
@@ -485,17 +501,28 @@ final class BookingLifecycleService
             ? Booking::REFUND_PENDING
             : Booking::REFUND_NONE;
 
+        $lossMessage = $isFullPayment
+            ? 'Toàn bộ số tiền đã thanh toán bị giữ lại.'
+            : 'Tiền cọc bị giữ lại.';
+
         $data = $this->schema->filterColumns('bookings', [
             'status' => Booking::STATUS_CANCELLED,
             'usage_status' => Booking::USAGE_NOT_CHECKED_IN,
             'cancelled_at' => $booking->cancelled_at ?? $deadline,
             'no_show_at' => $booking->no_show_at ?? $deadline,
+            'no_show_payment_type' => $money['payment_type'],
+            'no_show_grace_minutes' => $money['grace_minutes'],
+            'no_show_forfeited_amount' => $money['forfeited'],
+            // Giữ cột cũ để các giao diện/câu truy vấn cũ vẫn hoạt động.
             'deposit_forfeited_amount' => $money['forfeited'],
             'refund_amount' => $money['refundable'],
             'refund_status' => $refundStatus,
             'cancel_note' => 'Khách không check-in trong vòng '
-                .$this->noShowGraceMinutes().' phút sau giờ bắt đầu. Tiền cọc bị giữ lại.',
-            'cancellation_reason' => 'no_show_check_in_timeout',
+                .$money['grace_minutes'].' phút sau giờ bắt đầu. '
+                .$lossMessage,
+            'cancellation_reason' => $isFullPayment
+                ? 'full_payment_no_show_timeout'
+                : 'deposit_no_show_timeout',
             'updated_at' => now(),
         ]);
 
@@ -504,11 +531,22 @@ final class BookingLifecycleService
         $this->syncDetailStatus($booking, Booking::STATUS_CANCELLED);
 
         $content = 'Đơn '.$this->bookingCode($booking)
-            .' đã bị hủy do không check-in trong vòng '.$this->noShowGraceMinutes()
-            .' phút. Tiền cọc '.number_format($money['forfeited'], 0, ',', '.').'đ không được hoàn lại.';
+            .' đã bị hủy do không check-in trong vòng '
+            .$money['grace_minutes'].' phút. ';
+
+        if ($isFullPayment) {
+            $content .= 'Toàn bộ số tiền '
+                .number_format($money['forfeited'], 0, ',', '.')
+                .'đ không được hoàn lại.';
+        } else {
+            $content .= 'Tiền cọc '
+                .number_format($money['forfeited'], 0, ',', '.')
+                .'đ không được hoàn lại.';
+        }
 
         if ($money['refundable'] > 0) {
-            $content .= ' Phần tiền còn lại '.number_format($money['refundable'], 0, ',', '.')
+            $content .= ' Phần tiền còn lại '
+                .number_format($money['refundable'], 0, ',', '.')
                 .'đ đã được ghi nhận chờ hoàn.';
         }
 
@@ -518,9 +556,85 @@ final class BookingLifecycleService
     }
 
     /**
-     * @return array{paid:float,forfeited:float,refundable:float}
+     * @return array{
+     *   paid:float,
+     *   forfeited:float,
+     *   refundable:float,
+     *   payment_type:string,
+     *   grace_minutes:int
+     * }
      */
     private function noShowMoney(Booking $booking): array
+    {
+        $policy = $this->noShowPolicy($booking);
+        $effectivePaid = $this->effectivePaidAmount($booking);
+
+        if ($policy['payment_type'] === 'full') {
+            $forfeited = (bool) config(
+                'booking_lifecycle.forfeit_full_payment_on_no_show',
+                true,
+            ) ? $effectivePaid : 0;
+        } else {
+            $deposit = max(0, (float) ($booking->deposit_amount ?? 0));
+
+            $forfeited = (bool) config(
+                'booking_lifecycle.forfeit_deposit_on_no_show',
+                true,
+            ) && $deposit > 0
+                ? min($effectivePaid, $deposit)
+                : 0;
+        }
+
+        return [
+            'paid' => round($effectivePaid, 2),
+            'forfeited' => round($forfeited, 2),
+            'refundable' => round(max(0, $effectivePaid - $forfeited), 2),
+            'payment_type' => $policy['payment_type'],
+            'grace_minutes' => $policy['grace_minutes'],
+        ];
+    }
+
+    /** @return array{payment_type:string,grace_minutes:int} */
+    private function noShowPolicy(Booking $booking): array
+    {
+        $isFullPayment = $this->isFullPayment($booking);
+
+        return [
+            'payment_type' => $isFullPayment ? 'full' : 'deposit',
+            'grace_minutes' => $isFullPayment
+                ? max(0, (int) config(
+                    'booking_lifecycle.full_payment_no_show_grace_minutes',
+                    30,
+                ))
+                : max(0, (int) config(
+                    'booking_lifecycle.deposit_no_show_grace_minutes',
+                    15,
+                )),
+        ];
+    }
+
+    private function isFullPayment(Booking $booking): bool
+    {
+        $paymentStatus = strtolower((string) (
+            $booking->payment_status
+            ?? Booking::PAYMENT_UNPAID
+        ));
+
+        if (in_array($paymentStatus, [
+            Booking::PAYMENT_PAID,
+            'completed',
+            'paid_full',
+        ], true)) {
+            return true;
+        }
+
+        $totalPayable = $this->totalPayableAmount($booking);
+
+        return $totalPayable > 0
+            && $this->effectivePaidAmount($booking) >= $totalPayable;
+    }
+
+    private function effectivePaidAmount(Booking $booking): float
     {
         $paymentStatus = strtolower((string) (
             $booking->payment_status
@@ -529,8 +643,29 @@ final class BookingLifecycleService
 
         $recordedPaid = max(0, (float) ($booking->paid_amount ?? 0));
         $deposit = max(0, (float) ($booking->deposit_amount ?? 0));
+        $totalPayable = $this->totalPayableAmount($booking);
 
-        $totalPayable = max(
+        if (
+            $paymentStatus === Booking::PAYMENT_DEPOSIT_PAID
+            || (bool) ($booking->is_deposit_paid ?? false)
+        ) {
+            $recordedPaid = max($recordedPaid, $deposit);
+        }
+
+        if (in_array($paymentStatus, [
+            Booking::PAYMENT_PAID,
+            'completed',
+            'paid_full',
+        ], true)) {
+            $recordedPaid = max($recordedPaid, $totalPayable, $deposit);
+        }
+
+        return $recordedPaid;
+    }
+
+    private function totalPayableAmount(Booking $booking): float
+    {
+        return max(
             0,
             (float) (
                 $booking->final_amount
@@ -540,59 +675,15 @@ final class BookingLifecycleService
                 ?? 0
             ),
         );
-
-        /*
-         * Một số callback VNPay cũ chỉ cập nhật payment_status mà chưa cập nhật
-         * paid_amount. Khi đó vẫn phải nhận diện được số cọc đã thực thu.
-         */
-        $effectivePaid = $recordedPaid;
-
-        if (
-            $paymentStatus === Booking::PAYMENT_DEPOSIT_PAID
-            || (bool) ($booking->is_deposit_paid ?? false)
-        ) {
-            $effectivePaid = max($effectivePaid, $deposit);
-        }
-
-        if (in_array($paymentStatus, [
-            Booking::PAYMENT_PAID,
-            'completed',
-            'paid_full',
-        ], true)) {
-            $effectivePaid = max($effectivePaid, $totalPayable, $deposit);
-        }
-
-        if (! (bool) config('booking_lifecycle.forfeit_deposit_on_no_show', true)) {
-            return [
-                'paid' => round($effectivePaid, 2),
-                'forfeited' => 0,
-                'refundable' => round($effectivePaid, 2),
-            ];
-        }
-
-        /*
-         * Chỉ giữ tối đa số tiền cọc đã cấu hình. Không tự ý giữ toàn bộ tiền
-         * nếu booking không có deposit_amount.
-         */
-        $forfeited = $deposit > 0
-            ? min($effectivePaid, $deposit)
-            : 0;
-
-        return [
-            'paid' => round($effectivePaid, 2),
-            'forfeited' => round($forfeited, 2),
-            'refundable' => round(max(0, $effectivePaid - $forfeited), 2),
-        ];
     }
 
-    private function noShowDeadline(BookingScheduleWindow $window): CarbonImmutable
-    {
-        return $window->startsAt->addMinutes($this->noShowGraceMinutes());
-    }
+    private function noShowDeadline(
+        Booking $booking,
+        BookingScheduleWindow $window,
+    ): CarbonImmutable {
+        $policy = $this->noShowPolicy($booking);
 
-    private function noShowGraceMinutes(): int
-    {
-        return max(0, (int) config('booking_lifecycle.no_show_grace_minutes', 15));
+        return $window->startsAt->addMinutes($policy['grace_minutes']);
     }
 
     private function checkInEarlyMinutes(): int

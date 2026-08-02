@@ -339,6 +339,44 @@
                 </a>
             @endif
 
+            @if(
+                in_array(
+                    strtolower((string) ($booking->status ?? '')),
+                    ['cancelled', 'completed'],
+                    true
+                )
+                && strtolower((string) (
+                    $booking->usage_status
+                    ?? 'not_checked_in'
+                )) !== 'checked_in'
+                && \Illuminate\Support\Facades\Route::has(
+                    'admin.bookings.destroy'
+                )
+            )
+                <form
+                    method="POST"
+                    action="{{ route(
+                        'admin.bookings.destroy',
+                        $booking->id
+                    ) }}"
+                    onsubmit="return confirm(
+                        'Xóa vĩnh viễn đơn #{{ $booking->id }}? '
+                        + 'Thao tác này không thể hoàn tác.'
+                    );"
+                >
+                    @csrf
+                    @method('DELETE')
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-danger"
+                    >
+                        <i class="bi bi-trash3-fill me-1"></i>
+                        Xóa đơn
+                    </button>
+                </form>
+            @endif
+
             <a
                 href="{{ route('admin.bookings.index') }}"
                 class="btn btn-light border"
@@ -353,6 +391,13 @@
         <div class="alert alert-success rounded-4">
             <i class="bi bi-check-circle-fill me-2"></i>
             {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
         </div>
     @endif
 

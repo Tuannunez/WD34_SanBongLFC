@@ -181,6 +181,158 @@ class BookingController extends Controller
         );
     }
 
+    /**
+     * Xóa vĩnh viễn một đơn đặt sân đã kết thúc.
+     *
+     * Chỉ cho phép xóa đơn đã hủy hoặc đã hoàn thành.
+     * Không cho xóa đơn đang sử dụng sân hoặc đang chờ hoàn tiền.
+     */
+    public function destroy(Booking $booking): RedirectResponse
+    {
+        $status = strtolower((string) ($booking->status ?? 'pending'));
+        $usageStatus = strtolower((string) (
+            $booking->usage_status
+            ?? 'not_checked_in'
+        ));
+
+        if (
+            !in_array($status, ['cancelled', 'completed'], true)
+            || $usageStatus === 'checked_in'
+        ) {
+            return back()->with(
+                'error',
+                'Chỉ được xóa đơn đã hủy hoặc đã hoàn thành. '
+                .'Không thể xóa đơn đang hoạt động.',
+            );
+        }
+
+        $refundAmount = max(
+            0,
+            (float) ($booking->refund_amount ?? 0),
+        );
+
+        $refundStatus = strtolower((string) (
+            $booking->refund_status
+            ?? 'none'
+        ));
+
+        if (
+            $refundAmount > 0
+            && !in_array(
+                $refundStatus,
+                [
+                    'none',
+                    'completed',
+                    'confirmed_by_user',
+                    'refunded',
+                ],
+                true,
+            )
+        ) {
+            return back()->with(
+                'error',
+                'Đơn đang có yêu cầu hoàn tiền chưa hoàn tất nên chưa thể xóa.',
+            );
+        }
+
+        $bookingCode = (string) (
+            $booking->booking_code
+            ?? $booking->code
+            ?? '#'.$booking->id
+        );
+
+        $storedFiles = array_values(array_filter([
+            $booking->refund_proof_image ?? null,
+            $booking->refund_proof ?? null,
+        ]));
+
+        try {
+            DB::transaction(function () use ($booking): void {
+                /** @var Booking $lockedBooking */
+                $lockedBooking = Booking::query()
+                    ->lockForUpdate()
+                    ->findOrFail($booking->id);
+
+                $lockedStatus = strtolower((string) (
+                    $lockedBooking->status
+                    ?? 'pending'
+                ));
+
+                $lockedUsageStatus = strtolower((string) (
+                    $lockedBooking->usage_status
+                    ?? 'not_checked_in'
+                ));
+
+                if (
+                    !in_array(
+                        $lockedStatus,
+                        ['cancelled', 'completed'],
+                        true,
+                    )
+                    || $lockedUsageStatus === 'checked_in'
+                ) {
+                    throw new \RuntimeException(
+                        'Trạng thái đơn đã thay đổi và không còn được phép xóa.',
+                    );
+                }
+
+                $relatedTables = [
+                    'booking_status_histories',
+                    'booking_reviews',
+                    'reviews',
+                    'booking_services',
+                    'booking_details',
+                    'booking_refunds',
+                    'booking_disputes',
+                    'booking_payments',
+                    'payment_transactions',
+                    'payments',
+                    'notifications',
+                ];
+
+                foreach ($relatedTables as $table) {
+                    if (
+                        Schema::hasTable($table)
+                        && Schema::hasColumn($table, 'booking_id')
+                    ) {
+                        DB::table($table)
+                            ->where('booking_id', $lockedBooking->id)
+                            ->delete();
+                    }
+                }
+
+                $lockedBooking->delete();
+            }, 3);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with(
+                'error',
+                'Không thể xóa đơn vì vẫn còn dữ liệu liên kết hoặc '
+                .'trạng thái đơn đã thay đổi.',
+            );
+        }
+
+        foreach ($storedFiles as $storedFile) {
+            $path = ltrim((string) $storedFile, '/');
+
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, strlen('storage/'));
+            }
+
+            if ($path !== '') {
+                Storage::disk('public')->delete($path);
+            }
+        }
+
+        return redirect()
+            ->route('admin.bookings.index')
+            ->with(
+                'success',
+                'Đã xóa vĩnh viễn đơn '.$bookingCode.'.',
+            );
+    }
+
     public function invoice(int $id): View
     {
         /** @var Booking $booking */

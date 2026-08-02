@@ -43,6 +43,23 @@
     .schedule-line {
         white-space: nowrap;
     }
+
+    .booking-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .booking-delete-button {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
 </style>
 @endpush
 
@@ -86,6 +103,30 @@
             </span>
         </div>
     </div>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show rounded-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
+        </div>
+    @endif
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-xl-2">
@@ -325,6 +366,12 @@
                                 ?? 0;
 
                             $isNoShow = !empty($booking->no_show_at);
+
+                            $canDelete = in_array(
+                                $orderStatus,
+                                ['cancelled', 'completed'],
+                                true
+                            ) && $usageStatus !== 'checked_in';
                         @endphp
 
                         <tr>
@@ -420,13 +467,46 @@
                             </td>
 
                             <td class="text-end pe-4">
-                                <a
-                                    href="{{ route('admin.bookings.show', $booking->id) }}"
-                                    class="btn btn-sm btn-primary"
-                                >
-                                    <i class="bi bi-eye me-1"></i>
-                                    Chi tiết
-                                </a>
+                                <div class="booking-actions">
+                                    <a
+                                        href="{{ route('admin.bookings.show', $booking->id) }}"
+                                        class="btn btn-sm btn-primary"
+                                    >
+                                        <i class="bi bi-eye me-1"></i>
+                                        Chi tiết
+                                    </a>
+
+                                    @if(
+                                        $canDelete
+                                        && \Illuminate\Support\Facades\Route::has(
+                                            'admin.bookings.destroy'
+                                        )
+                                    )
+                                        <form
+                                            method="POST"
+                                            action="{{ route(
+                                                'admin.bookings.destroy',
+                                                $booking->id
+                                            ) }}"
+                                            onsubmit="return confirm(
+                                                'Xóa vĩnh viễn đơn #{{ $booking->id }}? '
+                                                + 'Toàn bộ chi tiết, thanh toán và lịch sử '
+                                                + 'liên quan cũng sẽ bị xóa.'
+                                            );"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger booking-delete-button"
+                                                title="Xóa vĩnh viễn đơn"
+                                            >
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
