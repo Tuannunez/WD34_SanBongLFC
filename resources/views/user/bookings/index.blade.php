@@ -307,14 +307,20 @@
                                         $pStatus = strtolower(trim((string)($booking->payment_status ?? '')));
                                         $paidAmt = (float)($booking->paid_amount ?? 0);
 
-                                        // NHẬN DIỆN THÔNG MINH: Đã thanh toán 100% nếu type là full, status là paid, hoặc đơn đã confirmed và có trạng thái thanh toán thành công
-                                        $isPaidFull = (
-                                            $pType === 'full' || 
-                                            $pType === 'full_payment' || 
-                                            in_array($pStatus, ['paid', 'completed', 'paid_full']) ||
-                                            ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0) ||
-                                            ($status === 'confirmed' && $pStatus === 'paid')
-                                        );
+                                        // XÁC ĐỊNH ĐÃ THANH TOÁN 100%:
+                                        // - Số tiền đã thanh toán lớn hơn hoặc bằng tổng tiền
+                                        // - Hoặc trạng thái thanh toán đặc biệt "paid_full" / "completed"
+                                        // - Hoặc loại thanh toán là full và giao dịch đã được xác nhận là paid
+                                        $isPaidFull = false;
+                                        if ($totalMoneyRow > 0) {
+                                            if ($paidAmt >= $totalMoneyRow) {
+                                                $isPaidFull = true;
+                                            } elseif (in_array($pStatus, ['paid_full', 'completed'])) {
+                                                $isPaidFull = true;
+                                            } elseif ($status !== 'pending' && in_array($pType, ['full', 'full_payment'])) {
+                                                $isPaidFull = true;
+                                            }
+                                        }
 
                                         if ($isPaidFull) {
                                             $depositAmount = $totalMoneyRow;
