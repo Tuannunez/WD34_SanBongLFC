@@ -68,12 +68,6 @@
                 Sân bóng
             </a>
 
-            <a href="{{ url('/admin/field-images') }}"
-                class="sidebar-link ps-5 {{ request()->is('admin/field-images*') ? 'active':'' }}">
-                <i class="bi bi-images"></i>
-                Hình ảnh
-            </a>
-
             <a href="{{ url('/admin/time-slots') }}"
                 class="sidebar-link ps-5 {{ request()->is('admin/time-slots*') ? 'active':'' }}">
                 <i class="bi bi-clock"></i>
