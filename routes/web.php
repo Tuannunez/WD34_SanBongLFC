@@ -15,9 +15,9 @@ use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Admin\StadiumsController;
 use App\Http\Controllers\Admin\TimeSlotsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\BookingCheckInScannerController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\User\BookingCheckInController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
 use App\Http\Controllers\User\NewsController as UserNewsController;
 use App\Http\Controllers\User\NotificationController as UserNotificationController;
@@ -135,14 +135,6 @@ Route::middleware('auth')->group(function (): void {
         ->whereNumber('booking')
         ->name('user.bookings.show');
 
-    Route::post(
-        '/don-dat-san-cua-toi/{booking}/check-in',
-        [BookingCheckInController::class, 'store']
-    )
-        ->whereNumber('booking')
-        ->middleware('throttle:10,1')
-        ->name('user.bookings.check-in');
-
     Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
         ->whereNumber('booking')
         ->name('user.bookings.destroy');
@@ -207,7 +199,7 @@ Route::middleware('auth')->group(function (): void {
 | Admin routes
 |--------------------------------------------------------------------------
 |
-| Admin quản lý dữ liệu và xử lý ngoại lệ. Check-in do người dùng thực hiện;
+| Admin/nhân viên xác nhận check-in bằng mã đơn mô phỏng;
 | check-out và xử lý no-show do Scheduler tự động thực hiện.
 |
 */
@@ -344,8 +336,16 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('bookings', AdminBookingController::class)
-            ->only(['index', 'show']);
+        // Route tĩnh phải đặt trước route bookings/{booking}.
+        Route::get('bookings/check-in', [BookingCheckInScannerController::class, 'index'])
+            ->name('bookings.check-in.index');
+
+        Route::post('bookings/check-in', [BookingCheckInScannerController::class, 'store'])
+            ->middleware('throttle:20,1')
+            ->name('bookings.check-in.store');
+
+        Route::get('bookings', [AdminBookingController::class, 'index'])
+            ->name('bookings.index');
 
         Route::post('bookings/{id}/process-refund', [AdminBookingController::class, 'processRefund'])
             ->whereNumber('id')
@@ -354,6 +354,15 @@ Route::prefix('admin')
         Route::get('bookings/{id}/invoice', [AdminBookingController::class, 'invoice'])
             ->whereNumber('id')
             ->name('bookings.invoice');
+
+        Route::delete('bookings/{booking}', [AdminBookingController::class, 'destroy'])
+            ->whereNumber('booking')
+            ->name('bookings.destroy');
+
+        // Route động đặt cuối cùng để không nuốt /bookings/check-in.
+        Route::get('bookings/{booking}', [AdminBookingController::class, 'show'])
+            ->whereNumber('booking')
+            ->name('bookings.show');
 
         Route::get('booking-details', [BookingDetailController::class, 'index'])
             ->name('booking-details.index');
