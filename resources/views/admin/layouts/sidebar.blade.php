@@ -85,11 +85,21 @@
             Dịch vụ
         </div>
 
-        <a href="{{ route('admin.services.index') }}"
-            class="sidebar-link ps-5 {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+        <a class="sidebar-link" data-bs-toggle="collapse" href="#serviceMenu">
             <i class="bi bi-box-seam"></i>
-            Quản lý dịch vụ
+            <span class="flex-grow-1">
+                Quản lý dịch vụ
+            </span>
+            <i class="bi bi-chevron-down"></i>
         </a>
+
+        <div class="collapse show" id="serviceMenu">
+            <a href="{{ route('admin.services.index') }}"
+                class="sidebar-link ps-5 {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam"></i>
+                Quản lý dịch vụ
+            </a>
+        </div>
 
         <div class="sidebar-title">
             Thanh toán
