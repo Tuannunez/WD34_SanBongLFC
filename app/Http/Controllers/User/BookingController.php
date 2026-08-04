@@ -372,7 +372,14 @@ class BookingController extends Controller
         }
 
         $customerPhone = trim((string) $request->input('customer_phone', $user->phone ?? ''));
-        if ($customerPhone !== '' && !preg_match('/^[0-9]{1,10}$/', $customerPhone)) {
+        if ($customerPhone === '') {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'customer_phone' => 'Vui lòng nhập số điện thoại.',
+                ]);
+        }
+        if (!preg_match('/^[0-9]{1,10}$/', $customerPhone)) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -381,7 +388,12 @@ class BookingController extends Controller
         }
 
         $timeSlotText = $request->input('time_slot');
-        [$startTime, $endTime] = $this->splitTimeSlot($timeSlotText);
+        if ($timeSlotText) {
+            [$startTime, $endTime] = $this->splitTimeSlot($timeSlotText);
+        } else {
+            $startTime = null;
+            $endTime = null;
+        }
 
         $fieldId = $request->input('field_id');
 
@@ -1065,8 +1077,12 @@ class BookingController extends Controller
         return null;
     }
 
-    private function splitTimeSlot(string $timeSlot): array
+    private function splitTimeSlot(?string $timeSlot): array
     {
+        if (!$timeSlot) {
+            return [null, null];
+        }
+
         $parts = explode('-', $timeSlot);
 
         $startTime = trim($parts[0] ?? '');
