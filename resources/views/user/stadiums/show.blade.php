@@ -429,8 +429,16 @@
                                         <input type="text"
                                                name="customer_phone"
                                                value="{{ old('customer_phone', Auth::user()->phone ?? '') }}"
-                                               class="form-control rounded-3"
-                                               placeholder="Nhập số điện thoại liên hệ">
+                                               class="form-control rounded-3 @error('customer_phone') is-invalid @enderror"
+                                               placeholder="Nhập số điện thoại liên hệ"
+                                               inputmode="numeric"
+                                               pattern="[0-9]{1,10}"
+                                               title="Chỉ nhập số và tối đa 10 chữ số"
+                                               maxlength="10">
+
+                                        <div class="invalid-feedback" id="customerPhoneFeedback">
+                                            @error('customer_phone'){{ $message }}@else Chỉ nhập số và tối đa 10 chữ số.@enderror
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
@@ -517,7 +525,9 @@
                                                     <div class="d-flex align-items-center justify-content-between py-2">
                                                         <div class="d-flex align-items-center">
                                                             <input class="form-check-input me-2 service-select-panel" type="checkbox"
-                                                                   id="stadiumServiceCheck{{ $sIndex }}" data-index="{{ $sIndex }}">
+                                                                   id="stadiumServiceCheck{{ $sIndex }}"
+                                                                   data-index="{{ $sIndex }}"
+                                                                   data-price="{{ $service->price }}">
                                                             <label for="stadiumServiceCheck{{ $sIndex }}" class="mb-0">
                                                                 <div class="fw-semibold">{{ $service->name }}</div>
                                                                 <small class="text-muted">{{ $service->unit ?? 'lượt' }} - {{ number_format((float)$service->price,0,',','.') }}đ</small>
@@ -687,9 +697,13 @@
         const selectedPrice = document.getElementById('selectedPrice');
         const summaryTime = document.getElementById('summaryTime');
         const summaryPrice = document.getElementById('summaryPrice');
-        const bookingForm = document.getElementById('bookingForm');
         const bookingDate = document.getElementById('bookingDate');
         const selectedField = document.getElementById('selectedField');
+        const bookingForm = document.getElementById('bookingForm');
+        const customerPhoneInput = bookingForm ? bookingForm.querySelector('[name="customer_phone"]') : null;
+        const serviceCheckboxes = Array.from(document.querySelectorAll('.service-select-panel'));
+        const serviceQtyInputs = Array.from(document.querySelectorAll('.service-qty-panel'));
+        let selectedSlotPrice = 0;
         const availabilityUrl = "{{ route('user.bookings.availability', $stadium->id) }}";
 
         function formatMoney(value) {
@@ -697,7 +711,42 @@
             return value.toLocaleString('vi-VN') + 'đ';
         }
 
+        function getServiceTotal() {
+            let total = 0;
+            serviceQtyInputs.forEach(function (qty) {
+                const idx = qty.dataset.index;
+                const checkbox = document.querySelector('.service-select-panel[data-index="' + idx + '"]');
+                if (!checkbox || !checkbox.checked) {
+                    return;
+                }
+                const price = Number(checkbox.dataset.price || 0);
+                const quantity = Number(qty.value || 0);
+                total += price * quantity;
+            });
+            return total;
+        }
+
+        function updateTotalPrice() {
+            const serviceTotal = getServiceTotal();
+            const total = selectedSlotPrice + serviceTotal;
+
+            if (selectedPrice) {
+                selectedPrice.value = total;
+                selectedPrice.dataset.basePrice = selectedSlotPrice;
+            }
+
+            if (summaryPrice) {
+                summaryPrice.innerText = formatMoney(total);
+            }
+        }
+
         function resetSelection() {
+            slotButtons.forEach(function (item) {
+                item.classList.remove('active');
+            });
+
+            selectedSlotPrice = 0;
+
             slotButtons.forEach(function (item) {
                 item.classList.remove('active');
             });
@@ -768,7 +817,9 @@
 
                 if (button.classList.contains('active')) {
                     selectedPrice.value = slot.price;
-                    summaryPrice.innerText = formatMoney(slot.price);
+                    if (summaryPrice) {
+                        summaryPrice.innerText = formatMoney(slot.price);
+                    }
                 }
             });
 
@@ -779,6 +830,10 @@
 
                 if (selectedButton && selectedButton.disabled) {
                     resetSelection();
+                }
+
+                if (selectedButton && selectedButton.classList.contains('active')) {
+                    updateTotalPrice();
                 }
             }
         }
@@ -834,16 +889,11 @@
                     selectedTimeSlot.value = time;
                 }
 
-                if (selectedPrice) {
-                    selectedPrice.value = price;
-                }
+                selectedSlotPrice = Number(price || 0);
+                updateTotalPrice();
 
                 if (summaryTime) {
                     summaryTime.innerText = time;
-                }
-
-                if (summaryPrice) {
-                    summaryPrice.innerText = formatMoney(price);
                 }
             });
         });
@@ -895,46 +945,52 @@
             bookingDate.addEventListener('change', fetchAvailability);
         }
 
-        if (bookingForm) {
-            bookingForm.addEventListener('submit', function (event) {
-                if (!selectedTimeSlot || !selectedTimeSlot.value) {
-                    event.preventDefault();
-                    alert('Vui lòng chọn khung giờ đặt sân.');
-                    return false;
+        serviceCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                const idx = checkbox.dataset.index;
+                const qty = document.querySelector('.service-qty-panel[data-index="' + idx + '"]');
+                if (!qty) {
+                    return;
                 }
+                qty.disabled = !checkbox.checked;
+                if (!checkbox.checked) {
+                    qty.value = 0;
+                } else if (!qty.value || qty.value == 0) {
+                    qty.value = 1;
+                }
+                updateTotalPrice();
+            });
+        });
 
-                const selectedButton = slotButtons.find(function (item) {
-                    return item.dataset.time === selectedTimeSlot.value;
-                });
+        serviceQtyInputs.forEach(function (qty) {
+            qty.addEventListener('input', function () {
+                if (qty.value < 0) {
+                    qty.value = 0;
+                }
+                updateTotalPrice();
+            });
+        });
 
-                if (selectedButton && selectedButton.disabled) {
-                    event.preventDefault();
-                    alert('Khung giờ này vừa được người khác đặt. Vui lòng chọn khung giờ khác.');
-                    return false;
+        if (customerPhoneInput) {
+            const customerPhoneFeedback = document.getElementById('customerPhoneFeedback');
+
+            customerPhoneInput.addEventListener('invalid', function (event) {
+                event.preventDefault();
+                customerPhoneInput.classList.add('is-invalid');
+                if (customerPhoneFeedback) {
+                    customerPhoneFeedback.textContent = 'Số điện thoại chỉ gồm số và tối đa 10 chữ số.';
+                }
+            });
+
+            customerPhoneInput.addEventListener('input', function () {
+                customerPhoneInput.setCustomValidity('');
+                if (customerPhoneInput.validity.valid) {
+                    customerPhoneInput.classList.remove('is-invalid');
                 }
             });
         }
 
         fetchAvailability();
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // service toggle in stadium booking panel
-        function togglePanelQty(index, checked) {
-            const qty = document.querySelector('.service-qty-panel[data-index="' + index + '"]');
-            if (!qty) return;
-            qty.disabled = !checked;
-            if (!checked) qty.value = 0; else if (!qty.value || qty.value == 0) qty.value = 1;
-        }
-
-        document.querySelectorAll('.service-select-panel').forEach(function (cb) {
-            cb.addEventListener('change', function (e) {
-                const idx = e.target.getAttribute('data-index');
-                togglePanelQty(idx, e.target.checked);
-            });
-            togglePanelQty(cb.getAttribute('data-index'), cb.checked);
-        });
     });
 </script>
 @endpush

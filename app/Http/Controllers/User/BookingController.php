@@ -260,6 +260,8 @@ class BookingController extends Controller
                 ]);
         }
 
+        $user = Auth::user();
+
         $bookingDate = $this->convertBookingDate($request->input('booking_date'));
 
         if (!$bookingDate) {
@@ -267,7 +269,16 @@ class BookingController extends Controller
                 ->withInput()
                 ->withErrors([
                     'booking_date' => 'Ngày đặt sân không hợp lệ.',
-                ]);    
+                ]);
+        }
+
+        $customerPhone = trim((string) $request->input('customer_phone', $user->phone ?? ''));
+        if ($customerPhone !== '' && !preg_match('/^[0-9]{1,10}$/', $customerPhone)) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'customer_phone' => 'Số điện thoại chỉ gồm số và tối đa 10 chữ số.',
+                ]);
         }
 
         $timeSlotText = $request->input('time_slot');
@@ -470,10 +481,7 @@ class BookingController extends Controller
 
         $customerName = $user->name ?? 'Khách hàng';
         $customerEmail = $user->email ?? 'customer@example.com';
-        $customerPhone = $request->input('customer_phone')
-            ?? $request->input('phone')
-            ?? $user->phone
-            ?? '0000000000';
+        $customerPhone = trim((string) $request->input('customer_phone', $user->phone ?? ''));
 
         $depositAmount = $finalAmount * 0.3; // Đơn lẻ cọc 30%
         $paymentTypeInput = strtolower((string)$request->input('payment_type', 'deposit'));
