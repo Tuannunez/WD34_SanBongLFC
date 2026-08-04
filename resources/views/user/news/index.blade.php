@@ -6,6 +6,9 @@
 <div class="container py-5">
     <div class="row gy-4">
         <div class="col-xl-8">
+            @php
+                $sidebarItems = collect();
+            @endphp
             @if($news->count())
                 @php
                     $newsCollection = $news->getCollection();
