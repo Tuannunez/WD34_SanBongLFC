@@ -715,7 +715,15 @@ body {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.chart-tab').forEach(item => item.classList.remove('active'));
                 this.classList.add('active');
-                customPanel.classList.toggle('visible', this.dataset.type === 'custom');
+
+                const isCustom = this.dataset.type === 'custom';
+                if (isCustom) {
+                    const isVisible = customPanel?.classList.contains('visible');
+                    customPanel?.classList.toggle('visible', !isVisible);
+                } else {
+                    customPanel?.classList.remove('visible');
+                }
+
                 if (this.dataset.type === '30') {
                     revenueChart.updateOptions({ xaxis: { categories: rev30Labels } });
                     revenueChart.updateSeries([{ name: 'Doanh thu', data: rev30Series }]);
