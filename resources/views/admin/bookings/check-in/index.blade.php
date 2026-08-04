@@ -113,6 +113,14 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     @if($errors->any())
         <div class="alert alert-danger rounded-4">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -177,7 +185,7 @@
 
         <div class="col-xl-7">
             @if($booking)
-                <div class="card scanner-card">
+                <div class="card scanner-card mb-4">
                     <div class="card-header bg-white border-0 p-4 pb-0">
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                             <div>
@@ -268,15 +276,8 @@
                                     Xác nhận check-in — Sân hoạt động
                                 </button>
                             </form>
-                        @elseif($usageStatus === 'checked_in')
-                            <a
-                                href="{{ route('admin.bookings.show', $booking->id) }}"
-                                class="btn btn-outline-primary btn-lg w-100"
-                            >
-                                <i class="bi bi-eye me-1"></i>
-                                Xem đơn đang hoạt động
-                            </a>
                         @endif
+
                     </div>
                 </div>
             @else

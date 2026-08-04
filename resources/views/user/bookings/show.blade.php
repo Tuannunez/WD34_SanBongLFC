@@ -214,7 +214,6 @@
     .booking-card:hover {
         box-shadow: 0 16px 42px rgba(15, 23, 42, .085);
     }
-
 </style>
 @endpush
 
@@ -626,6 +625,25 @@
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             {{ $errors->first('check_in') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    {{-- NÚT THÊM GIỜ (GIA HẠN SÂN) DÀNH CHO KHÁCH HÀNG KHI ĐANG ĐÁ --}}
+    @if($status === 'confirmed' && $usageStatus === 'checked_in')
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-light">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-clock-history text-warning me-2"></i> Bạn muốn đá thêm giờ?</h5>
+                    <p class="text-muted small mb-0">Hệ thống sẽ tự động kiểm tra xem sân có trống khung giờ tiếp theo hay không trước khi gia hạn.</p>
+                </div>
+                
+                <form action="{{ route('user.bookings.add-extra-time', $booking->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn gia hạn thêm khung giờ kế tiếp cho sân này?');">
+                    @csrf
+                    <button type="submit" class="btn btn-warning fw-bold text-dark rounded-3 px-4 py-2.5 shadow-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Thêm giờ ngay
+                    </button>
+                </form>
+            </div>
         </div>
     @endif
 

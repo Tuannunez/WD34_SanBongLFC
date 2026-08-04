@@ -141,6 +141,90 @@ final class BookingCheckInScannerController extends Controller
             );
     }
 
+    /**
+     * HÀM XỬ LÝ THÊM GIỜ (GIA HẠN SÂN) KÈM KIỂM TRA TRÙNG LỊCH
+     */
+    public function addExtraTime(Request $request, int $bookingId): RedirectResponse
+    {
+        $booking = DB::table('bookings')->where('id', $bookingId)->first();
+        
+        $bookingDetail = DB::table('booking_details')
+            ->where('booking_id', $bookingId)
+            ->orderByDesc('end_time')
+            ->first();
+
+        if (!$booking || !$bookingDetail) {
+            return back()->with('error', 'Không tìm thấy thông tin đơn đặt sân.');
+        }
+
+        $fieldId = $bookingDetail->field_id;
+        $bookingDate = $bookingDetail->booking_date ?? $bookingDetail->date;
+        $currentEndTime = $bookingDetail->end_time;
+
+        // Tìm khung giờ kế tiếp dựa vào giờ kết thúc hiện tại
+        $nextSlot = DB::table('time_slots')
+            ->where('start_time', $currentEndTime)
+            ->where('status', true)
+            ->first();
+
+        if (!$nextSlot) {
+            return back()->with('error', 'Không tìm thấy khung giờ tiếp theo để thêm giờ.');
+        }
+
+        // Kiểm tra trùng lịch: Khung giờ tiếp theo đã có ai đặt chưa (trạng thái != cancelled)
+        $isConflict = DB::table('booking_details as bd')
+            ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+            ->where('bd.field_id', $fieldId)
+            ->where('bd.time_slot_id', $nextSlot->id)
+            ->whereDate('bd.booking_date', $bookingDate)
+            ->where('b.status', '!=', 'cancelled')
+            ->exists();
+
+        if ($isConflict) {
+            return back()->with('error', 'Sân này đã có khách đặt ở khung giờ tiếp theo, không thể thêm giờ!');
+        }
+
+        $field = DB::table('fields')->where('id', $fieldId)->first();
+        $extraPrice = (float)($field->price_per_hour ?? 350000);
+
+        try {
+            DB::beginTransaction();
+
+            DB::table('booking_details')->insert([
+                'booking_id' => $bookingId,
+                'stadium_id' => $booking->stadium_id ?? null,
+                'field_id' => $fieldId,
+                'time_slot_id' => $nextSlot->id,
+                'booking_date' => $bookingDate,
+                'date' => $bookingDate,
+                'start_time' => $nextSlot->start_time,
+                'end_time' => $nextSlot->end_time,
+                'price' => $extraPrice,
+                'total_price' => $extraPrice,
+                'status' => 'confirmed',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $currentTotal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
+            $newTotalAmount = $currentTotal + $extraPrice;
+
+            DB::table('bookings')->where('id', $bookingId)->update([
+                'total_amount' => $newTotalAmount,
+                'final_amount' => $newTotalAmount,
+                'total_price' => $newTotalAmount,
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Thêm giờ thành công! Đã cộng thêm khung giờ ' . substr($nextSlot->start_time, 0, 5) . ' - ' . substr($nextSlot->end_time, 0, 5) . ' vào đơn hàng.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi khi thêm giờ: ' . $e->getMessage());
+        }
+    }
+
     private function findBookingByCode(string $bookingCode): ?Booking
     {
         $codeColumn = $this->bookingCodeColumn();
@@ -162,16 +246,6 @@ final class BookingCheckInScannerController extends Controller
         return $booking;
     }
 
-    /**
-     * @return array{
-     *     can_check_in: bool,
-     *     message: string,
-     *     payment_full: bool,
-     *     starts_at: CarbonImmutable|null,
-     *     ends_at: CarbonImmutable|null,
-     *     opens_at: CarbonImmutable|null
-     * }
-     */
     private function evaluateCheckIn(Booking $booking): array
     {
         $status = strtolower((string) ($booking->status ?? 'pending'));
@@ -240,17 +314,6 @@ final class BookingCheckInScannerController extends Controller
         );
     }
 
-    /**
-     * @param array{starts_at:CarbonImmutable,ends_at:CarbonImmutable}|null $window
-     * @return array{
-     *     can_check_in: bool,
-     *     message: string,
-     *     payment_full: bool,
-     *     starts_at: CarbonImmutable|null,
-     *     ends_at: CarbonImmutable|null,
-     *     opens_at: CarbonImmutable|null
-     * }
-     */
     private function evaluation(
         bool $canCheckIn,
         string $message,
@@ -268,9 +331,6 @@ final class BookingCheckInScannerController extends Controller
         ];
     }
 
-    /**
-     * @return array{starts_at:CarbonImmutable,ends_at:CarbonImmutable}|null
-     */
     private function resolveScheduleWindow(Booking $booking): ?array
     {
         $timezone = $this->timezone();

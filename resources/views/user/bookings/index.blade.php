@@ -407,10 +407,6 @@
                                         $pStatus = strtolower(trim((string)($booking->payment_status ?? '')));
                                         $paidAmt = (float)($booking->paid_amount ?? 0);
 
-                                        // XÁC ĐỊNH ĐÃ THANH TOÁN 100%:
-                                        // - Số tiền đã thanh toán lớn hơn hoặc bằng tổng tiền
-                                        // - Hoặc trạng thái thanh toán đặc biệt "paid_full" / "completed"
-                                        // - Hoặc loại thanh toán là full và giao dịch đã được xác nhận là paid
                                         $isPaidFull = false;
                                         if ($totalMoneyRow > 0) {
                                             if ($paidAmt >= $totalMoneyRow) {
@@ -814,7 +810,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- MODAL CHI TIẾT -->
+                                            <!-- MODAL CHI TIẾT (ĐÃ THÊM NÚT GIA HẠN THÊM GIỜ) -->
                                             <div class="modal fade text-start" id="detailModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -827,6 +823,30 @@
                                                         </div>
 
                                                         <div class="modal-body p-4">
+                                                            
+                                                            {{-- TÍCH HỢP NÚT GIA HẠN THÊM GIỜ Ở ĐÂY --}}
+                                                            @if($status === 'confirmed')
+                                                                <div class="p-3 bg-light border border-warning-subtle rounded-4 mb-4">
+                                                                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history text-warning me-1"></i> Bạn muốn đá thêm giờ?</h6>
+                                                                    <form action="{{ route('user.bookings.add-extra-time', $booking->id) }}" method="POST" onsubmit="return confirm('Xác nhận gia hạn thêm giờ cho sân này?');">
+                                                                        @csrf
+                                                                        <div class="row g-2 align-items-center">
+                                                                            <div class="col-sm-7">
+                                                                                <select name="duration_minutes" class="form-select form-select-sm rounded-3 fw-semibold">
+                                                                                    <option value="30">Gia hạn thêm 30 phút</option>
+                                                                                    <option value="60" selected>Gia hạn thêm 1 tiếng</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="col-sm-5">
+                                                                                <button type="submit" class="btn btn-warning btn-sm fw-bold text-dark w-100 rounded-3 shadow-sm py-1.5">
+                                                                                    <i class="bi bi-plus-circle me-1"></i> Xác nhận thêm giờ
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            @endif
+
                                                             @if($isMonthly)
                                                                 <div class="alert alert-success border-0 rounded-3 small mb-3">
                                                                     <i class="bi bi-lock-fill me-1"></i> <strong>Lịch cố định theo tháng:</strong> Đơn hàng đã được đặt giữ sân cả tháng và không áp dụng hủy/hoàn tiền.

@@ -80,6 +80,105 @@ class BookingController extends Controller
         ));
     }
 
+    public function addExtraTime(Request $request, int $bookingId)
+    {
+        $userId = Auth::id();
+
+        $booking = DB::table('bookings')
+            ->where('id', $bookingId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$booking) {
+            abort(404);
+        }
+
+        $bookingDetail = DB::table('booking_details')
+            ->where('booking_id', $bookingId)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$bookingDetail) {
+            return back()->with('error', 'Không tìm thấy thông tin chi tiết sân của đơn hàng.');
+        }
+
+        $fieldId = $bookingDetail->field_id;
+        $bookingDate = $bookingDetail->booking_date ?? now()->format('Y-m-d');
+        
+        $currentTimeSlot = DB::table('time_slots')
+            ->where('id', $bookingDetail->time_slot_id)
+            ->first();
+
+        if (!$currentTimeSlot || !isset($currentTimeSlot->end_time)) {
+            return back()->with('error', 'Không xác định được khung giờ hiện tại của sân.');
+        }
+
+        $currentEndTime = $currentTimeSlot->end_time;
+        $durationMinutes = (int) $request->input('duration_minutes', 60);
+
+        $nextSlot = DB::table('time_slots')
+            ->where('start_time', $currentEndTime)
+            ->where('status', true)
+            ->first();
+
+        if (!$nextSlot) {
+            return back()->with('error', 'Rất tiếc, đã hết khung giờ trong ngày hoặc không tìm thấy khung giờ tiếp theo để thêm giờ.');
+        }
+
+        $isConflict = DB::table('booking_details as bd')
+            ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+            ->where('bd.field_id', $fieldId)
+            ->where('bd.time_slot_id', $nextSlot->id)
+            ->whereDate('bd.booking_date', $bookingDate)
+            ->where('b.status', '!=', 'cancelled')
+            ->exists();
+
+        if ($isConflict) {
+            return back()->with('error', 'Sân này đã có người đặt ở khung giờ tiếp theo rồi, bạn không thể thêm giờ!');
+        }
+
+        $field = DB::table('fields')->where('id', $fieldId)->first();
+        $pricePerHour = (float)($field->price_per_hour ?? 350000);
+        $extraPrice = $pricePerHour * ($durationMinutes / 60);
+
+        try {
+            DB::beginTransaction();
+
+            DB::table('booking_details')->insert([
+                'booking_id' => $bookingId,
+                'field_id' => $fieldId,
+                'time_slot_id' => $nextSlot->id,
+                'booking_date' => $bookingDate,
+                'price' => $extraPrice,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $currentTotal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
+            $newTotalAmount = $currentTotal + $extraPrice;
+
+            // Chỉ cập nhật các cột chắc chắn tồn tại trong bảng bookings
+            $updateData = [
+                'updated_at' => now(),
+            ];
+            if (Schema::hasColumn('bookings', 'total_amount')) {
+                $updateData['total_amount'] = $newTotalAmount;
+            }
+            if (Schema::hasColumn('bookings', 'final_amount')) {
+                $updateData['final_amount'] = $newTotalAmount;
+            }
+
+            DB::table('bookings')->where('id', $bookingId)->update($updateData);
+
+            DB::commit();
+            return back()->with('success', 'Gia hạn thêm khung giờ (' . substr($nextSlot->start_time, 0, 5) . ' - ' . substr($nextSlot->end_time, 0, 5) . ') thành công!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi khi thêm giờ: ' . $e->getMessage());
+        }
+    }
+
     public function create(int $stadium)
     {
         $stadiumData = DB::table('stadiums')->where('id', $stadium)->first();
@@ -634,7 +733,6 @@ class BookingController extends Controller
             return back()->withInput()->withErrors(['monthly_error' => 'Vui lòng chọn đầy đủ Sân và Khung giờ đá!']);
         }
 
-        // CHẶN NGAY NẾU CHỌN THÁNG/NĂM TRONG QUÁ KHỨ SO VỚI THỜI GIAN HIỆN TẠI
         $selectedMonthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $currentMonthStart = now()->startOfMonth();
 
@@ -648,7 +746,6 @@ class BookingController extends Controller
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $date = Carbon::createFromDate($year, $month, $day);
             
-            // Chỉ lấy các ngày đúng thứ trong tuần VÀ phải từ hôm nay trở đi (không lấy ngày đã qua trong tháng hiện tại)
             if ($date->dayOfWeek === $dayOfWeek && $date->greaterThanOrEqualTo(now()->startOfDay())) {
                 $datesInMonth[] = $date->format('Y-m-d');
             }

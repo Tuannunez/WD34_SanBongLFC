@@ -135,6 +135,11 @@ Route::middleware('auth')->group(function (): void {
         ->whereNumber('booking')
         ->name('user.bookings.show');
 
+    // User tự thêm giờ (gia hạn sân) cho đơn của mình
+    Route::post('/don-dat-san-cua-toi/{booking}/add-extra-time', [UserBookingController::class, 'addExtraTime'])
+        ->whereNumber('booking')
+        ->name('user.bookings.add-extra-time');
+
     Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
         ->whereNumber('booking')
         ->name('user.bookings.destroy');
