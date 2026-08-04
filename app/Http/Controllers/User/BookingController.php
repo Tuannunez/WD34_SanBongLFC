@@ -70,14 +70,138 @@ class BookingController extends Controller
             )
             ->get();
 
+        $availableServices = DB::table('services')
+            ->where('status', 1)
+            ->orderBy('name')
+            ->get();
+
         $bookingReview = Review::where('booking_id', $booking->id)->first();
 
         return view('user.bookings.show', compact(
             'booking',
             'bookingDetails',
             'bookingServices',
-            'bookingReview'
+            'bookingReview',
+            'availableServices'
         ));
+    }
+
+    public function storeAdditionalServices(Request $request, int $bookingId)
+    {
+        $booking = DB::table('bookings')
+            ->where('id', $bookingId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$booking) {
+            abort(404);
+        }
+
+        if (in_array($booking->status, ['cancelled', 'completed'])) {
+            return back()->withErrors(['services' => 'Không thể thêm dịch vụ cho đơn đã hoàn thành hoặc đã hủy.']);
+        }
+
+        $serviceInputs = $request->input('services', []);
+        $selectedServices = [];
+
+        foreach ($serviceInputs as $item) {
+            if (empty($item['selected'])) {
+                continue;
+            }
+
+            $serviceId = intval($item['id'] ?? 0);
+            $quantity = intval($item['quantity'] ?? 0);
+
+            if ($serviceId <= 0 || $quantity <= 0) {
+                continue;
+            }
+
+            $selectedServices[] = [
+                'service_id' => $serviceId,
+                'quantity' => $quantity,
+            ];
+        }
+
+        if (empty($selectedServices)) {
+            return back()->withInput()->withErrors(['services' => 'Vui lòng chọn ít nhất một dịch vụ để thêm.']);
+        }
+
+        $insertRows = [];
+        $addedTotal = 0;
+        $details = [];
+
+        foreach ($selectedServices as $item) {
+            $service = DB::table('services')
+                ->where('id', $item['service_id'])
+                ->where('status', true)
+                ->first();
+
+            if (!$service) {
+                continue;
+            }
+
+            $price = (float) $service->price;
+            $total = $price * $item['quantity'];
+
+            $insertRows[] = [
+                'booking_id' => $booking->id,
+                'service_id' => $service->id,
+                'quantity' => $item['quantity'],
+                'price' => $price,
+                'total' => $total,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $addedTotal += $total;
+            $details[] = $item['quantity'] . ' x ' . $service->name;
+        }
+
+        if (empty($insertRows) || $addedTotal <= 0) {
+            return back()->withInput()->withErrors(['services' => 'Không có dịch vụ hợp lệ để thêm.']);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            DB::table('booking_services')->insert($insertRows);
+
+            $currentTotal = (float) ($booking->total_price ?? $booking->total_amount ?? $booking->final_amount ?? 0);
+            $currentServiceTotal = (float) ($booking->service_total ?? 0);
+            $newTotal = $currentTotal + $addedTotal;
+
+            $updateData = [
+                'total_amount' => $newTotal,
+                'updated_at' => now(),
+                'note' => trim(($booking->note ?? '') . '\n+ Thêm dịch vụ: ' . implode(', ', $details)),
+            ];
+
+            if (Schema::hasColumn('bookings', 'total_price')) {
+                $updateData['total_price'] = $newTotal;
+            }
+
+            if (Schema::hasColumn('bookings', 'final_amount')) {
+                $updateData['final_amount'] = $newTotal;
+            }
+
+            if (Schema::hasColumn('bookings', 'service_total')) {
+                $updateData['service_total'] = $currentServiceTotal + $addedTotal;
+            }
+
+            DB::table('bookings')
+                ->where('id', $booking->id)
+                ->update($updateData);
+
+            DB::commit();
+
+            return redirect()
+                ->route('user.bookings.show', $booking->id)
+                ->with('success', 'Đã thêm dịch vụ và cập nhật tổng tiền thành công.');
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            return back()->withInput()->withErrors(['services' => 'Có lỗi khi thêm dịch vụ. Vui lòng thử lại.']);
+        }
     }
 
     public function create(int $stadium)
