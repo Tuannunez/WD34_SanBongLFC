@@ -495,21 +495,25 @@ return (float) $query->sum($amountColumn);
 
 private function getBookingStatusChart()
 {
+    $now = now();
     return [
 
         DB::table('bookings')
             ->where('status', 'confirmed')
-            ->whereDate('created_at', today())
+            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->count(),
 
         DB::table('bookings')
             ->where('status', 'pending')
-            ->whereDate('created_at', today())
+            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->count(),
 
         DB::table('bookings')
             ->where('status', 'cancelled')
-            ->whereDate('created_at', today())
+            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->count(),
 
     ];
