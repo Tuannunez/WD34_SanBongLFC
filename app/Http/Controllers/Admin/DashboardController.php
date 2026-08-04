@@ -46,6 +46,8 @@ $fieldSpark = $this->getFieldSpark();
 
 $revenue30Days = $this->getRevenueChart(30);
 
+$customRevenueChart = $this->getRevenueHistoryChart(365);
+
 $bookingStatusChart = $this->getBookingStatusChart();
 
 $topFieldsChart = $this->getTopFieldsChart();
@@ -118,6 +120,8 @@ $quarter3Revenue = $this->getQuarterRevenue(3);
 'revenue7Days',
 
 'revenue30Days',
+
+'customRevenueChart',
 
 'bookingStatusChart',
 
@@ -363,6 +367,51 @@ return (float) $query->sum($amountColumn);
         }
 
         return null;
+    }
+
+    private function getRevenueHistoryChart($days = 365)
+    {
+        $amountColumn = $this->firstExistingColumn('bookings', [
+            'total_amount',
+            'total_price',
+            'amount'
+        ]);
+
+        if (!$amountColumn) {
+            return [
+                'dates' => [],
+                'labels' => [],
+                'series' => []
+            ];
+        }
+
+        $start = now()->subDays($days - 1);
+
+        $bookings = DB::table('bookings')
+            ->whereIn('bookings.status', ['confirmed', 'completed'])
+            ->selectRaw("DATE(created_at) as date, SUM($amountColumn) as total")
+            ->whereDate('created_at', '>=', $start)
+            ->groupBy(DB::raw("DATE(created_at)"))
+            ->orderBy('date')
+            ->get();
+
+        $dates = [];
+        $labels = [];
+        $series = [];
+
+        for ($i = 0; $i < $days; $i++) {
+            $day = $start->copy()->addDays($i);
+            $dates[] = $day->format('Y-m-d');
+            $labels[] = $day->format('d/m');
+            $value = $bookings->firstWhere('date', $day->format('Y-m-d'));
+            $series[] = $value ? (float) $value->total : 0;
+        }
+
+        return [
+            'dates' => $dates,
+            'labels' => $labels,
+            'series' => $series
+        ];
     }
 
     private function getRevenueChart($days = 30)

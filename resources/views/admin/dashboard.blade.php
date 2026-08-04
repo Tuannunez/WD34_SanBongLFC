@@ -15,6 +15,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 .chart-tab {
     padding: 9px 18px;
@@ -29,6 +30,29 @@ body {
     background: #206bc4;
     color: #fff;
     transform: translateY(-2px);
+}
+.custom-date-panel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 4px;
+    padding: 6px 10px;
+    background: #f5f7fb;
+    border-radius: 10px;
+}
+.custom-date-panel.hidden {
+    display: none;
+}
+.custom-date-panel input {
+    border: 1px solid #dfe7f1;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+}
+.custom-date-panel button {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
 }
 .dashboard-header {
     display: flex;
@@ -220,9 +244,16 @@ body {
                 <div class="chart-tabs">
                     <div class="chart-tab active" data-type="30">30 ngày</div>
                     <div class="chart-tab" data-type="7">7 ngày</div>
+                    <div class="chart-tab" data-type="custom">Tùy chỉnh</div>
                     <div class="chart-tab" data-quarter="1">Quý 1</div>
                     <div class="chart-tab" data-quarter="2">Quý 2</div>
                     <div class="chart-tab" data-quarter="3">Quý 3</div>
+                    <div class="custom-date-panel" id="customDatePanel">
+                        <input type="date" id="customStartDate" value="{{ now()->subDays(29)->format('Y-m-d') }}">
+                        <span class="text-muted">→</span>
+                        <input type="date" id="customEndDate" value="{{ now()->format('Y-m-d') }}">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="applyCustomDate">Áp dụng</button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -432,6 +463,7 @@ body {
         const q1Data = @json($q1);
         const q2Data = @json($q2);
         const q3Data = @json($q3);
+        const customRangeData = @json($customRevenueChart ?? ['dates' => [], 'labels' => [], 'series' => []]);
 
         let revenueChart = new ApexCharts(document.querySelector("#revenueChart"), {
             chart: { height: 360, type: "area", toolbar: { show: false }, zoom: { enabled: false } },
@@ -443,32 +475,82 @@ body {
         });
         revenueChart.render();
 
+        const customPanel = document.getElementById("customDatePanel");
+        const customStartInput = document.getElementById("customStartDate");
+        const customEndInput = document.getElementById("customEndDate");
+
+        function updateCustomRevenueChart(startDate, endDate) {
+            const start = new Date(startDate + "T00:00:00");
+            const end = new Date(endDate + "T00:00:00");
+
+            if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+                return;
+            }
+
+            const labels = [];
+            const series = [];
+
+            (customRangeData.dates || []).forEach((date, index) => {
+                const current = new Date(date + "T00:00:00");
+
+                if (current >= start && current <= end) {
+                    labels.push(customRangeData.labels?.[index] || date);
+                    series.push(Number(customRangeData.series?.[index] || 0));
+                }
+            });
+
+            if (!labels.length) {
+                labels.push(...(rev30Labels || []));
+                series.push(...(rev30Series || []));
+            }
+
+            revenueChart.updateOptions({ xaxis: { categories: labels } });
+            revenueChart.updateSeries([{ name: "Doanh thu", data: series }]);
+        }
+
         document.querySelectorAll(".chart-tab").forEach(tab => {
             tab.addEventListener("click", function() {
                 document.querySelectorAll(".chart-tab").forEach(item => item.classList.remove("active"));
                 this.classList.add("active");
 
                 if (this.dataset.type == "30") {
+                    customPanel.classList.remove("hidden");
                     revenueChart.updateOptions({ xaxis: { categories: rev30Labels } });
                     revenueChart.updateSeries([{ name: "Doanh thu", data: rev30Series }]);
                 }
                 if (this.dataset.type == "7") {
+                    customPanel.classList.remove("hidden");
                     revenueChart.updateOptions({ xaxis: { categories: rev7Labels } });
                     revenueChart.updateSeries([{ name: "Doanh thu", data: rev7Series }]);
                 }
+                if (this.dataset.type == "custom") {
+                    customPanel.classList.remove("hidden");
+                    if (customStartInput.value && customEndInput.value) {
+                        updateCustomRevenueChart(customStartInput.value, customEndInput.value);
+                    }
+                }
                 if (this.dataset.quarter == "1") {
+                    customPanel.classList.add("hidden");
                     revenueChart.updateOptions({ xaxis: { categories: ["Th1", "Th2", "Th3", "Th4"] } });
                     revenueChart.updateSeries([{ name: "Doanh thu", data: q1Data }]);
                 }
                 if (this.dataset.quarter == "2") {
+                    customPanel.classList.add("hidden");
                     revenueChart.updateOptions({ xaxis: { categories: ["Th5", "Th6", "Th7", "Th8"] } });
                     revenueChart.updateSeries([{ name: "Doanh thu", data: q2Data }]);
                 }
                 if (this.dataset.quarter == "3") {
+                    customPanel.classList.add("hidden");
                     revenueChart.updateOptions({ xaxis: { categories: ["Th9", "Th10", "Th11", "Th12"] } });
                     revenueChart.updateSeries([{ name: "Doanh thu", data: q3Data }]);
                 }
             });
+        });
+
+        document.getElementById("applyCustomDate").addEventListener("click", function() {
+            if (customStartInput.value && customEndInput.value) {
+                updateCustomRevenueChart(customStartInput.value, customEndInput.value);
+            }
         });
     }
 </script>
