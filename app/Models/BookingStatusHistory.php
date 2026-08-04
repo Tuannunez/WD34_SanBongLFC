@@ -5,27 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Payment extends Model
+class BookingStatusHistory extends Model
 {
-    protected $table = 'payments';
-
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
-            'paid_at' => 'datetime',
+            'metadata' => 'array',
+            'occurred_at' => 'datetime',
         ];
     }
 
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class, 'booking_id');
-    }
-
-    public function paymentMethod(): BelongsTo
-    {
-        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
     }
 }

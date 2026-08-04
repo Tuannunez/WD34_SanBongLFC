@@ -1,213 +1,543 @@
 @extends('admin.layouts.app')
 
-@section('content')
+@section('title', 'Quản lý đơn đặt sân')
 
+@push('styles')
 <style>
-    .custom-pagination { padding: 4px 0; }
-    .custom-pagination .page-btn {
-        width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e5e7eb;
-        background: #ffffff; color: #374151; font-weight: 700; font-size: 14px;
-        text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-        transition: all .2s ease; box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+    .booking-stat {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
     }
-    .custom-pagination .page-btn:hover { background: #ecfdf5; border-color: #16a34a; color: #15803d; transform: translateY(-1px); }
-    .custom-pagination .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; box-shadow: 0 8px 18px rgba(22, 163, 74, .25); }
-    .custom-pagination .page-btn.disabled { background: #f1f5f9; color: #94a3b8; border-color: #e5e7eb; box-shadow: none; cursor: not-allowed; }
+
+    .booking-stat-icon {
+        width: 46px;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 20px;
+    }
+
+    .booking-table-card {
+        border: 0;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
+    }
+
+    .booking-code {
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .usage-dot {
+        width: 8px;
+        height: 8px;
+        display: inline-block;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+
+    .schedule-line {
+        white-space: nowrap;
+    }
+
+    .booking-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .booking-delete-button {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
 </style>
+@endpush
 
-<div class="container-fluid py-4">
+@section('content')
+@php
+    $orderStatusMeta = [
+        'pending' => ['Chờ thanh toán', 'warning'],
+        'confirmed' => ['Đã xác nhận', 'primary'],
+        'completed' => ['Hoàn thành', 'success'],
+        'cancelled' => ['Đã hủy', 'danger'],
+    ];
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    $usageStatusMeta = [
+        'not_checked_in' => ['Chưa check-in', 'secondary'],
+        'checked_in' => ['Đang sử dụng sân', 'info'],
+        'checked_out' => ['Đã check-out', 'success'],
+    ];
+
+    $paymentStatusMeta = [
+        'unpaid' => ['Chưa thanh toán', 'secondary'],
+        'deposit_paid' => ['Đã thanh toán cọc', 'warning'],
+        'paid' => ['Đã thanh toán', 'success'],
+        'partially_refunded' => ['Hoàn một phần', 'info'],
+        'refunded' => ['Đã hoàn tiền', 'primary'],
+    ];
+@endphp
+
+<div class="container-fluid py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h3 class="fw-bold mb-1">Đơn đặt sân</h3>
-            <p class="text-muted mb-0">Quản lý danh sách đơn đặt sân của khách hàng</p>
+            <h3 class="fw-bold mb-1">Quản lý đơn đặt sân</h3>
+            <p class="text-muted mb-0">
+                Theo dõi thanh toán, check-in, check-out và khách vắng mặt.
+            </p>
+        </div>
+
+        <div class="text-end">
+            <span class="badge bg-light text-secondary border px-3 py-2">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Tự làm mới mỗi 30 giây
+            </span>
         </div>
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-            <i class="bi bi-check-circle me-1"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success alert-dismissible fade show rounded-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
         </div>
     @endif
 
-    @php
-        $bookingCollection = method_exists($bookings, 'getCollection') ? $bookings->getCollection() : collect($bookings);
-        $totalMoneyOnPage = $bookingCollection->sum(function ($b) {
-            return $b->total_price ?? $b->total_amount ?? $b->total ?? $b->amount ?? 0;
-        });
-        $pendingCount = $bookingCollection->where('status', 'pending')->count();
-        $refundPendingCount = $bookingCollection->where('status', 'cancelled')->where('refund_status', 'pending')->count();
-    @endphp
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+            ></button>
+        </div>
+    @endif
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4">
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Tổng đơn đặt sân</p>
-                    <h4 class="fw-bold mb-0">{{ method_exists($bookings, 'total') ? $bookings->total() : count($bookings) }}</h4>
+                    <span class="booking-stat-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-calendar2-check"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['total'] ?? 0 }}</div>
+                    <div class="text-muted small">Tổng đơn</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4">
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Đơn chờ xác nhận</p>
-                    <h4 class="fw-bold mb-0 text-warning">{{ $pendingCount }}</h4>
+                    <span class="booking-stat-icon bg-warning-subtle text-warning">
+                        <i class="bi bi-hourglass-split"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['pending'] ?? 0 }}</div>
+                    <div class="text-muted small">Chờ thanh toán</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4">
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Yêu cầu hoàn tiền</p>
-                    <h4 class="fw-bold mb-0 text-danger">{{ $refundPendingCount }}</h4>
+                    <span class="booking-stat-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-patch-check"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['confirmed'] ?? 0 }}</div>
+                    <div class="text-muted small">Đã xác nhận</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4">
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Tổng tiền hiển thị</p>
-                    <h4 class="fw-bold mb-0 text-success">{{ number_format((float) $totalMoneyOnPage, 0, ',', '.') }}đ</h4>
+                    <span class="booking-stat-icon bg-info-subtle text-info">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['checked_in'] ?? 0 }}</div>
+                    <div class="text-muted small">Đang sử dụng</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
+                <div class="card-body">
+                    <span class="booking-stat-icon bg-success-subtle text-success">
+                        <i class="bi bi-check2-circle"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['completed'] ?? 0 }}</div>
+                    <div class="text-muted small">Hoàn thành</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-xl-2">
+            <div class="card booking-stat h-100">
+                <div class="card-body">
+                    <span class="booking-stat-icon bg-danger-subtle text-danger">
+                        <i class="bi bi-person-x"></i>
+                    </span>
+                    <div class="fs-3 fw-bold mt-3">{{ $stats['no_show'] ?? 0 }}</div>
+                    <div class="text-muted small">Không đến sân</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <form method="GET" action="{{ route('admin.bookings.index') }}" class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" name="keyword" value="{{ request('keyword') }}" class="form-control rounded-3" placeholder="Tìm mã đơn, tên khách, email, số điện thoại...">
-                </div>
-                <div class="col-md-3">
-                    <select name="status" class="form-select rounded-3">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending" @selected(request('status') === 'pending')>Chờ xác nhận</option>
-                        <option value="confirmed" @selected(request('status') === 'confirmed')>Đã xác nhận</option>
-                        <option value="completed" @selected(request('status') === 'completed')>Hoàn thành</option>
-                        <option value="cancelled" @selected(request('status') === 'cancelled')>Đã hủy</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <input type="date" name="booking_date" value="{{ request('booking_date') }}" class="form-control rounded-3">
-                </div>
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary rounded-3 w-100"><i class="bi bi-search me-1"></i> Tìm</button>
-                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary rounded-3"><i class="bi bi-arrow-clockwise"></i></a>
-                </div>
-            </div>
-        </div>
-    </form>
+    <div class="card booking-table-card">
+        <div class="card-header bg-white border-0 p-4">
+            <form method="GET" action="{{ route('admin.bookings.index') }}">
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label small fw-semibold text-muted">
+                            Tìm đơn
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input
+                                type="text"
+                                name="keyword"
+                                class="form-control"
+                                value="{{ request('keyword') }}"
+                                placeholder="Mã đơn, khách hàng, điện thoại..."
+                            >
+                        </div>
+                    </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="fw-semibold mb-0"><i class="bi bi-calendar-check text-primary me-2"></i> Danh sách đơn đặt sân</h5>
+                    <div class="col-md-4 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">
+                            Trạng thái đơn
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="">Tất cả</option>
+                            <option value="pending" @selected(request('status') === 'pending')>
+                                Chờ thanh toán
+                            </option>
+                            <option value="confirmed" @selected(request('status') === 'confirmed')>
+                                Đã xác nhận
+                            </option>
+                            <option value="completed" @selected(request('status') === 'completed')>
+                                Hoàn thành
+                            </option>
+                            <option value="cancelled" @selected(request('status') === 'cancelled')>
+                                Đã hủy
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">
+                            Sử dụng sân
+                        </label>
+                        <select name="usage_status" class="form-select">
+                            <option value="">Tất cả</option>
+                            <option value="not_checked_in" @selected(request('usage_status') === 'not_checked_in')>
+                                Chưa check-in
+                            </option>
+                            <option value="checked_in" @selected(request('usage_status') === 'checked_in')>
+                                Đã check-in
+                            </option>
+                            <option value="checked_out" @selected(request('usage_status') === 'checked_out')>
+                                Đã check-out
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">
+                            Thanh toán
+                        </label>
+                        <select name="payment_status" class="form-select">
+                            <option value="">Tất cả</option>
+                            <option value="unpaid" @selected(request('payment_status') === 'unpaid')>
+                                Chưa thanh toán
+                            </option>
+                            <option value="deposit_paid" @selected(request('payment_status') === 'deposit_paid')>
+                                Đã cọc
+                            </option>
+                            <option value="paid" @selected(request('payment_status') === 'paid')>
+                                Đã thanh toán
+                            </option>
+                            <option value="refunded" @selected(request('payment_status') === 'refunded')>
+                                Đã hoàn tiền
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            Lọc
+                        </button>
+                        <a
+                            href="{{ route('admin.bookings.index') }}"
+                            class="btn btn-light border"
+                            title="Xóa bộ lọc"
+                        >
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
         </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Đơn đặt sân</th>
+                        <th>Khách hàng</th>
+                        <th>Lịch sân</th>
+                        <th class="text-end">Tổng tiền</th>
+                        <th>Thanh toán</th>
+                        <th>Trạng thái đơn</th>
+                        <th>Check-in / Check-out</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse($bookings as $booking)
+                        @php
+                            $orderStatus = strtolower((string) ($booking->status ?? 'pending'));
+                            [$orderText, $orderColor] = $orderStatusMeta[$orderStatus]
+                                ?? [ucfirst($orderStatus), 'secondary'];
+
+                            $usageStatus = strtolower((string) ($booking->usage_status ?? 'not_checked_in'));
+
+                            $adminLifecycle = (array) ($booking->admin_lifecycle ?? []);
+                            $usageText = (string) ($adminLifecycle['label'] ?? 'Chưa xác định');
+                            $usageColor = (string) ($adminLifecycle['color'] ?? 'secondary');
+                            $usageDescription = (string) ($adminLifecycle['description'] ?? '');
+                            $usageDeadline = $adminLifecycle['deadline_at'] ?? null;
+
+                            $paymentStatus = strtolower((string) ($booking->payment_status ?? 'unpaid'));
+                            [$paymentText, $paymentColor] = $paymentStatusMeta[$paymentStatus]
+                                ?? [ucfirst($paymentStatus), 'secondary'];
+
+                            $details = $booking->bookingDetails ?? collect();
+                            $firstDetail = $details->first();
+
+                            $date = data_get($firstDetail, 'booking_date')
+                                ?? data_get($firstDetail, 'date')
+                                ?? data_get($booking, 'booking_date');
+
+                            $start = data_get($firstDetail, 'slot_start_time')
+                                ?? data_get($firstDetail, 'start_time')
+                                ?? data_get($firstDetail, 'timeSlot.start_time');
+
+                            $end = data_get($details->last(), 'slot_end_time')
+                                ?? data_get($details->last(), 'end_time')
+                                ?? data_get($details->last(), 'timeSlot.end_time');
+
+                            $customerName = data_get($booking, 'user.name')
+                                ?? $booking->customer_name
+                                ?? $booking->name
+                                ?? 'Khách hàng';
+
+                            $customerPhone = $booking->customer_phone
+                                ?? $booking->phone
+                                ?? data_get($booking, 'user.phone')
+                                ?? '-';
+
+                            $totalMoney = $booking->final_amount
+                                ?? $booking->total_amount
+                                ?? $booking->total_price
+                                ?? $booking->total
+                                ?? 0;
+
+                            $isNoShow = !empty($booking->no_show_at);
+
+                            $canDelete = in_array(
+                                $orderStatus,
+                                ['cancelled', 'completed'],
+                                true
+                            ) && $usageStatus !== 'checked_in';
+                        @endphp
+
                         <tr>
-                            <th class="ps-4">ID</th>
-                            <th>Khách hàng</th>
-                            <th>Email</th>
-                            <th>Số điện thoại</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th>Hình thức thanh toán</th>
-                            <th>Ngày tạo</th>
-                            <th class="text-end pe-4">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($bookings as $booking)
-                            @php
-                                $status = $booking->status ?? 'pending';
-                                $statusText = match ($status) {
-                                    'confirmed' => 'Đã xác nhận',
-                                    'completed' => 'Hoàn thành',
-                                    'cancelled' => 'Đã hủy',
-                                    default => 'Chờ xác nhận',
-                                };
-                                $statusClass = match ($status) {
-                                    'confirmed' => 'bg-success-subtle text-success',
-                                    'completed' => 'bg-primary-subtle text-primary',
-                                    'cancelled' => 'bg-danger-subtle text-danger',
-                                    default => 'bg-warning-subtle text-warning',
-                                };
-                                $totalMoney = $booking->total_price ?? $booking->total_amount ?? $booking->total ?? $booking->amount ?? 0;
-                                $customerName = $booking->user_name ?? $booking->customer_name ?? $booking->name ?? 'Chưa có thông tin';
-                                $customerEmail = $booking->user_email ?? $booking->customer_email ?? $booking->email ?? '-';
-                                $customerPhone = $booking->customer_phone ?? $booking->phone ?? '-';
-                                $rfStatus = $booking->refund_status ?? 'none';
-                            @endphp
-
-                            <tr>
-                                <td class="ps-4 fw-semibold">
+                            <td class="ps-4">
+                                <div class="fw-bold">
                                     #{{ $booking->id }}
-                                    @if(!empty($booking->booking_code))
-                                        <div><small class="text-muted">{{ $booking->booking_code }}</small></div>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                            <i class="bi bi-person"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-semibold">{{ $customerName }}</div>
-                                            <small class="text-muted">Khách đặt sân</small>
-                                        </div>
+                                </div>
+                                <div class="booking-code">
+                                    {{ $booking->booking_code ?? $booking->code ?? 'Không có mã đơn' }}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    {{ !empty($booking->created_at)
+                                        ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i')
+                                        : '-' }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="fw-semibold">{{ $customerName }}</div>
+                                <div class="small text-muted">{{ $customerPhone }}</div>
+                            </td>
+
+                            <td>
+                                @if($date)
+                                    <div class="fw-semibold">
+                                        {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}
                                     </div>
-                                </td>
-                                <td>{{ $customerEmail }}</td>
-                                <td>{{ $customerPhone }}</td>
-                                <td class="fw-bold text-success">{{ number_format((float) $totalMoney, 0, ',', '.') }}đ</td>
-                                <td>
-                                    <span class="badge {{ $statusClass }} px-3 py-2">{{ $statusText }}</span>
-                                    
-                                    @if($status === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
-                                        @if($rfStatus === 'pending')
-                                            <div class="mt-1"><span class="badge bg-danger text-white"><i class="bi bi-exclamation-circle me-1"></i> Cần CK: {{ number_format($booking->refund_amount, 0, ',', '.') }}đ</span></div>
-                                        @elseif($rfStatus === 'completed')
-                                            <div class="mt-1"><span class="badge bg-success text-white"><i class="bi bi-check2-all me-1"></i> Đã gửi bill CK</span></div>
-                                        @elseif($rfStatus === 'disputed')
-                                            <div class="mt-1"><span class="badge bg-danger text-white"><i class="bi bi-lightning-fill me-1"></i> Khách báo lỗi!</span></div>
-                                        @elseif($rfStatus === 'confirmed_by_user')
-                                            <div class="mt-1"><span class="badge bg-primary text-white"><i class="bi bi-patch-check-fill me-1"></i> Khách đã nhận</span></div>
-                                        @endif
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
-                                        {{ $booking->method_name ?? 'Tại sân / Chưa chọn' }}
-                                    </span>
-                                </td>
-                                <td>{{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ route('admin.bookings.show', $booking->id) }}" class="btn btn-sm btn-outline-info rounded-3" title="Xem chi tiết & Upload Bill">
-                                        <i class="bi bi-eye"></i>
+                                @else
+                                    <div class="text-muted">Chưa có ngày</div>
+                                @endif
+
+                                <div class="small text-muted schedule-line">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ $start ?? '-' }} – {{ $end ?? '-' }}
+                                </div>
+                            </td>
+
+                            <td class="text-end fw-bold text-success">
+                                {{ number_format((float) $totalMoney, 0, ',', '.') }}đ
+                            </td>
+
+                            <td>
+                                <span class="badge bg-{{ $paymentColor }}-subtle text-{{ $paymentColor }}">
+                                    {{ $paymentText }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-{{ $orderColor }}-subtle text-{{ $orderColor }}">
+                                    {{ $orderText }}
+                                </span>
+
+                                @if($isNoShow)
+                                    <div class="small text-danger mt-1">
+                                        <i class="bi bi-person-x me-1"></i>
+                                        No-show
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td style="min-width: 230px;">
+                                <span class="badge bg-{{ $usageColor }}-subtle text-{{ $usageColor }}">
+                                    <span class="usage-dot bg-{{ $usageColor }}"></span>
+                                    {{ $usageText }}
+                                </span>
+
+                                @if($usageDescription !== '')
+                                    <div class="small text-muted mt-1">
+                                        {{ $usageDescription }}
+                                    </div>
+                                @endif
+
+                                @if($usageDeadline)
+                                    <div class="small text-danger mt-1">
+                                        Hạn:
+                                        {{ $usageDeadline->format('H:i d/m/Y') }}
+                                    </div>
+                                @endif
+
+                                @if(!empty($booking->checked_in_at))
+                                    <div class="small text-success mt-1">
+                                        Check-in:
+                                        {{ \Carbon\Carbon::parse($booking->checked_in_at)->format('H:i d/m/Y') }}
+                                    </div>
+                                @endif
+
+                                @if(!empty($booking->checked_out_at))
+                                    <div class="small text-primary">
+                                        Check-out:
+                                        {{ \Carbon\Carbon::parse($booking->checked_out_at)->format('H:i d/m/Y') }}
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="booking-actions">
+                                    <a
+                                        href="{{ route('admin.bookings.show', $booking->id) }}"
+                                        class="btn btn-sm btn-primary"
+                                    >
+                                        <i class="bi bi-eye me-1"></i>
+                                        Chi tiết
                                     </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center py-5">
-                                    <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
-                                    <span class="text-muted">Chưa có đơn đặt sân nào.</span>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+
+                                    @if(
+                                        $canDelete
+                                        && \Illuminate\Support\Facades\Route::has(
+                                            'admin.bookings.destroy'
+                                        )
+                                    )
+                                        <form
+                                            method="POST"
+                                            action="{{ route(
+                                                'admin.bookings.destroy',
+                                                $booking->id
+                                            ) }}"
+                                            onsubmit="return confirm(
+                                                'Xóa vĩnh viễn đơn #{{ $booking->id }}? '
+                                                + 'Toàn bộ chi tiết, thanh toán và lịch sử '
+                                                + 'liên quan cũng sẽ bị xóa.'
+                                            );"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger booking-delete-button"
+                                                title="Xóa vĩnh viễn đơn"
+                                            >
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <span class="text-muted">
+                                    Không tìm thấy đơn đặt sân phù hợp.
+                                </span>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        @if($bookings->hasPages())
+            <div class="card-footer bg-white border-0 p-4">
+                {{ $bookings->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        window.setTimeout(function () {
+            window.location.reload();
+        }, 30000);
+    });
+</script>
+@endpush

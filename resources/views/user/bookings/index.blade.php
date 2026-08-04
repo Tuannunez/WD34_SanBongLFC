@@ -2,15 +2,115 @@
 
 @section('title', 'Đơn đặt sân của tôi')
 
+@push('styles')
+<style>
+    .booking-history-page {
+        --booking-primary: #2563eb;
+        --booking-success: #198754;
+        --booking-border: #e8edf3;
+        --booking-shadow: 0 10px 28px rgba(15, 23, 42, .065);
+    }
+
+    .booking-history-page .account-panel,
+    .booking-history-page .booking-stat-card,
+    .booking-history-page .booking-list-card {
+        border: 1px solid rgba(226, 232, 240, .75) !important;
+        box-shadow: var(--booking-shadow) !important;
+    }
+
+    .booking-history-page .account-avatar {
+        background:
+            linear-gradient(145deg, #dcfce7, #f0fdf4) !important;
+        box-shadow: inset 0 0 0 1px rgba(22, 163, 74, .12);
+    }
+
+    .booking-history-page .booking-stat-card {
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .booking-history-page .booking-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, .09) !important;
+    }
+
+    .booking-history-page .booking-list-card {
+        overflow: hidden;
+    }
+
+    .booking-history-page .booking-history-table thead th {
+        padding-top: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--booking-border);
+        color: #475569;
+        font-size: .78rem;
+        letter-spacing: .025em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .booking-history-page .booking-history-table tbody tr {
+        transition: background-color .15s ease;
+    }
+
+    .booking-history-page .booking-history-table tbody tr:hover {
+        background: #f8fbff;
+    }
+
+    .booking-history-page .booking-history-table td {
+        border-color: #eef2f6;
+    }
+
+    .booking-history-page .booking-action-group {
+        padding: 4px;
+        border: 1px solid #e7ecf2;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+    .booking-history-page .booking-action-group .btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 !important;
+        border-radius: 9px !important;
+    }
+
+    .booking-history-page .invoice-action {
+        border-color: #334155;
+        color: #334155;
+        background: #fff;
+    }
+
+    .booking-history-page .invoice-action:hover {
+        border-color: #0f172a;
+        color: #fff;
+        background: #0f172a;
+    }
+
+    .booking-history-page .modal-content {
+        border: 1px solid rgba(226, 232, 240, .9) !important;
+    }
+
+    @media (max-width: 991.98px) {
+        .booking-history-page .booking-action-group {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container py-5">
+<div class="container py-5 booking-history-page">
     <div class="row g-4">
 
         {{-- CỘT TRÁI: TÀI KHOẢN --}}
         <div class="col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 account-panel">
                 <div class="card-body text-center p-4">
-                    <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                    <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 account-avatar"
                          style="width: 78px; height: 78px;">
                         <i class="bi bi-person-circle fs-1"></i>
                     </div>
@@ -25,7 +125,7 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card border-0 shadow-sm rounded-4 account-panel">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h6 class="fw-bold mb-0">
                         <i class="bi bi-grid me-2 text-success"></i>
@@ -197,7 +297,7 @@
 
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 booking-stat-card">
                         <div class="card-body">
                             <p class="text-muted mb-1">Tổng đơn</p>
                             <h4 class="fw-bold mb-0">{{ $totalBookings }}</h4>
@@ -206,7 +306,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 booking-stat-card">
                         <div class="card-body">
                             <p class="text-muted mb-1">Chờ xác nhận</p>
                             <h4 class="fw-bold text-warning mb-0">{{ $pendingCount }}</h4>
@@ -215,7 +315,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 booking-stat-card">
                         <div class="card-body">
                             <p class="text-muted mb-1">Đã xác nhận</p>
                             <h4 class="fw-bold text-success mb-0">{{ $confirmedCount }}</h4>
@@ -224,7 +324,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 booking-stat-card">
                         <div class="card-body">
                             <p class="text-muted mb-1">Tổng tiền</p>
                             <h5 class="fw-bold text-success mb-0">
@@ -236,7 +336,7 @@
             </div>
 
             {{-- DANH SÁCH ĐƠN --}}
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card border-0 shadow-sm rounded-4 booking-list-card">
                 <div class="card-header bg-white border-0 py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="fw-semibold mb-0">
@@ -252,7 +352,7 @@
 
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 booking-history-table">
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-4" style="width: 22%;">Mã đơn</th>
@@ -454,7 +554,7 @@
 
                                         {{-- CỘT THAO TÁC --}}
                                         <td class="text-end pe-4">
-                                            <div class="d-inline-flex gap-1">
+                                            <div class="d-inline-flex gap-1 booking-action-group">
                                                 @if($status === 'pending')
                                                     <a href="{{ route('user.payment.show', $booking->id) }}" 
                                                        class="btn btn-sm btn-success rounded-3 d-inline-flex align-items-center gap-1 py-1.5 shadow-sm fw-medium" 
@@ -480,6 +580,15 @@
                                                         title="Xem chi tiết đơn & Bill chuyển khoản">
                                                     <i class="bi bi-eye-fill"></i>
                                                 </button>
+
+                                                @if(\Illuminate\Support\Facades\Route::has('user.bookings.invoice'))
+                                                    <a href="{{ route('user.bookings.invoice', $booking->id) }}"
+                                                       class="btn btn-sm invoice-action rounded-3"
+                                                       target="_blank"
+                                                       title="Xem và in hóa đơn">
+                                                        <i class="bi bi-receipt-cutoff"></i>
+                                                    </a>
+                                                @endif
 
                                                 @if($status === 'completed')
                                                     <a href="{{ route('user.bookings.show', $booking->id) }}" 
@@ -847,8 +956,21 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="modal-footer border-0 p-3 pt-0">
-                                                            <button type="button" class="btn btn-secondary btn-sm rounded-3 px-4" data-bs-dismiss="modal">Đóng</button>
+                                                        <div class="modal-footer border-0 p-3 pt-0 d-flex justify-content-between">
+                                                            @if(\Illuminate\Support\Facades\Route::has('user.bookings.invoice'))
+                                                                <a href="{{ route('user.bookings.invoice', $booking->id) }}"
+                                                                   class="btn btn-outline-dark btn-sm rounded-3 px-3"
+                                                                   target="_blank">
+                                                                    <i class="bi bi-receipt-cutoff me-1"></i>
+                                                                    Xem hóa đơn
+                                                                </a>
+                                                            @endif
+
+                                                            <button type="button"
+                                                                    class="btn btn-secondary btn-sm rounded-3 px-4"
+                                                                    data-bs-dismiss="modal">
+                                                                Đóng
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>

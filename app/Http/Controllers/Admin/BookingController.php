@@ -3,209 +3,770 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Throwable;
 
 class BookingController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('bookings')
-            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->select(
-                'bookings.*',
-                'users.name as user_name',
-                'users.email as user_email',
-                'payment_methods.name as method_name'
-            )
-            ->orderByDesc('bookings.id');
+        $query = Booking::query()
+            ->with([
+                'user',
+                'bookingDetails.field',
+                'bookingDetails.timeSlot',
+            ])
+            ->orderByDesc('id');
 
-        if ($request->filled('keyword')) {
-            $keyword = trim($request->keyword);
+        $this->applyFilters($query, $request);
 
-            $query->where(function ($q) use ($keyword) {
-                if (is_numeric($keyword)) {
-                    $q->where('bookings.id', $keyword);
-                }
+        $bookings = $query
+            ->paginate(15)
+            ->withQueryString();
 
-                if (Schema::hasColumn('bookings', 'booking_code')) {
-                    $q->orWhere('bookings.booking_code', 'like', "%{$keyword}%");
-                }
+        $bookings->getCollection()->each(
+            function (Booking $booking): void {
+                $booking->setAttribute(
+                    'admin_lifecycle',
+                    $this->lifecyclePresentation($booking),
+                );
+            },
+        );
 
-                if (Schema::hasColumn('bookings', 'code')) {
-                    $q->orWhere('bookings.code', 'like', "%{$keyword}%");
-                }
-
-                if (Schema::hasColumn('bookings', 'customer_name')) {
-                    $q->orWhere('bookings.customer_name', 'like', "%{$keyword}%");
-                }
-
-                if (Schema::hasColumn('bookings', 'customer_email')) {
-                    $q->orWhere('bookings.customer_email', 'like', "%{$keyword}%");
-                }
-
-                if (Schema::hasColumn('bookings', 'customer_phone')) {
-                    $q->orWhere('bookings.customer_phone', 'like', "%{$keyword}%");
-                }
-
-                $q->orWhere('users.name', 'like', "%{$keyword}%")
-                  ->orWhere('users.email', 'like', "%{$keyword}%");
-
-                if (Schema::hasColumn('bookings', 'status')) {
-                    $q->orWhere('bookings.status', 'like', "%{$keyword}%");
-                }
-            });
-        }
-
-        if ($request->filled('status') && Schema::hasColumn('bookings', 'status')) {
-            $query->where('bookings.status', $request->status);
-        }
-
-        if ($request->filled('booking_date')) {
-            if (Schema::hasColumn('bookings', 'booking_date')) {
-                $query->whereDate('bookings.booking_date', $request->booking_date);
-            } elseif (Schema::hasColumn('bookings', 'date')) {
-                $query->whereDate('bookings.date', $request->booking_date);
-            }
-        }
-
-        $bookings = $query->paginate(10)->withQueryString();
-
-        return view('admin.bookings.index', compact('bookings'));
-    }
-
-    public function show($id)
-    {
-        $booking = DB::table('bookings')
-            ->leftJoin('payments', 'bookings.id', '=', 'payments.booking_id')
-            ->leftJoin('users', 'bookings.user_id', '=', 'users.id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->select(
-                'bookings.*',
-                'users.name as user_name',
-                'users.email as user_email',
-                'payment_methods.name as method_name'
-            )
-            ->where('bookings.id', $id)
-            ->first();
-
-        if (!$booking) {
-            abort(404);
-        }
-
-        $bookingDetails = DB::table('booking_details')
-            ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
-            ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
-            ->where('booking_details.booking_id', $booking->id)
-            ->select(
-                'booking_details.*',
-                'fields.name as field_name',
-                'fields.price_per_hour as field_price_per_hour',
-                'time_slots.start_time as slot_start_time',
-                'time_slots.end_time as slot_end_time'
-            )
-            ->get();
-
-        return view('admin.bookings.show', compact('booking', 'bookingDetails'));
-    }
-
-    public function processRefund(Request $request, $id)
-    {
-        $request->validate([
-            'refund_proof_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
-            'refund_proof_note' => 'nullable|string|max:255',
-        ], [
-            'refund_proof_image.required' => 'Vui lòng chọn ảnh bill chuyển khoản.',
-            'refund_proof_image.image' => 'File tải lên phải là hình ảnh hợp lệ.',
-        ]);
-
-        $booking = DB::table('bookings')->where('id', $id)->first();
-
-        if (!$booking) {
-            return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
-        }
-
-        $imagePath = null;
-        if ($request->hasFile('refund_proof_image')) {
-            $file = $request->file('refund_proof_image');
-            $filename = 'bill_' . $id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            
-            if (!file_exists(public_path('uploads/refunds'))) {
-                mkdir(public_path('uploads/refunds'), 0777, true);
-            }
-            
-            $file->move(public_path('uploads/refunds'), $filename);
-            $imagePath = 'uploads/refunds/' . $filename;
-        }
-
-        DB::table('bookings')->where('id', $id)->update([
-            'refund_status' => 'completed',
-            'refund_proof_image' => $imagePath,
-            'refund_proof_note' => $request->input('refund_proof_note'),
-            'updated_at' => now(),
-        ]);
-
-        return redirect()
-            ->route('admin.bookings.show', $id)
-            ->with('success', 'Đã tải bill chuyển khoản thành công! Khách hàng đã có thể xem được ảnh bill.');
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'status' => ['required', 'string', 'max:50'],
-            'payment_status' => ['nullable', 'string', 'max:50'],
-        ]);
-
-        $updateData = [
-            'status' => $request->status,
-            'updated_at' => now(),
+        $stats = [
+            'total' => Booking::query()->count(),
+            'pending' => Booking::query()
+                ->where('status', 'pending')
+                ->count(),
+            'confirmed' => Booking::query()
+                ->where('status', 'confirmed')
+                ->count(),
+            'checked_in' => Booking::query()
+                ->where('usage_status', 'checked_in')
+                ->count(),
+            'completed' => Booking::query()
+                ->where('status', 'completed')
+                ->count(),
+            'no_show' => Schema::hasColumn('bookings', 'no_show_at')
+                ? Booking::query()->whereNotNull('no_show_at')->count()
+                : 0,
         ];
 
-        if ($request->filled('payment_status') && $request->payment_status === 'paid') {
-            DB::table('payments')
-                ->where('booking_id', $id)
-                ->update([
-                    'status' => 'paid',
-                    'paid_at' => now(), 
-                    'updated_at' => now()
-                ]);
-        }
-
-        DB::table('bookings')
-            ->where('id', $id)
-            ->update($updateData);
-
-        return redirect()
-            ->route('admin.bookings.show', $id)
-            ->with('success', 'Cập nhật trạng thái đơn hàng thành công.');
+        return view('admin.bookings.index', compact('bookings', 'stats'));
     }
 
-    public function destroy($id)
+    public function show(Booking $booking): View
     {
-        if (Schema::hasColumn('bookings', 'status')) {
-            DB::table('bookings')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
+        $booking->load([
+            'user',
+            'bookingDetails.field',
+            'bookingDetails.timeSlot',
+            'bookingServices.service',
+            'payments.paymentMethod',
+            'review',
+        ]);
+
+        $bookingDetails = $booking->bookingDetails ?? collect();
+        $bookingServices = $booking->bookingServices ?? collect();
+        $payments = $booking->payments ?? collect();
+        $bookingReview = $booking->review;
+        $lifecycle = $this->lifecyclePresentation($booking);
+
+        $statusHistories = collect();
+
+        if (Schema::hasTable('booking_status_histories')) {
+            $statusHistories = DB::table('booking_status_histories')
+                ->where('booking_id', $booking->id)
+                ->orderByDesc('occurred_at')
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get();
         }
 
-        if (Schema::hasColumn('booking_details', 'status')) {
-            DB::table('booking_details')
-                ->where('booking_id', $id)
-                ->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
+        return view('admin.bookings.show', compact(
+            'booking',
+            'bookingDetails',
+            'bookingServices',
+            'payments',
+            'bookingReview',
+            'statusHistories',
+            'lifecycle',
+        ));
+    }
+
+    /**
+     * Admin chỉ xử lý ngoại lệ hoàn tiền.
+     * Check-in do khách thực hiện; check-out/no-show do Scheduler xử lý.
+     */
+    public function processRefund(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'refund_proof_image' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+            'refund_proof_note' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+        ], [
+            'refund_proof_image.required' => 'Vui lòng tải ảnh chứng từ hoàn tiền.',
+            'refund_proof_image.image' => 'Chứng từ hoàn tiền phải là hình ảnh.',
+            'refund_proof_image.max' => 'Ảnh chứng từ không được vượt quá 5 MB.',
+        ]);
+
+        $path = $data['refund_proof_image']->store('refunds', 'public');
+
+        try {
+            DB::transaction(function () use ($id, $path, $data): void {
+                /** @var Booking $booking */
+                $booking = Booking::query()
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                abort_unless(
+                    strtolower((string) $booking->status) === 'cancelled'
+                    && (float) ($booking->refund_amount ?? 0) > 0,
+                    422,
+                    'Đơn này không thuộc luồng cần hoàn tiền.',
+                );
+
+                $updates = [];
+
+                if (Schema::hasColumn('bookings', 'refund_status')) {
+                    $updates['refund_status'] = 'completed';
+                }
+
+                if (Schema::hasColumn('bookings', 'refund_proof_image')) {
+                    $updates['refund_proof_image'] = 'storage/'.$path;
+                }
+
+                if (Schema::hasColumn('bookings', 'refund_proof')) {
+                    $updates['refund_proof'] = $path;
+                }
+
+                if (Schema::hasColumn('bookings', 'refund_proof_note')) {
+                    $updates['refund_proof_note'] = $data['refund_proof_note'] ?? null;
+                }
+
+                if (Schema::hasColumn('bookings', 'refund_processed_at')) {
+                    $updates['refund_processed_at'] = now();
+                }
+
+                if ($updates !== []) {
+                    $booking->forceFill($updates)->save();
+                }
+            }, 3);
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($path);
+
+            throw $exception;
+        }
+
+        return back()->with(
+            'success',
+            'Đã lưu chứng từ hoàn tiền. Khách hàng có thể kiểm tra và xác nhận.',
+        );
+    }
+
+    /**
+     * Xóa vĩnh viễn một đơn đặt sân đã kết thúc.
+     *
+     * Chỉ cho phép xóa đơn đã hủy hoặc đã hoàn thành.
+     * Không cho xóa đơn đang sử dụng sân hoặc đang chờ hoàn tiền.
+     */
+    public function destroy(Booking $booking): RedirectResponse
+    {
+        $status = strtolower((string) ($booking->status ?? 'pending'));
+        $usageStatus = strtolower((string) (
+            $booking->usage_status
+            ?? 'not_checked_in'
+        ));
+
+        if (
+            !in_array($status, ['cancelled', 'completed'], true)
+            || $usageStatus === 'checked_in'
+        ) {
+            return back()->with(
+                'error',
+                'Chỉ được xóa đơn đã hủy hoặc đã hoàn thành. '
+                .'Không thể xóa đơn đang hoạt động.',
+            );
+        }
+
+        $refundAmount = max(
+            0,
+            (float) ($booking->refund_amount ?? 0),
+        );
+
+        $refundStatus = strtolower((string) (
+            $booking->refund_status
+            ?? 'none'
+        ));
+
+        if (
+            $refundAmount > 0
+            && !in_array(
+                $refundStatus,
+                [
+                    'none',
+                    'completed',
+                    'confirmed_by_user',
+                    'refunded',
+                ],
+                true,
+            )
+        ) {
+            return back()->with(
+                'error',
+                'Đơn đang có yêu cầu hoàn tiền chưa hoàn tất nên chưa thể xóa.',
+            );
+        }
+
+        $bookingCode = (string) (
+            $booking->booking_code
+            ?? $booking->code
+            ?? '#'.$booking->id
+        );
+
+        $storedFiles = array_values(array_filter([
+            $booking->refund_proof_image ?? null,
+            $booking->refund_proof ?? null,
+        ]));
+
+        try {
+            DB::transaction(function () use ($booking): void {
+                /** @var Booking $lockedBooking */
+                $lockedBooking = Booking::query()
+                    ->lockForUpdate()
+                    ->findOrFail($booking->id);
+
+                $lockedStatus = strtolower((string) (
+                    $lockedBooking->status
+                    ?? 'pending'
+                ));
+
+                $lockedUsageStatus = strtolower((string) (
+                    $lockedBooking->usage_status
+                    ?? 'not_checked_in'
+                ));
+
+                if (
+                    !in_array(
+                        $lockedStatus,
+                        ['cancelled', 'completed'],
+                        true,
+                    )
+                    || $lockedUsageStatus === 'checked_in'
+                ) {
+                    throw new \RuntimeException(
+                        'Trạng thái đơn đã thay đổi và không còn được phép xóa.',
+                    );
+                }
+
+                $relatedTables = [
+                    'booking_status_histories',
+                    'booking_reviews',
+                    'reviews',
+                    'booking_services',
+                    'booking_details',
+                    'booking_refunds',
+                    'booking_disputes',
+                    'booking_payments',
+                    'payment_transactions',
+                    'payments',
+                    'notifications',
+                ];
+
+                foreach ($relatedTables as $table) {
+                    if (
+                        Schema::hasTable($table)
+                        && Schema::hasColumn($table, 'booking_id')
+                    ) {
+                        DB::table($table)
+                            ->where('booking_id', $lockedBooking->id)
+                            ->delete();
+                    }
+                }
+
+                $lockedBooking->delete();
+            }, 3);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with(
+                'error',
+                'Không thể xóa đơn vì vẫn còn dữ liệu liên kết hoặc '
+                .'trạng thái đơn đã thay đổi.',
+            );
+        }
+
+        foreach ($storedFiles as $storedFile) {
+            $path = ltrim((string) $storedFile, '/');
+
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, strlen('storage/'));
+            }
+
+            if ($path !== '') {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         return redirect()
             ->route('admin.bookings.index')
-            ->with('success', 'Đã hủy đơn đặt sân.');
+            ->with(
+                'success',
+                'Đã xóa vĩnh viễn đơn '.$bookingCode.'.',
+            );
+    }
+
+    public function invoice(int $id): View
+    {
+        /** @var Booking $booking */
+        $booking = Booking::query()
+            ->with([
+                'user',
+                'bookingDetails.field',
+                'bookingDetails.timeSlot',
+                'bookingServices.service',
+                'payments.paymentMethod',
+            ])
+            ->findOrFail($id);
+
+        if (
+            Schema::hasColumn('bookings', 'invoice_issued_at')
+            && $booking->invoice_issued_at === null
+        ) {
+            $booking->forceFill([
+                'invoice_issued_at' => now(),
+            ])->save();
+        }
+
+        return view('admin.bookings.invoice', compact('booking'));
+    }
+
+    /**
+     * Tính trạng thái hiển thị theo thời gian cho admin.
+     *
+     * Phương thức này KHÔNG cập nhật database và KHÔNG tự check-in.
+     * Trạng thái checked_in chỉ xuất hiện khi usage_status trong database
+     * thực sự bằng checked_in.
+     *
+     * @return array<string, mixed>
+     */
+    private function lifecyclePresentation(Booking $booking): array
+    {
+        $timezone = (string) config(
+            'booking_lifecycle.timezone',
+            config('app.timezone', 'Asia/Ho_Chi_Minh'),
+        );
+
+        $now = CarbonImmutable::now($timezone);
+        $status = strtolower((string) ($booking->status ?? 'pending'));
+        $usageStatus = strtolower((string) (
+            $booking->usage_status
+            ?? 'not_checked_in'
+        ));
+        $paymentStatus = strtolower((string) (
+            $booking->payment_status
+            ?? 'unpaid'
+        ));
+
+        $window = $this->resolveScheduleWindow($booking, $timezone);
+        $fullPayment = $this->isFullPayment($booking);
+        $graceMinutes = $fullPayment
+            ? max(
+                0,
+                (int) config(
+                    'booking_lifecycle.full_payment_no_show_grace_minutes',
+                    30,
+                ),
+            )
+            : max(
+                0,
+                (int) config(
+                    'booking_lifecycle.deposit_no_show_grace_minutes',
+                    15,
+                ),
+            );
+
+        $opensAt = $window !== null
+            ? $window['starts_at']->subMinutes(
+                max(
+                    0,
+                    (int) config(
+                        'booking_lifecycle.check_in_early_minutes',
+                        15,
+                    ),
+                ),
+            )
+            : null;
+
+        $deadlineAt = $window !== null
+            ? $window['starts_at']->addMinutes($graceMinutes)
+            : null;
+
+        $noShowAt = ! empty($booking->no_show_at)
+            ? CarbonImmutable::parse($booking->no_show_at, $timezone)
+            : null;
+
+        if ($noShowAt !== null) {
+            return [
+                'phase' => 'no_show',
+                'label' => $fullPayment
+                    ? 'No-show – mất toàn bộ tiền'
+                    : 'No-show – mất tiền cọc',
+                'color' => 'danger',
+                'icon' => 'bi-person-x-fill',
+                'description' => $fullPayment
+                    ? 'Khách thanh toán đủ nhưng không check-in trong 30 phút.'
+                    : 'Khách đặt cọc nhưng không check-in trong 15 phút.',
+                'starts_at' => $window['starts_at'] ?? null,
+                'ends_at' => $window['ends_at'] ?? null,
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($status === 'cancelled') {
+            return [
+                'phase' => 'cancelled',
+                'label' => 'Đơn đã hủy',
+                'color' => 'danger',
+                'icon' => 'bi-x-circle-fill',
+                'description' => 'Đơn đã bị hủy.',
+                'starts_at' => $window['starts_at'] ?? null,
+                'ends_at' => $window['ends_at'] ?? null,
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($usageStatus === 'checked_out' || $status === 'completed') {
+            return [
+                'phase' => 'checked_out',
+                'label' => 'Đã check-out',
+                'color' => 'success',
+                'icon' => 'bi-check2-all',
+                'description' => 'Khung giờ đã kết thúc và đơn đã hoàn thành.',
+                'starts_at' => $window['starts_at'] ?? null,
+                'ends_at' => $window['ends_at'] ?? null,
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($usageStatus === 'checked_in') {
+            return [
+                'phase' => 'checked_in',
+                'label' => 'Khách đã check-in',
+                'color' => 'info',
+                'icon' => 'bi-box-arrow-in-right',
+                'description' => 'Khách đang sử dụng sân. Scheduler sẽ tự check-out khi hết giờ.',
+                'starts_at' => $window['starts_at'] ?? null,
+                'ends_at' => $window['ends_at'] ?? null,
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if (
+            $status === 'pending'
+            || in_array($paymentStatus, ['', 'unpaid', 'pending'], true)
+        ) {
+            return [
+                'phase' => 'waiting_payment',
+                'label' => 'Chờ thanh toán',
+                'color' => 'secondary',
+                'icon' => 'bi-credit-card',
+                'description' => 'Đơn chưa đủ điều kiện mở check-in.',
+                'starts_at' => $window['starts_at'] ?? null,
+                'ends_at' => $window['ends_at'] ?? null,
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($window === null || $opensAt === null || $deadlineAt === null) {
+            return [
+                'phase' => 'missing_schedule',
+                'label' => 'Thiếu lịch sân',
+                'color' => 'danger',
+                'icon' => 'bi-calendar-x',
+                'description' => 'Không xác định được ngày hoặc khung giờ của đơn.',
+                'starts_at' => null,
+                'ends_at' => null,
+                'opens_at' => null,
+                'deadline_at' => null,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($now->lessThan($opensAt)) {
+            return [
+                'phase' => 'upcoming',
+                'label' => 'Chưa đến giờ check-in',
+                'color' => 'secondary',
+                'icon' => 'bi-clock',
+                'description' => 'Check-in mở lúc '.$opensAt->format('H:i d/m/Y').'.',
+                'starts_at' => $window['starts_at'],
+                'ends_at' => $window['ends_at'],
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($now->lessThan($window['starts_at'])) {
+            return [
+                'phase' => 'check_in_open',
+                'label' => 'Đã mở check-in',
+                'color' => 'primary',
+                'icon' => 'bi-unlock-fill',
+                'description' => 'Khách có thể bấm check-in trước giờ bắt đầu.',
+                'starts_at' => $window['starts_at'],
+                'ends_at' => $window['ends_at'],
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        if ($now->lessThan($deadlineAt)) {
+            return [
+                'phase' => 'waiting_check_in',
+                'label' => 'Đang chờ khách check-in',
+                'color' => 'warning',
+                'icon' => 'bi-person-clock',
+                'description' => 'Giờ sân đã bắt đầu nhưng khách chưa bấm check-in.',
+                'starts_at' => $window['starts_at'],
+                'ends_at' => $window['ends_at'],
+                'opens_at' => $opensAt,
+                'deadline_at' => $deadlineAt,
+                'grace_minutes' => $graceMinutes,
+                'payment_type' => $fullPayment ? 'full' : 'deposit',
+            ];
+        }
+
+        return [
+            'phase' => 'overdue_waiting_scheduler',
+            'label' => 'Quá hạn – chờ hệ thống xử lý',
+            'color' => 'danger',
+            'icon' => 'bi-exclamation-octagon-fill',
+            'description' => 'Đã quá hạn check-in nhưng Scheduler chưa cập nhật no-show.',
+            'starts_at' => $window['starts_at'],
+            'ends_at' => $window['ends_at'],
+            'opens_at' => $opensAt,
+            'deadline_at' => $deadlineAt,
+            'grace_minutes' => $graceMinutes,
+            'payment_type' => $fullPayment ? 'full' : 'deposit',
+        ];
+    }
+
+    /**
+     * @return array{starts_at:CarbonImmutable,ends_at:CarbonImmutable}|null
+     */
+    private function resolveScheduleWindow(
+        Booking $booking,
+        string $timezone,
+    ): ?array {
+        $details = $booking->bookingDetails ?? collect();
+        $windows = [];
+
+        foreach ($details as $detail) {
+            $dateValue = data_get($detail, 'booking_date')
+                ?? data_get($detail, 'date')
+                ?? data_get($booking, 'booking_date');
+
+            $startValue = data_get($detail, 'slot_start_time')
+                ?? data_get($detail, 'start_time')
+                ?? data_get($detail, 'timeSlot.start_time');
+
+            $endValue = data_get($detail, 'slot_end_time')
+                ?? data_get($detail, 'end_time')
+                ?? data_get($detail, 'timeSlot.end_time');
+
+            if ($dateValue === null || $startValue === null || $endValue === null) {
+                continue;
+            }
+
+            try {
+                $date = $dateValue instanceof CarbonInterface
+                    ? $dateValue->format('Y-m-d')
+                    : CarbonImmutable::parse($dateValue, $timezone)->format('Y-m-d');
+
+                $startsAt = CarbonImmutable::parse(
+                    $date.' '.$startValue,
+                    $timezone,
+                );
+
+                $endsAt = CarbonImmutable::parse(
+                    $date.' '.$endValue,
+                    $timezone,
+                );
+
+                if ($endsAt->lessThanOrEqualTo($startsAt)) {
+                    $endsAt = $endsAt->addDay();
+                }
+
+                $windows[] = [
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
+                ];
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        if ($windows === []) {
+            return null;
+        }
+
+        usort(
+            $windows,
+            static fn (array $left, array $right): int =>
+                $left['starts_at']->getTimestamp()
+                <=> $right['starts_at']->getTimestamp(),
+        );
+
+        $startsAt = $windows[0]['starts_at'];
+        $endsAt = $windows[0]['ends_at'];
+
+        foreach ($windows as $window) {
+            if ($window['ends_at']->greaterThan($endsAt)) {
+                $endsAt = $window['ends_at'];
+            }
+        }
+
+        return [
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+        ];
+    }
+
+    private function isFullPayment(Booking $booking): bool
+    {
+        $paymentStatus = strtolower((string) (
+            $booking->payment_status
+            ?? 'unpaid'
+        ));
+
+        if (in_array($paymentStatus, [
+            'paid',
+            'paid_full',
+            'completed',
+        ], true)) {
+            return true;
+        }
+
+        $paidAmount = max(0, (float) ($booking->paid_amount ?? 0));
+        $totalPayable = max(
+            0,
+            (float) (
+                $booking->final_amount
+                ?? $booking->total_amount
+                ?? $booking->total_price
+                ?? $booking->total
+                ?? 0
+            ),
+        );
+
+        return $totalPayable > 0 && $paidAmount >= $totalPayable;
+    }
+
+    private function applyFilters(Builder $query, Request $request): void
+    {
+        if ($request->filled('status')) {
+            $query->where(
+                'status',
+                $request->string('status')->toString(),
+            );
+        }
+
+        if ($request->filled('usage_status')) {
+            $query->where(
+                'usage_status',
+                $request->string('usage_status')->toString(),
+            );
+        }
+
+        if (
+            $request->filled('payment_status')
+            && Schema::hasColumn('bookings', 'payment_status')
+        ) {
+            $query->where(
+                'payment_status',
+                $request->string('payment_status')->toString(),
+            );
+        }
+
+        if ($request->filled('keyword')) {
+            $keyword = trim($request->string('keyword')->toString());
+
+            $query->where(function (Builder $bookingQuery) use ($keyword): void {
+                if (ctype_digit($keyword)) {
+                    $bookingQuery->orWhere('id', (int) $keyword);
+                }
+
+                if (Schema::hasColumn('bookings', 'booking_code')) {
+                    $bookingQuery->orWhere(
+                        'booking_code',
+                        'like',
+                        "%{$keyword}%",
+                    );
+                }
+
+                if (Schema::hasColumn('bookings', 'customer_name')) {
+                    $bookingQuery->orWhere(
+                        'customer_name',
+                        'like',
+                        "%{$keyword}%",
+                    );
+                }
+
+                if (Schema::hasColumn('bookings', 'customer_phone')) {
+                    $bookingQuery->orWhere(
+                        'customer_phone',
+                        'like',
+                        "%{$keyword}%",
+                    );
+                }
+
+                $bookingQuery->orWhereHas(
+                    'user',
+                    function (Builder $userQuery) use ($keyword): void {
+                        $userQuery
+                            ->where('name', 'like', "%{$keyword}%")
+                            ->orWhere('email', 'like', "%{$keyword}%");
+                    },
+                );
+            });
+        }
     }
 }
