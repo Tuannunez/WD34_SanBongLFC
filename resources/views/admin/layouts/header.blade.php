@@ -91,7 +91,7 @@
 
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2">
                 <li>
-                    <a class="dropdown-item" href="#">
+                    <a class="dropdown-item" href="/ho-so-ca-nhan">
                         <i class="bi bi-person me-2"></i>
                         Tài khoản
                     </a>
