@@ -51,23 +51,61 @@ class StadiumsController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|max:255',
-            'price' => 'nullable|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'phone' => 'nullable|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'required|max:255',
-            'open_time' => 'required',
-            'close_time' => 'required',
-            'description' => 'nullable|string',
+            'name' => ['required', 'string', 'min:3', 'max:100', 'unique:stadiums,name', 'regex:/.*\S+.*/'],
+            'price' => ['required', 'string', 'regex:/^-?\d+$/', function ($attribute, $value, $fail) {
+                $number = intval($value);
+                if ($number === 0) {
+                    $fail('Giá sân phải lớn hơn 0.');
+                } elseif ($number < 0) {
+                    $fail('Giá sân không hợp lệ.');
+                }
+            }],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'phone' => ['required', 'regex:/^0(3|5|7|8|9)[0-9]{8}$/'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'address' => ['required', 'string', 'min:5', 'max:255', 'regex:/.*\S+.*/'],
+            'open_time' => ['required', 'date_format:H:i'],
+            'close_time' => ['required', 'date_format:H:i', 'after:open_time'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'name.required' => 'Vui lòng nhập tên sân.',
+            'name.min' => 'Tên sân phải có ít nhất 3 ký tự.',
+            'name.max' => 'Tên sân tối đa 100 ký tự.',
+            'name.unique' => 'Tên sân đã tồn tại.',
+            'name.regex' => 'Tên sân không được chỉ chứa khoảng trắng.',
+            'price.required' => 'Vui lòng nhập giá sân.',
+            'price.regex' => 'Giá sân phải là số.',
+            'image.image' => 'Ảnh phải là hình ảnh hợp lệ.',
+            'image.mimes' => 'Ảnh không đúng định dạng.',
+            'image.max' => 'Ảnh tối đa 5MB.',
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
+            'phone.regex' => 'Số điện thoại không hợp lệ.',
+            'email.email' => 'Email không đúng định dạng.',
+            'address.required' => 'Vui lòng nhập địa chỉ.',
+            'address.min' => 'Địa chỉ phải có ít nhất 5 ký tự.',
+            'address.max' => 'Địa chỉ tối đa 255 ký tự.',
+            'address.regex' => 'Địa chỉ không được chỉ chứa khoảng trắng.',
+            'open_time.required' => 'Vui lòng chọn giờ mở.',
+            'open_time.date_format' => 'Giờ mở phải đúng định dạng HH:mm.',
+            'close_time.required' => 'Vui lòng chọn giờ đóng.',
+            'close_time.date_format' => 'Giờ đóng phải đúng định dạng HH:mm.',
+            'close_time.after' => 'Giờ đóng phải sau giờ mở.',
+            'description.max' => 'Mô tả không được vượt quá 1.000 ký tự.',
         ]);
 
         if ($request->filled('price')) {
-            $data['price'] = (float) preg_replace('/[^0-9.]/', '', (string) $request->input('price'));
+            $data['price'] = (int) preg_replace('/[^0-9]/', '', (string) $request->input('price'));
         }
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('stadiums', 'public');
+            $file = $request->file('image');
+            if ($file->getSize() < 2 * 1024 * 1024) {
+                return back()->withInput()->withErrors(['image' => 'Ảnh tối thiểu 2MB.']);
+            }
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return back()->withInput()->withErrors(['image' => 'Ảnh tối đa 5MB.']);
+            }
+            $data['image'] = $file->store('stadiums', 'public');
         }
 
         Stadium::create($data);
