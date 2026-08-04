@@ -391,7 +391,7 @@
                                     <input type="hidden" name="time_slot" id="selectedTimeSlot" value="{{ old('time_slot') }}">
                                     <input type="hidden" name="total_price" id="selectedPrice" value="{{ old('total_price') }}">
 
-                                    <div class="mb-3">
+                                    <!-- <div class="mb-3">
                                         <label class="form-label fw-semibold" for="promotionCode">Mã giảm giá</label>
                                         <input type="text"
                                                id="promotionCode"
@@ -403,7 +403,7 @@
                                         @error('promotion_code')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
-                                    </div>
+                                    </div> -->
 
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">

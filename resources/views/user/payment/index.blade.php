@@ -83,6 +83,33 @@
                         @csrf
                         <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
+                        {{-- PHẦN CHỌN MÃ KHUYẾN MÃI --}}
+                        <h5 class="text-secondary border-bottom pb-2 mb-3">Mã khuyến mãi</h5>
+                        <div class="mb-4">
+                            <select name="promotion_id" id="promotion-select" class="form-select rounded-3 py-2 border">
+                                <option value="">-- Chọn mã khuyến mãi (nếu có) --</option>
+                                @if(isset($promotions))
+                                    @foreach($promotions as $promo)
+                                        <option value="{{ $promo->id }}" 
+                                                data-percent="{{ $promo->discount_percent ?? $promo->discount_value ?? 0 }}" 
+                                                data-amount="{{ $promo->discount_amount ?? 0 }}"
+                                                @if($booking->promotion_id == $promo->id) selected @endif>
+                                            {{ $promo->code }} - {{ $promo->name ?? '' }} 
+                                            @if(!empty($promo->discount_percent)) 
+                                                (Giảm {{ $promo->discount_percent }}%)
+                                            @elseif(!empty($promo->discount_value) && $promo->discount_type === 'percent')
+                                                (Giảm {{ $promo->discount_value }}%)
+                                            @elseif(!empty($promo->discount_amount))
+                                                (Giảm {{ number_format($promo->discount_amount, 0, ',', '.') }}đ)
+                                            @elseif(!empty($promo->discount_value))
+                                                (Giảm {{ number_format($promo->discount_value, 0, ',', '.') }}đ)
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+
                         @php 
                             $isMonthlyBooking = (($booking->booking_type ?? 'single') === 'monthly'); 
                         @endphp
@@ -103,7 +130,7 @@
                                 @endforeach
                             @endif
                         @else
-                            {{-- ĐƠN THÁNG: ẨN HOÀN TOÀN TẠI SÂN/QR, CHỈ HIỆN THÔNG BÁO XÁC NHẬN --}}
+                            {{-- ĐƠN THÁNG: ẨN HOÀN TOÀN TẠI SÂN/QR --}}
                             <div class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm bg-success bg-opacity-10 text-success-emphasis">
                                 <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận đơn lịch cố định tháng</h6>
                                 <p class="small mb-0">Hệ thống đã ghi nhận số tiền cần thanh toán cho đơn lịch tháng. Vui lòng bấm xác nhận bên dưới để hoàn tất.</p>
@@ -126,21 +153,49 @@
     document.addEventListener('DOMContentLoaded', function () {
         const isMonthly = @json($isMonthlyBooking);
         
-        if (!isMonthly) {
-            const displayAmount = document.getElementById('display-amount');
-            const amountTitle = document.getElementById('amount-title');
-            const depositNote = document.getElementById('deposit-note');
-            
-            const rawTotalPrice = parseFloat(document.getElementById('raw-total-price').value) || 0;
-            const rawDepositAmount = parseFloat(document.getElementById('raw-deposit-amount').value) || (rawTotalPrice * 0.3);
-            
-            const radios = document.querySelectorAll('.payment-method-radio');
+        const displayAmount = document.getElementById('display-amount');
+        const amountTitle = document.getElementById('amount-title');
+        const depositNote = document.getElementById('deposit-note');
+        const promotionSelect = document.getElementById('promotion-select');
+        
+        const rawTotalPriceInput = document.getElementById('raw-total-price');
+        const rawDepositAmountInput = document.getElementById('raw-deposit-amount');
 
-            function formatMoney(amount) {
-                return new Intl.NumberFormat('vi-VN').format(amount);
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount > 0 ? Math.round(amount) : 0);
+        }
+
+        function updateDisplayPrice() {
+            let baseTotalPrice = parseFloat(rawTotalPriceInput.value) || 0;
+            let baseDepositAmount = parseFloat(rawDepositAmountInput.value) || (baseTotalPrice * 0.3);
+
+            if (promotionSelect && promotionSelect.selectedIndex > 0) {
+                let selectedOption = promotionSelect.options[promotionSelect.selectedIndex];
+                
+                let percent = parseFloat(selectedOption.getAttribute('data-percent')) || 0;
+                let fixedAmount = parseFloat(selectedOption.getAttribute('data-amount')) || 0;
+
+                if (percent > 0) {
+                    let discount = baseTotalPrice * (percent / 100);
+                    baseTotalPrice -= discount;
+                    baseDepositAmount -= discount * 0.3;
+                } else if (fixedAmount > 0) {
+                    baseTotalPrice -= fixedAmount;
+                    baseDepositAmount -= fixedAmount > baseDepositAmount ? baseDepositAmount : fixedAmount; 
+                }
             }
 
-            function updateDisplayPrice() {
+            baseTotalPrice = Math.max(0, baseTotalPrice);
+            baseDepositAmount = Math.max(0, baseDepositAmount);
+
+            if (isMonthly) {
+                if (displayAmount) displayAmount.textContent = formatMoney(baseTotalPrice);
+                if (amountTitle) amountTitle.textContent = "Tổng số tiền thanh toán lịch tháng";
+                if (depositNote) {
+                    depositNote.textContent = "Thanh toán lịch tháng";
+                    depositNote.className = "badge bg-success text-white mt-2 px-3 py-1.5 rounded-pill small";
+                }
+            } else {
                 let selectedRadio = document.querySelector('.payment-method-radio:checked');
                 if (!selectedRadio) return;
 
@@ -154,14 +209,14 @@
                 const methodText = currentBlock ? currentBlock.querySelector('.method-name-text').textContent.trim().toLowerCase() : '';
 
                 if (methodCode.includes('FIELD') || methodCode.includes('TIEN_MAT') || methodText.includes('tại sân') || methodText.includes('tai san')) {
-                    if (displayAmount) displayAmount.textContent = formatMoney(rawDepositAmount);
+                    if (displayAmount) displayAmount.textContent = formatMoney(baseDepositAmount);
                     if (amountTitle) amountTitle.textContent = "Số tiền cần cọc trước (30%)";
                     if (depositNote) {
                         depositNote.textContent = "Cọc trước 30% giữ sân";
                         depositNote.className = "badge bg-warning text-dark mt-2 px-3 py-1.5 rounded-pill small";
                     }
                 } else {
-                    if (displayAmount) displayAmount.textContent = formatMoney(rawTotalPrice);
+                    if (displayAmount) displayAmount.textContent = formatMoney(baseTotalPrice);
                     if (amountTitle) amountTitle.textContent = "Tổng số tiền cần trả (100%)";
                     if (depositNote) {
                         depositNote.textContent = "Thanh toán đủ";
@@ -169,13 +224,19 @@
                     }
                 }
             }
+        }
 
-            radios.forEach(radio => {
+        if (!isMonthly) {
+            document.querySelectorAll('.payment-method-radio').forEach(radio => {
                 radio.addEventListener('change', updateDisplayPrice);
             });
-
-            updateDisplayPrice();
         }
+
+        if (promotionSelect) {
+            promotionSelect.addEventListener('change', updateDisplayPrice);
+        }
+
+        updateDisplayPrice();
 
         // Đếm ngược 5 phút giữ sân
         const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";

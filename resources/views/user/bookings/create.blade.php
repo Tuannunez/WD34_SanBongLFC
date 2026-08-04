@@ -124,19 +124,7 @@
                                     </select>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold" for="promotionCode">Mã giảm giá</label>
-                                    <input type="text"
-                                           id="promotionCode"
-                                           name="promotion_code"
-                                           value="{{ old('promotion_code') }}"
-                                           class="form-control rounded-3 @error('promotion_code') is-invalid @enderror"
-                                           placeholder="Nhập mã giảm giá nếu có"
-                                           style="text-transform: uppercase">
-                                    @error('promotion_code')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                                
 
                                 <div>
                                     <label class="form-label fw-semibold">Ghi chú</label>

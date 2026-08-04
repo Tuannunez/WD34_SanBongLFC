@@ -58,16 +58,19 @@ class PaymentController extends Controller
 
         $paymentMethods = $this->ensurePaymentMethods();
 
-        return view('user.payment.index', compact('booking', 'paymentMethods'));
+        // Lấy danh sách mã khuyến mãi đang hoạt động để hiển thị ra select box
+        $promotions = DB::table('promotions')->where('status', 1)->get();
+
+        return view('user.payment.index', compact('booking', 'paymentMethods', 'promotions'));
     }
 
     public function processPayment(Request $request)
     {
         $bookingId = $request->input('booking_id');
+        $promotionId = $request->input('promotion_id');
+
         $booking = DB::table('bookings')
-            ->leftJoin('promotions', 'bookings.promotion_id', '=', 'promotions.id')
-            ->where('bookings.id', $bookingId)
-            ->select('bookings.*', 'promotions.code as promotion_code', 'promotions.name as promotion_name')
+            ->where('id', $bookingId)
             ->first();
         
         if (!$booking) {
@@ -86,8 +89,58 @@ class PaymentController extends Controller
                 ->with('error', 'Đơn đặt sân đã quá hạn 5 phút giữ sân và đã bị hủy tự động. Vui lòng đặt lại lịch mới!');
         }
 
+        // Lấy giá gốc ban đầu (tổng tiền trước khi giảm)
+        $originalTotal = (float)($booking->total_amount ?? 0);
+        if ($originalTotal <= 0) {
+            $originalTotal = (float)($booking->price ?? 0) + (float)($booking->service_total ?? 0);
+        }
+
+        $discountAmount = 0;
+
+        // Xử lý mã giảm giá nếu người dùng chọn ở trang thanh toán
+        if (!empty($promotionId)) {
+            $promo = DB::table('promotions')->where('id', $promotionId)->first();
+            if ($promo) {
+                $pTypeVal = $promo->discount_type ?? '';
+                $pVal = (float)($promo->discount_value ?? 0);
+                $pPercent = (float)($promo->discount_percent ?? 0);
+                $pAmount = (float)($promo->discount_amount ?? 0);
+
+                if ($pTypeVal === 'percent' || $pPercent > 0) {
+                    $rate = $pPercent > 0 ? $pPercent : $pVal;
+                    $discountAmount = $originalTotal * ($rate / 100);
+                    if (!empty($promo->max_discount_amount)) {
+                        $discountAmount = min($discountAmount, (float)$promo->max_discount_amount);
+                    }
+                } else {
+                    $discountAmount = $pAmount > 0 ? $pAmount : $pVal;
+                }
+            }
+        }
+
+        $discountAmount = min($discountAmount, $originalTotal);
+        $finalPrice = max(0, $originalTotal - $discountAmount);
+        $depositPrice = $finalPrice * 0.3; // Cọc 30%
+
+        // Cập nhật lại thông tin vào database theo đúng cấu trúc bảng bookings của bạn
+        DB::table('bookings')->where('id', $booking->id)->update([
+            'promotion_id' => !empty($promotionId) ? $promotionId : null,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $finalPrice,
+            'final_amount' => $finalPrice,
+            'deposit_amount' => $depositPrice,
+            'updated_at' => now()
+        ]);
+
+        // Lấy lại thông tin sau khi cập nhật
+        $booking = DB::table('bookings')
+            ->leftJoin('promotions', 'bookings.promotion_id', '=', 'promotions.id')
+            ->where('bookings.id', $bookingId)
+            ->select('bookings.*', 'promotions.code as promotion_code')
+            ->first();
+
         $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
-        $paymentTypeToSave = 'deposit'; // Mặc định là cọc
+        $paymentTypeToSave = 'deposit';
 
         if ($isMonthly) {
             $amountToPay = $booking->deposit_amount ?? $booking->total_amount;
@@ -101,28 +154,27 @@ class PaymentController extends Controller
                 return back()->withErrors(['error' => 'Vui lòng chọn phương thức thanh toán hợp lệ.']);
             }
 
-            $totalPrice = $booking->total_price ?? $booking->total_amount ?? 0;
-            $depositPrice = $booking->deposit_amount ?? ($totalPrice * 0.3);
+            $currentTotal = $booking->total_amount;
+            $currentDeposit = $booking->deposit_amount ?? ($currentTotal * 0.3);
             $methodCode = strtoupper($method->code ?? '');
 
             if ($methodCode !== 'BANK_TRANSFER' && $methodCode !== 'VNPAY_QR') {
-                $amountToPay = $depositPrice;
+                $amountToPay = $currentDeposit;
                 $vnp_OrderInfo = "Thanh toan coc 30% don dat san " . $booking->booking_code;
-                $paymentTypeToSave = 'deposit'; // Thanh toán tại sân -> Cọc 30%
+                $paymentTypeToSave = 'deposit';
             } else {
-                $amountToPay = $totalPrice;
+                $amountToPay = $currentTotal;
                 $vnp_OrderInfo = "Thanh toan 100% don dat san " . $booking->booking_code;
-                $paymentTypeToSave = 'full'; // Thanh toán qua VNPay/QR -> 100% (Full)
+                $paymentTypeToSave = 'full';
             }
         }
 
-        // Tạm lưu payment_type định hình trước khi sang VNPay
         DB::table('bookings')->where('id', $booking->id)->update([
             'payment_type' => $paymentTypeToSave,
             'updated_at' => now()
         ]);
 
-        if (!empty($booking->promotion_code) && (float) ($booking->discount_amount ?? 0) > 0) {
+        if (!empty($booking->promotion_code)) {
             $vnp_OrderInfo .= " ma KM " . $booking->promotion_code;
         }
 
@@ -225,10 +277,9 @@ class PaymentController extends Controller
                 }
 
                 if ($request->input('vnp_ResponseCode') == '00') {
-                    $totalAmountVal = $booking->total_price ?? $booking->total_amount ?? 0;
+                    $totalAmountVal = $booking->total_amount ?? 0;
                     $depositAmountVal = $booking->deposit_amount ?? ($totalAmountVal * 0.3);
 
-                    // Nếu loại thanh toán là full thì paid_amount = tổng tiền, ngược lại bằng tiền cọc
                     $actualPaid = ($booking->payment_type === 'full') ? $totalAmountVal : $depositAmountVal;
 
                     $updateData = [
