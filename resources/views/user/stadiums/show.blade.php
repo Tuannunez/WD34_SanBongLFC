@@ -424,7 +424,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">
-                                            Số điện thoại liên hệ
+                                            Số điện thoại liên hệ <span class="text-danger">*</span>
                                         </label>
                                         <input type="text"
                                                name="customer_phone"
@@ -434,7 +434,8 @@
                                                inputmode="numeric"
                                                pattern="[0-9]{1,10}"
                                                title="Chỉ nhập số và tối đa 10 chữ số"
-                                               maxlength="10">
+                                               maxlength="10"
+                                               required>
 
                                         <div class="invalid-feedback" id="customerPhoneFeedback">
                                             @error('customer_phone'){{ $message }}@else Chỉ nhập số và tối đa 10 chữ số.@enderror
