@@ -49,7 +49,7 @@
                     <div class="card-body p-4">
                         <div class="alert alert-warning border-0 rounded-3 small mb-4 bg-warning bg-opacity-10 text-warning-emphasis">
                             <i class="bi bi-shield-lock-fill me-1 text-warning"></i>
-                            <strong>Quy chế đặt lịch tháng:</strong> Đội bóng có thể chọn cọc trước 50% hoặc thanh toán đủ 100%. 50% tiền sân còn lại (nếu chọn cọc) sẽ được thanh toán theo từng buổi ra sân (nếu tự ý bỏ lịch không báo trước sẽ tính mất cọc buổi đó).
+                            <strong>Quy chế đặt lịch tháng:</strong> Đội bóng có thể chọn cọc trước 50% hoặc thanh toán đủ 100%. Hệ thống chỉ tính tiền và giữ lịch từ ngày hiện tại trở đi.
                         </div>
 
                         <div class="row g-3">
@@ -142,7 +142,7 @@
                     <div class="card-body">
                         <ul class="list-unstyled small text-muted mb-4">
                             <li class="d-flex justify-content-between py-2 border-bottom">
-                                <span>Tổng số buổi trong tháng:</span>
+                                <span>Tổng số buổi (từ hôm nay):</span>
                                 <strong class="text-dark" id="totalSlotsText">0 buổi</strong>
                             </li>
                             <li class="d-flex justify-content-between py-2 border-bottom">
@@ -161,7 +161,7 @@
 
                         <div class="p-3 bg-success-subtle rounded-3 text-success mb-3 small" id="noticeText">
                             <i class="bi bi-info-circle-fill me-1"></i>
-                            Khách hàng sẽ thanh toán cọc 50% trước, 50% còn lại thanh toán theo từng buổi ra sân.
+                            Chỉ tính tiền từ các buổi từ hôm nay trở đi trong tháng.
                         </div>
 
                         <button type="submit" class="btn btn-success rounded-3 w-100 py-2.5 fw-bold shadow-sm fs-6">
@@ -199,9 +199,13 @@ document.addEventListener('DOMContentLoaded', function () {
         let pricePerSlot = selectedSlot ? parseFloat(selectedSlot.getAttribute('data-price')) || 350000 : 350000;
 
         let slotCount = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const date = new Date(year, month - 1, 1);
         while (date.getMonth() === month - 1) {
-            if (date.getDay() === dayOfWeek) {
+            // Chỉ đếm các buổi từ hôm nay trở đi
+            if (date.getDay() === dayOfWeek && date >= today) {
                 slotCount++;
             }
             date.setDate(date.getDate() + 1);
@@ -209,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const totalAmount = slotCount * pricePerSlot;
         
-        // Kiểm tra xem khách chọn cọc 50% hay trả đủ 100%
         let selectedPaymentType = document.querySelector('input[name="payment_type"]:checked').value;
         let payableAmount = totalAmount;
 
@@ -219,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
             noticeText.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> 50% tiền sân còn lại sẽ được thanh toán dần theo từng buổi khi ra sân.';
         } else {
             payableLabel.textContent = 'Thanh toán ngay (100%):';
-            noticeText.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Đội bóng đã thanh toán đủ toàn bộ chi phí cả tháng.';
+            noticeText.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Đội bóng đã thanh toán đủ toàn bộ chi phí các buổi trong tháng.';
         }
 
         totalSlotsText.textContent = slotCount + ' buổi';

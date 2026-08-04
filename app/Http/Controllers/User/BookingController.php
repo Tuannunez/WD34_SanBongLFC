@@ -634,19 +634,28 @@ class BookingController extends Controller
             return back()->withInput()->withErrors(['monthly_error' => 'Vui lòng chọn đầy đủ Sân và Khung giờ đá!']);
         }
 
+        // CHẶN NGAY NẾU CHỌN THÁNG/NĂM TRONG QUÁ KHỨ SO VỚI THỜI GIAN HIỆN TẠI
+        $selectedMonthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $currentMonthStart = now()->startOfMonth();
+
+        if ($selectedMonthStart->lt($currentMonthStart)) {
+            return back()->withInput()->withErrors(['monthly_error' => 'Không thể đăng ký lịch cố định cho tháng trong quá khứ. Vui lòng chọn tháng hiện tại hoặc tương lai!']);
+        }
+
         $datesInMonth = [];
-        $startDate = Carbon::createFromDate($year, $month, 1);
-        $daysInMonth = $startDate->daysInMonth;
+        $daysInMonth = $selectedMonthStart->daysInMonth;
 
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $date = Carbon::createFromDate($year, $month, $day);
-            if ($date->dayOfWeek === $dayOfWeek) {
+            
+            // Chỉ lấy các ngày đúng thứ trong tuần VÀ phải từ hôm nay trở đi (không lấy ngày đã qua trong tháng hiện tại)
+            if ($date->dayOfWeek === $dayOfWeek && $date->greaterThanOrEqualTo(now()->startOfDay())) {
                 $datesInMonth[] = $date->format('Y-m-d');
             }
         }
 
         if (empty($datesInMonth)) {
-            return back()->withInput()->withErrors(['monthly_error' => 'Không tìm thấy ngày phù hợp trong tháng đã chọn.']);
+            return back()->withInput()->withErrors(['monthly_error' => 'Không tìm thấy ngày nào hợp lệ từ hôm nay trở đi trong tháng đã chọn để đặt lịch.']);
         }
 
         $conflictedDates = DB::table('booking_details as bd')
@@ -751,7 +760,6 @@ class BookingController extends Controller
         }
     }
 
-    // 🔥 HÀM HỦY ĐƠN & GỬI YÊU CẦU HOÀN TIỀN VỀ CHO ADMIN
     public function destroy(Request $request, int $booking)
     {
         $bookingData = DB::table('bookings')
@@ -785,7 +793,6 @@ class BookingController extends Controller
             ]);
         }
 
-        // Tính toán số tiền được hoàn dựa trên thời gian và số tiền đã thanh toán
         $totalMoneyRow = (float)($bookingData->total_amount ?? $bookingData->total_price ?? $bookingData->final_amount ?? 0);
         $paidAmt = (float)($bookingData->paid_amount ?? 0);
         $depositAmt = (float)($bookingData->deposit_amount ?? 0);
@@ -802,7 +809,7 @@ class BookingController extends Controller
         $hrs = Carbon::now()->diffInHours($mDate, false);
 
         if ($status === 'pending') {
-            $estRefund = 0; // Đơn chưa thanh toán thì không có tiền hoàn
+            $estRefund = 0;
         } elseif ($hrs >= 24) {
             if ($isPaidFull) {
                 $estRefund = $totalMoneyRow * 0.70;
@@ -817,7 +824,6 @@ class BookingController extends Controller
             }
         }
 
-        // Gom thông tin ngân hàng khách nhập từ modal
         $bankName = trim($request->input('bank_name', ''));
         $bankAccount = trim($request->input('bank_account_number', ''));
         $bankHolder = trim($request->input('bank_account_holder', ''));
@@ -859,7 +865,6 @@ class BookingController extends Controller
                     ]);
             }
 
-            // Gửi thông báo về cho Admin
             DB::table('notifications')->insert([
                 'user_id' => Auth::id(),
                 'title' => 'Yêu cầu hủy đơn & hoàn tiền',
