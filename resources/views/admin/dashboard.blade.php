@@ -31,28 +31,125 @@ body {
     color: #fff;
     transform: translateY(-2px);
 }
+.chart-tabs {
+    position: relative;
+}
 .custom-date-panel {
+    display: none;
+    position: absolute;
+    top: 52px;
+    right: 0;
+    width: 360px;
+    padding: 18px;
+    background: #ffffff;
+    border: 1px solid #e7edf6;
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    z-index: 10;
+}
+.custom-date-panel.visible {
+    display: block;
+}
+.custom-date-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.custom-date-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #102a43;
+}
+.custom-date-panel-subtitle {
+    font-size: 12px;
+    color: #627d98;
+}
+.custom-date-nav {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-left: 4px;
-    padding: 6px 10px;
-    background: #f5f7fb;
-    border-radius: 10px;
 }
-.custom-date-panel.hidden {
-    display: none;
+.custom-date-nav button {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e7edf6;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #1e3a8a;
+    font-size: 18px;
+    line-height: 1;
+    transition: background .2s ease;
+    cursor: pointer;
 }
-.custom-date-panel input {
-    border: 1px solid #dfe7f1;
-    border-radius: 8px;
-    padding: 7px 10px;
+.custom-date-nav button:hover {
+    background: #eef4ff;
+}
+.custom-date-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.custom-date-weekday {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #627d98;
+    text-transform: uppercase;
+}
+.custom-date-day {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    background: #f8fafc;
+    color: #102a43;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+.custom-date-day:hover {
+    background: #e2efff;
+    transform: translateY(-1px);
+}
+.custom-date-day.is-muted {
+    background: transparent;
+    color: #cbd5e1;
+    cursor: default;
+    transform: none;
+}
+.custom-date-day.is-selected {
+    background: linear-gradient(135deg, #206bc4, #4299e1);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 12px 28px rgba(32, 107, 196, .18);
+}
+.custom-date-day.is-range {
+    background: #dbeafe;
+    color: #102a43;
+}
+.custom-date-summary {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #f0f6ff;
+    color: #102a43;
     font-size: 13px;
+    margin-bottom: 12px;
 }
-.custom-date-panel button {
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 13px;
+.custom-date-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.custom-date-footer button {
+    min-width: 110px;
 }
 .dashboard-header {
     display: flex;
@@ -249,10 +346,22 @@ body {
                     <div class="chart-tab" data-quarter="2">Quý 2</div>
                     <div class="chart-tab" data-quarter="3">Quý 3</div>
                     <div class="custom-date-panel" id="customDatePanel">
-                        <input type="date" id="customStartDate" value="{{ now()->subDays(29)->format('Y-m-d') }}">
-                        <span class="text-muted">→</span>
-                        <input type="date" id="customEndDate" value="{{ now()->format('Y-m-d') }}">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="applyCustomDate">Áp dụng</button>
+                        <div class="custom-date-panel-header">
+                            <div>
+                                <div class="custom-date-panel-title">Chọn khoảng ngày</div>
+                                <div class="custom-date-panel-subtitle">Chọn ngày đầu và ngày cuối để lọc doanh thu</div>
+                            </div>
+                            <div class="custom-date-nav">
+                                <button type="button" id="prevMonthBtn" aria-label="Tháng trước">‹</button>
+                                <button type="button" id="nextMonthBtn" aria-label="Tháng sau">›</button>
+                            </div>
+                        </div>
+                        <div class="custom-date-calendar" id="customDateCalendar"></div>
+                        <div class="custom-date-summary" id="customDateSummary">Chưa chọn khoảng ngày</div>
+                        <div class="custom-date-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetCustomDate">Xóa</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="applyCustomDate">Áp dụng</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -476,82 +585,162 @@ body {
         revenueChart.render();
 
         const customPanel = document.getElementById("customDatePanel");
-        const customStartInput = document.getElementById("customStartDate");
-        const customEndInput = document.getElementById("customEndDate");
+        const customDateCalendar = document.getElementById("customDateCalendar");
+        const customDateSummary = document.getElementById("customDateSummary");
+        const applyCustomDate = document.getElementById("applyCustomDate");
+        const resetCustomDate = document.getElementById("resetCustomDate");
+        const prevMonthBtn = document.getElementById("prevMonthBtn");
+        const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+        let calendarViewDate = new Date();
+        let selectionStart = null;
+        let selectionEnd = null;
+
+        function toDateKey(date) {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function normalizeRange(start, end) {
+            const s = new Date(start);
+            const e = new Date(end);
+            if (s > e) return { start: e, end: s };
+            return { start: s, end: e };
+        }
+
+        function formatDate(date) {
+            const d = new Date(date);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
 
         function updateCustomRevenueChart(startDate, endDate) {
             const start = new Date(startDate + "T00:00:00");
             const end = new Date(endDate + "T00:00:00");
-
-            if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
-                return;
-            }
+            if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return;
 
             const labels = [];
             const series = [];
-
             (customRangeData.dates || []).forEach((date, index) => {
                 const current = new Date(date + "T00:00:00");
-
                 if (current >= start && current <= end) {
                     labels.push(customRangeData.labels?.[index] || date);
                     series.push(Number(customRangeData.series?.[index] || 0));
                 }
             });
-
             if (!labels.length) {
                 labels.push(...(rev30Labels || []));
                 series.push(...(rev30Series || []));
             }
-
             revenueChart.updateOptions({ xaxis: { categories: labels } });
             revenueChart.updateSeries([{ name: "Doanh thu", data: series }]);
         }
 
-        document.querySelectorAll(".chart-tab").forEach(tab => {
-            tab.addEventListener("click", function() {
-                document.querySelectorAll(".chart-tab").forEach(item => item.classList.remove("active"));
-                this.classList.add("active");
+        function renderCustomCalendar() {
+            if (!customDateCalendar) return;
+            const year = calendarViewDate.getFullYear();
+            const month = calendarViewDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const weekdayStart = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+            const todayKey = toDateKey(new Date());
+            const selected = selectionStart && selectionEnd ? normalizeRange(selectionStart, selectionEnd) : null;
 
-                if (this.dataset.type == "30") {
-                    customPanel.classList.remove("hidden");
-                    revenueChart.updateOptions({ xaxis: { categories: rev30Labels } });
-                    revenueChart.updateSeries([{ name: "Doanh thu", data: rev30Series }]);
+            const weekdays = ['CN','T2','T3','T4','T5','T6','T7'];
+            let html = weekdays.map(d => `<div class="custom-date-weekday">${d}</div>`).join('');
+
+            for (let i = 0; i < weekdayStart; i++) {
+                html += `<button type="button" class="custom-date-day is-muted" disabled></button>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const key = toDateKey(date);
+                let classes = ['custom-date-day'];
+                if (key === todayKey) classes.push('is-today');
+                if (selected) {
+                    if (date.getTime() === selected.start.getTime() || date.getTime() === selected.end.getTime()) classes.push('is-selected');
+                    else if (date > selected.start && date < selected.end) classes.push('is-range');
                 }
-                if (this.dataset.type == "7") {
-                    customPanel.classList.remove("hidden");
-                    revenueChart.updateOptions({ xaxis: { categories: rev7Labels } });
-                    revenueChart.updateSeries([{ name: "Doanh thu", data: rev7Series }]);
-                }
-                if (this.dataset.type == "custom") {
-                    customPanel.classList.remove("hidden");
-                    if (customStartInput.value && customEndInput.value) {
-                        updateCustomRevenueChart(customStartInput.value, customEndInput.value);
+                html += `<button type="button" class="${classes.join(' ')}" data-date="${key}">${day}</button>`;
+            }
+
+            customDateCalendar.innerHTML = html;
+            customDateCalendar.querySelectorAll('.custom-date-day:not(.is-muted)').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const date = new Date(btn.dataset.date + 'T00:00:00');
+                    if (!selectionStart || (selectionStart && selectionEnd)) {
+                        selectionStart = date;
+                        selectionEnd = null;
+                    } else {
+                        selectionEnd = date;
+                        const normalized = normalizeRange(selectionStart, selectionEnd);
+                        selectionStart = normalized.start;
+                        selectionEnd = normalized.end;
                     }
+                    if (selectionStart && selectionEnd) {
+                        customDateSummary.innerHTML = `Khoảng đã chọn: <strong>${formatDate(selectionStart)}</strong> → <strong>${formatDate(selectionEnd)}</strong>`;
+                    } else {
+                        customDateSummary.innerHTML = `Chọn ngày kết thúc...`;
+                    }
+                    renderCustomCalendar();
+                });
+            });
+        }
+
+        function resetCustomSelection() {
+            selectionStart = null;
+            selectionEnd = null;
+            customDateSummary.innerHTML = 'Chưa chọn khoảng ngày';
+            renderCustomCalendar();
+        }
+
+        prevMonthBtn?.addEventListener('click', () => {
+            calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() - 1, 1);
+            renderCustomCalendar();
+        });
+        nextMonthBtn?.addEventListener('click', () => {
+            calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 1);
+            renderCustomCalendar();
+        });
+        resetCustomDate?.addEventListener('click', resetCustomSelection);
+        applyCustomDate?.addEventListener('click', () => {
+            if (selectionStart && selectionEnd) {
+                updateCustomRevenueChart(toDateKey(selectionStart), toDateKey(selectionEnd));
+                customPanel?.classList.remove('visible');
+            }
+        });
+
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.chart-tab').forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+                customPanel.classList.toggle('visible', this.dataset.type === 'custom');
+                if (this.dataset.type === '30') {
+                    revenueChart.updateOptions({ xaxis: { categories: rev30Labels } });
+                    revenueChart.updateSeries([{ name: 'Doanh thu', data: rev30Series }]);
                 }
-                if (this.dataset.quarter == "1") {
-                    customPanel.classList.add("hidden");
-                    revenueChart.updateOptions({ xaxis: { categories: ["Th1", "Th2", "Th3", "Th4"] } });
-                    revenueChart.updateSeries([{ name: "Doanh thu", data: q1Data }]);
+                if (this.dataset.type === '7') {
+                    revenueChart.updateOptions({ xaxis: { categories: rev7Labels } });
+                    revenueChart.updateSeries([{ name: 'Doanh thu', data: rev7Series }]);
                 }
-                if (this.dataset.quarter == "2") {
-                    customPanel.classList.add("hidden");
-                    revenueChart.updateOptions({ xaxis: { categories: ["Th5", "Th6", "Th7", "Th8"] } });
-                    revenueChart.updateSeries([{ name: "Doanh thu", data: q2Data }]);
+                if (this.dataset.quarter === '1') {
+                    revenueChart.updateOptions({ xaxis: { categories: ['Th1','Th2','Th3','Th4'] } });
+                    revenueChart.updateSeries([{ name: 'Doanh thu', data: q1Data }]);
                 }
-                if (this.dataset.quarter == "3") {
-                    customPanel.classList.add("hidden");
-                    revenueChart.updateOptions({ xaxis: { categories: ["Th9", "Th10", "Th11", "Th12"] } });
-                    revenueChart.updateSeries([{ name: "Doanh thu", data: q3Data }]);
+                if (this.dataset.quarter === '2') {
+                    revenueChart.updateOptions({ xaxis: { categories: ['Th5','Th6','Th7','Th8'] } });
+                    revenueChart.updateSeries([{ name: 'Doanh thu', data: q2Data }]);
+                }
+                if (this.dataset.quarter === '3') {
+                    revenueChart.updateOptions({ xaxis: { categories: ['Th9','Th10','Th11','Th12'] } });
+                    revenueChart.updateSeries([{ name: 'Doanh thu', data: q3Data }]);
                 }
             });
         });
 
-        document.getElementById("applyCustomDate").addEventListener("click", function() {
-            if (customStartInput.value && customEndInput.value) {
-                updateCustomRevenueChart(customStartInput.value, customEndInput.value);
-            }
-        });
+        resetCustomSelection();
+        renderCustomCalendar();
     }
 </script>
 <script>
