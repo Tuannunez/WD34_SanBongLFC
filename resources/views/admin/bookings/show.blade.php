@@ -168,7 +168,7 @@
     );
     $phaseDescription = (string) (
         $lifecycle['description']
-        ?? 'Chưa có thông tin vòng đời.'
+         ?? 'Chưa có thông tin vòng đời.'
     );
     $phaseColor = (string) ($lifecycle['color'] ?? 'secondary');
     $phaseIcon = (string) ($lifecycle['icon'] ?? 'bi-question-circle');
@@ -238,6 +238,8 @@
         $paidAmount = $totalMoney;
     }
 
+    $remainingAmount = max(0, $totalMoney - $paidAmount);
+
     $depositAmount = max(
         0,
         (float) ($booking->deposit_amount ?? 0)
@@ -269,7 +271,7 @@
 
     $customerEmail = data_get($booking, 'user.email')
         ?? $booking->customer_email
-        ?? $booking->email
+         ?? $booking->email
         ?? '-';
 
     $confirmStep = in_array(
@@ -755,6 +757,22 @@
                         <span class="text-muted">Tổng tiền</span>
                         <strong class="text-end">
                             {{ number_format($totalMoney, 0, ',', '.') }}đ
+                        </strong>
+                    </div>
+
+                    {{-- ĐÃ ĐÓNG --}}
+                    <div class="admin-info-row">
+                        <span class="text-muted">Đã đóng</span>
+                        <strong class="text-end text-success">
+                            {{ number_format($paidAmount, 0, ',', '.') }}đ
+                        </strong>
+                    </div>
+
+                    {{-- CÒN LẠI --}}
+                    <div class="admin-info-row">
+                        <span class="text-muted">Còn lại</span>
+                        <strong class="text-end text-danger">
+                            {{ number_format($remainingAmount, 0, ',', '.') }}đ
                         </strong>
                     </div>
 
