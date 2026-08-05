@@ -120,7 +120,6 @@ Route::middleware('auth')->group(function (): void {
         ->whereNumber('stadium')
         ->name('user.bookings.store.from-stadium');
 
-    // Đặt sân cố định theo tháng.
     Route::get('/dat-san-thang/{stadium}', [UserBookingController::class, 'createMonthly'])
         ->whereNumber('stadium')
         ->name('user.bookings.createMonthly');
@@ -135,10 +134,14 @@ Route::middleware('auth')->group(function (): void {
         ->whereNumber('booking')
         ->name('user.bookings.show');
 
-    // User tự thêm giờ (gia hạn sân) cho đơn của mình
+    // Route tự thêm giờ & thêm dịch vụ cho khách hàng
     Route::post('/don-dat-san-cua-toi/{booking}/add-extra-time', [UserBookingController::class, 'addExtraTime'])
         ->whereNumber('booking')
         ->name('user.bookings.add-extra-time');
+
+    Route::post('/don-dat-san-cua-toi/{booking}/add-service', [UserBookingController::class, 'addServiceToBooking'])
+        ->whereNumber('booking')
+        ->name('user.bookings.add-service');
 
     Route::delete('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'destroy'])
         ->whereNumber('booking')
@@ -203,10 +206,6 @@ Route::middleware('auth')->group(function (): void {
 |--------------------------------------------------------------------------
 | Admin routes
 |--------------------------------------------------------------------------
-|
-| Admin/nhân viên xác nhận check-in bằng mã đơn mô phỏng;
-| check-out và xử lý no-show do Scheduler tự động thực hiện.
-|
 */
 
 Route::prefix('admin')
@@ -218,12 +217,6 @@ Route::prefix('admin')
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Notifications
-        |--------------------------------------------------------------------------
-        */
-
         Route::get('/notifications', [AdminNotificationController::class, 'index'])
             ->name('notifications.index');
 
@@ -232,12 +225,6 @@ Route::prefix('admin')
 
         Route::post('/notifications', [AdminNotificationController::class, 'store'])
             ->name('notifications.store');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Roles and users
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource('roles', RoleController::class);
 
@@ -251,12 +238,6 @@ Route::prefix('admin')
         )
             ->whereNumber('user')
             ->name('users.toggle-status');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Stadiums, fields, schedules and prices
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource('stadiums', StadiumsController::class);
 
@@ -335,13 +316,6 @@ Route::prefix('admin')
         Route::resource('services', AdminServiceController::class);
         Route::resource('booking-services', BookingServiceController::class);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Bookings
-        |--------------------------------------------------------------------------
-        */
-
-        // Route tĩnh phải đặt trước route bookings/{booking}.
         Route::get('bookings/check-in', [BookingCheckInScannerController::class, 'index'])
             ->name('bookings.check-in.index');
 
@@ -364,7 +338,6 @@ Route::prefix('admin')
             ->whereNumber('booking')
             ->name('bookings.destroy');
 
-        // Route động đặt cuối cùng để không nuốt /bookings/check-in.
         Route::get('bookings/{booking}', [AdminBookingController::class, 'show'])
             ->whereNumber('booking')
             ->name('bookings.show');
@@ -375,12 +348,6 @@ Route::prefix('admin')
         Route::get('booking-details/{bookingDetail}', [BookingDetailController::class, 'show'])
             ->whereNumber('bookingDetail')
             ->name('booking-details.show');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Promotions, news and reviews
-        |--------------------------------------------------------------------------
-        */
 
         Route::resource('promotions', PromotionController::class);
         Route::resource('news', AdminNewsController::class);

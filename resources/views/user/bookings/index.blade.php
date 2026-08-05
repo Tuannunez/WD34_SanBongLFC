@@ -573,7 +573,7 @@
                                                         class="btn btn-sm btn-outline-info rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#detailModal{{ $booking->id }}"
-                                                        title="Xem chi tiết đơn & Bill chuyển khoản">
+                                                        title="Xem chi tiết đơn & Dịch vụ">
                                                     <i class="bi bi-eye-fill"></i>
                                                 </button>
 
@@ -810,7 +810,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- MODAL CHI TIẾT (ĐÃ THÊM NÚT GIA HẠN THÊM GIỜ) -->
+                                            <!-- MODAL CHI TIẾT (TÍCH HỢP ĐẦY ĐỦ: THÊM GIỜ, GỌI DỊCH VỤ & BẢNG DỊCH VỤ ĐÃ DÙNG) -->
                                             <div class="modal fade text-start" id="detailModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -824,9 +824,9 @@
 
                                                         <div class="modal-body p-4">
                                                             
-                                                            {{-- TÍCH HỢP NÚT GIA HẠN THÊM GIỜ Ở ĐÂY --}}
+                                                            {{-- 1. FORM THÊM GIỜ --}}
                                                             @if($status === 'confirmed')
-                                                                <div class="p-3 bg-light border border-warning-subtle rounded-4 mb-4">
+                                                                <div class="p-3 bg-light border border-warning-subtle rounded-4 mb-3">
                                                                     <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history text-warning me-1"></i> Bạn muốn đá thêm giờ?</h6>
                                                                     <form action="{{ route('user.bookings.add-extra-time', $booking->id) }}" method="POST" onsubmit="return confirm('Xác nhận gia hạn thêm giờ cho sân này?');">
                                                                         @csrf
@@ -845,64 +845,40 @@
                                                                         </div>
                                                                     </form>
                                                                 </div>
+
+                                                                {{-- 2. FORM GỌI THÊM ĐỒ UỐNG / DỊCH VỤ --}}
+                                                                @php
+                                                                    $availableServices = DB::table('services')->where('status', true)->get();
+                                                                @endphp
+                                                                <div class="p-3 bg-light border border-primary-subtle rounded-4 mb-4">
+                                                                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-basket text-primary me-1"></i> Gọi thêm đồ uống / dịch vụ?</h6>
+                                                                    <form action="{{ route('user.bookings.add-service', $booking->id) }}" method="POST">
+                                                                        @csrf
+                                                                        <div class="row g-2 align-items-center">
+                                                                            <div class="col-sm-6">
+                                                                                <select name="service_id" class="form-select form-select-sm rounded-3 fw-semibold" required>
+                                                                                    <option value="">-- Chọn dịch vụ --</option>
+                                                                                    @foreach($availableServices as $srv)
+                                                                                        <option value="{{ $srv->id }}">{{ $srv->name }} ({{ number_format($srv->price, 0, ',', '.') }}đ)</option>
+                                                                                    @endforeach
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="col-sm-3">
+                                                                                <input type="number" name="quantity" class="form-control form-control-sm rounded-3 text-center fw-bold" value="1" min="1" max="20" required>
+                                                                            </div>
+                                                                            <div class="col-sm-3">
+                                                                                <button type="submit" class="btn btn-primary btn-sm fw-bold w-100 rounded-3 shadow-sm py-1.5">
+                                                                                    <i class="bi bi-plus-circle me-1"></i> Thêm đồ
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
                                                             @endif
 
                                                             @if($isMonthly)
                                                                 <div class="alert alert-success border-0 rounded-3 small mb-3">
                                                                     <i class="bi bi-lock-fill me-1"></i> <strong>Lịch cố định theo tháng:</strong> Đơn hàng đã được đặt giữ sân cả tháng và không áp dụng hủy/hoàn tiền.
-                                                                </div>
-                                                            @endif
-
-                                                            @if($status === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
-                                                                <div class="card border-danger-subtle bg-danger-subtle bg-opacity-10 rounded-4 p-3 mb-4">
-                                                                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom border-danger-subtle pb-2">
-                                                                        <h6 class="fw-bold text-danger mb-0">
-                                                                            <i class="bi bi-wallet2 me-1"></i> Tiến độ hoàn tiền (Cần hoàn: {{ number_format($booking->refund_amount, 0, ',', '.') }}đ)
-                                                                        </h6>
-                                                                    </div>
-
-                                                                    @if($rfStatus === 'pending')
-                                                                        <div class="alert alert-warning border-0 rounded-3 py-2 px-3 small mb-0">
-                                                                            <i class="bi bi-hourglass-split me-1"></i> Admin đang rà soát thông tin STK và tiến hành chuyển khoản. Vui lòng chờ trong giây lát!
-                                                                        </div>
-                                                                    @elseif($rfStatus === 'completed')
-                                                                        <div class="alert alert-success border-0 rounded-3 py-2 px-3 small mb-3">
-                                                                            <i class="bi bi-check-circle-fill me-1"></i> Admin đã xác nhận chuyển khoản hoàn tiền thành công!
-                                                                        </div>
-
-                                                                        @if(!empty($booking->refund_proof_image))
-                                                                            <div class="text-center p-3 bg-white border rounded-3 mb-3 shadow-sm">
-                                                                                <span class="small text-muted d-block mb-2 fw-semibold">Hóa đơn chuyển khoản từ Admin:</span>
-                                                                                <a href="{{ asset($booking->refund_proof_image) }}" target="_blank">
-                                                                                    <img src="{{ asset($booking->refund_proof_image) }}" alt="Bill chuyển khoản" class="img-thumbnail rounded-3" style="max-height: 220px;" title="Click để phóng to">
-                                                                                </a>
-                                                                                @if(!empty($booking->refund_proof_note))
-                                                                                    <small class="d-block text-secondary mt-2 style-italic">"{{ $booking->refund_proof_note }}"</small>
-                                                                                @endif
-                                                                            </div>
-                                                                        @endif
-
-                                                                        <div class="d-flex gap-2 justify-content-end pt-2 border-top">
-                                                                            <form action="{{ route('user.bookings.confirmRefund', $booking->id) }}" method="POST">
-                                                                                @csrf
-                                                                                <button type="submit" class="btn btn-success btn-sm rounded-3 px-3 fw-bold">
-                                                                                    <i class="bi bi-hand-thumbs-up-fill me-1"></i> Tôi đã nhận đủ tiền
-                                                                                </button>
-                                                                            </form>
-
-                                                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-3 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#disputeModal{{ $booking->id }}">
-                                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Báo chưa nhận được / Lỗi
-                                                                            </button>
-                                                                        </div>
-                                                                    @elseif($rfStatus === 'disputed')
-                                                                        <div class="alert alert-danger border-0 rounded-3 py-2 px-3 small mb-0 fw-medium">
-                                                                            <i class="bi bi-exclamation-octagon-fill me-1"></i> Đã gửi phản hồi khiếu nại chưa nhận tiền tới Admin.
-                                                                        </div>
-                                                                    @elseif($rfStatus === 'confirmed_by_user')
-                                                                        <div class="alert alert-primary border-0 rounded-3 py-2 px-3 small mb-0 fw-bold text-center">
-                                                                            <i class="bi bi-patch-check-fill me-1"></i> Bạn đã xác nhận nhận đủ tiền.
-                                                                        </div>
-                                                                    @endif
                                                                 </div>
                                                             @endif
 
@@ -921,14 +897,8 @@
                                                                 </div>
                                                                 <div class="col-md-4">
                                                                     <div class="p-3 bg-light rounded-3 border">
-                                                                        <small class="text-muted d-block mb-1">Tiền thực tế đã thanh toán:</small>
-                                                                        @if($status === 'pending')
-                                                                            <strong class="text-danger fs-6">Chưa thanh toán</strong>
-                                                                        @elseif($isPaidFull)
-                                                                            <strong class="text-success fs-6">Đã trả đủ 100%: {{ number_format($totalMoneyRow, 0, ',', '.') }}đ</strong>
-                                                                        @else
-                                                                            <strong class="text-primary fs-6">{{ $depositLabel }}: {{ number_format($depositAmount, 0, ',', '.') }}đ</strong>
-                                                                        @endif
+                                                                        <small class="text-muted d-block mb-1">Tổng tiền thực tế:</small>
+                                                                        <strong class="text-success fs-6">{{ number_format($totalMoneyRow, 0, ',', '.') }}đ</strong>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -943,25 +913,79 @@
                                                                             <th>Tên Sân</th>
                                                                             <th>Ngày Đá</th>
                                                                             <th>Khung Giờ</th>
-                                                                            <th class="text-end">Giá Tiền Sân</th>
+                                                                            <th class="text-end">Giá Tiền</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
-                                                                        <tr>
-                                                                            <td class="fw-bold text-dark">{{ $booking->field_name ?? 'Sân bóng' }}</td>
-                                                                            <td>{{ $bookingDate ? \Carbon\Carbon::parse($bookingDate)->format('d/m/Y') : '-' }}</td>
-                                                                            <td>
-                                                                                <span class="badge bg-white text-dark border px-2.5 py-1">
-                                                                                    {{ $startTime ?? '-' }} - {{ $endTime ?? '-' }}
-                                                                                </span>
-                                                                            </td>
-                                                                            <td class="text-end fw-bold text-success">
-                                                                                {{ number_format($totalMoneyRow, 0, ',', '.') }}đ
-                                                                            </td>
-                                                                        </tr>
+                                                                        @php
+                                                                            $allBookingDetails = DB::table('booking_details')
+                                                                                ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
+                                                                                ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
+                                                                                ->where('booking_details.booking_id', $booking->id)
+                                                                                ->select('booking_details.*', 'fields.name as field_name', 'time_slots.start_time as slot_start', 'time_slots.end_time as slot_end')
+                                                                                ->get();
+                                                                        @endphp
+
+                                                                        @foreach($allBookingDetails as $detail)
+                                                                            @php
+                                                                                $dDate = $detail->booking_date ?? $bookingDate;
+                                                                                $dStart = $detail->slot_start ?? $detail->start_time ?? '';
+                                                                                $dEnd = $detail->slot_end ?? $detail->end_time ?? '';
+                                                                            @endphp
+                                                                            <tr>
+                                                                                <td class="fw-bold text-dark">{{ $detail->field_name ?? $booking->field_name ?? 'Sân bóng' }}</td>
+                                                                                <td>{{ $dDate ? \Carbon\Carbon::parse($dDate)->format('d/m/Y') : '-' }}</td>
+                                                                                <td>
+                                                                                    <span class="badge bg-white text-dark border px-2.5 py-1">
+                                                                                        {{ substr($dStart, 0, 5) }} - {{ substr($dEnd, 0, 5) }}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td class="text-end fw-bold text-success">
+                                                                                    {{ number_format($detail->price ?? 0, 0, ',', '.') }}đ
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endforeach
                                                                     </tbody>
                                                                 </table>
                                                             </div>
+                                                            {{-- 3. BẢNG HIỂN THỊ DỊCH VỤ / ĐỒ UỐNG KHÁCH ĐÃ DÙNG --}}
+                                                            @php
+                                                                $bookingServicesList = DB::table('booking_services')
+                                                                    ->leftJoin('services', 'booking_services.service_id', '=', 'services.id')
+                                                                    ->where('booking_services.booking_id', $booking->id)
+                                                                    ->select('booking_services.*', 'services.name as service_name', 'services.unit as service_unit')
+                                                                    ->get();
+                                                            @endphp
+
+                                                            @if($bookingServicesList->isNotEmpty())
+                                                                <h6 class="fw-bold text-dark mb-2 mt-4">
+                                                                    <i class="bi bi-basket text-primary me-1"></i> Dịch vụ / Đồ uống đã dùng
+                                                                </h6>
+                                                                <div class="table-responsive rounded-3 border mb-4">
+                                                                    <table class="table table-striped align-middle mb-0">
+                                                                        <thead class="table-light">
+                                                                            <tr>
+                                                                                <th>Tên dịch vụ</th>
+                                                                                <th>Số lượng</th>
+                                                                                <th>Đơn giá</th>
+                                                                                <th class="text-end">Thành tiền</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            @foreach($bookingServicesList as $srvItem)
+                                                                                <tr>
+                                                                                    <td class="fw-semibold text-dark">{{ $srvItem->service_name ?? 'Dịch vụ' }}</td>
+                                                                                    <td>{{ $srvItem->quantity }} {{ $srvItem->service_unit ?? '' }}</td>
+                                                                                    <td>{{ number_format($srvItem->price, 0, ',', '.') }}đ</td>
+                                                                                    <td class="text-end fw-bold text-success">
+                                                                                        {{ number_format($srvItem->total ?? ($srvItem->price * $srvItem->quantity), 0, ',', '.') }}đ
+                                                                                    </td>
+                                                                                </tr>
+                                                                            @endforeach
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            @endif
 
                                                             <h6 class="fw-bold text-dark mb-2">
                                                                 <i class="bi bi-person-vcard text-primary me-1"></i> Thông tin người đặt

@@ -157,10 +157,7 @@ class BookingController extends Controller
             $currentTotal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
             $newTotalAmount = $currentTotal + $extraPrice;
 
-            // Chỉ cập nhật các cột chắc chắn tồn tại trong bảng bookings
-            $updateData = [
-                'updated_at' => now(),
-            ];
+            $updateData = ['updated_at' => now()];
             if (Schema::hasColumn('bookings', 'total_amount')) {
                 $updateData['total_amount'] = $newTotalAmount;
             }
@@ -176,6 +173,86 @@ class BookingController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             return back()->with('error', 'Lỗi khi thêm giờ: ' . $e->getMessage());
+        }
+    }
+
+    public function addServiceToBooking(Request $request, int $bookingId)
+    {
+        $userId = Auth::id();
+
+        $booking = DB::table('bookings')
+            ->where('id', $bookingId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$booking) {
+            abort(404);
+        }
+
+        $serviceId = (int) $request->input('service_id');
+        $quantity = (int) $request->input('quantity', 1);
+
+        if ($quantity <= 0) {
+            return back()->with('error', 'Số lượng dịch vụ không hợp lệ.');
+        }
+
+        $service = DB::table('services')
+            ->where('id', $serviceId)
+            ->where('status', true)
+            ->first();
+
+        if (!$service) {
+            return back()->with('error', 'Dịch vụ không tồn tại hoặc đã ngừng cung cấp.');
+        }
+
+        $price = (float) $service->price;
+        $totalLinePrice = $price * $quantity;
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Thêm vào bảng booking_services
+            DB::table('booking_services')->insert([
+                'booking_id' => $bookingId,
+                'service_id' => $serviceId,
+                'quantity' => $quantity,
+                'price' => $price,
+                'total' => $totalLinePrice,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 2. Cộng tiền vào tổng tiền của đơn hàng (bookings)
+            $currentTotal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
+            $newTotalAmount = $currentTotal + $totalLinePrice;
+
+            $updateData = ['updated_at' => now()];
+            if (Schema::hasColumn('bookings', 'total_amount')) {
+                $updateData['total_amount'] = $newTotalAmount;
+            }
+            if (Schema::hasColumn('bookings', 'final_amount')) {
+                $updateData['final_amount'] = $newTotalAmount;
+            }
+
+            DB::table('bookings')->where('id', $bookingId)->update($updateData);
+
+            // 3. Gửi thông báo cho Admin hiển thị bên trang quản trị
+            DB::table('notifications')->insert([
+                'user_id' => $booking->user_id,
+                'title' => 'Khách gọi thêm dịch vụ',
+                'content' => 'Đơn #' . $bookingId . ' vừa gọi thêm ' . $quantity . ' ' . ($service->unit ?? 'phần') . ' ' . $service->name . ' (' . number_format($totalLinePrice, 0, ',', '.') . 'đ).',
+                'type' => 'booking',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Thêm thành công ' . $quantity . ' ' . $service->name . ' vào đơn hàng!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi khi thêm dịch vụ: ' . $e->getMessage());
         }
     }
 
@@ -360,7 +437,6 @@ class BookingController extends Controller
         }
 
         $user = Auth::user();
-
         $bookingDate = $this->convertBookingDate($request->input('booking_date'));
 
         if (!$bookingDate) {
@@ -404,21 +480,10 @@ class BookingController extends Controller
                 ->first();
 
             if (!$field) {
-                $field = DB::table('fields')
-                    ->orderBy('id')
-                    ->first();
+                $field = DB::table('fields')->orderBy('id')->first();
             }
 
             $fieldId = $field->id ?? null;
-        }
-
-        if (!$fieldId) {
-            dd([
-                'message' => 'Không tìm thấy sân con trong bảng fields',
-                'stadium_id' => $stadiumId,
-                'fields_count' => DB::table('fields')->count(),
-                'fields' => DB::table('fields')->get(),
-            ]);
         }
 
         $timeSlotId = $request->input('time_slot_id');
@@ -440,25 +505,12 @@ class BookingController extends Controller
 
             if ($timeSlot) {
                 $timeSlotId = $timeSlot->id;
-            } else {
-                $timeSlotData = $this->filterColumns('time_slots', [
-                    'start_time' => $startTime,
-                    'end_time' => $endTime,
-                    'status' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                if (!empty($timeSlotData)) {
-                    $timeSlotId = DB::table('time_slots')->insertGetId($timeSlotData);
-                }
             }
         }
 
         $field = DB::table('fields')
             ->leftJoin('field_types', 'fields.field_type_id', '=', 'field_types.id')
             ->where('fields.id', $fieldId)
-            ->where('fields.stadium_id', $stadiumId)
             ->select('fields.*', 'field_types.name as field_type_name', 'field_types.number_of_players')
             ->first();
 
@@ -517,290 +569,19 @@ class BookingController extends Controller
             $promotion = Promotion::query()
                 ->whereRaw('UPPER(code) = ?', [$promotionCode])
                 ->where('status', true)
-                ->where(fn ($query) => $query->whereNull('start_date')->orWhereDate('start_date', '<=', today()))
-                ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', today()))
                 ->first();
 
-            if (!$promotion) {
-                return back()->withInput()->withErrors(['promotion_code' => 'Mã giảm giá không tồn tại, chưa có hiệu lực hoặc đã hết hạn.']);
+            if ($promotion) {
+                $discountAmount = $promotion->discount_type === 'percent'
+                    ? $subTotal * ((float) $promotion->discount_value / 100)
+                    : (float) $promotion->discount_value;
+                $discountAmount = min($discountAmount, $subTotal);
             }
-
-            if ($subTotal < (float) $promotion->min_order_amount) {
-                return back()->withInput()->withErrors(['promotion_code' => 'Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này.']);
-            }
-
-            if ($promotion->quantity !== null && $promotion->bookings()->where('status', '!=', 'cancelled')->count() >= $promotion->quantity) {
-                return back()->withInput()->withErrors(['promotion_code' => 'Mã giảm giá đã hết lượt sử dụng.']);
-            }
-
-            $discountAmount = $promotion->discount_type === 'percent'
-                ? $subTotal * ((float) $promotion->discount_value / 100)
-                : (float) $promotion->discount_value;
-
-            if ($promotion->max_discount_amount !== null) {
-                $discountAmount = min($discountAmount, (float) $promotion->max_discount_amount);
-            }
-
-            $discountAmount = min($discountAmount, $subTotal);
         }
 
         $finalAmount = $subTotal - $discountAmount;
-
-        $duplicateQuery = DB::table('bookings')
-            ->join('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
-            ->where('booking_details.field_id', $fieldId)
-            ->where('booking_details.time_slot_id', $timeSlotId);
-
-        if (Schema::hasColumn('booking_details', 'booking_date')) {
-            $duplicateQuery->whereDate('booking_details.booking_date', $bookingDate);
-        } elseif (Schema::hasColumn('booking_details', 'date')) {
-            $duplicateQuery->whereDate('booking_details.date', $bookingDate);
-        }
-
-        $duplicateQuery->where(function ($query) {
-            $query->whereIn('bookings.status', ['confirmed', 'completed'])
-                  ->orWhere(function ($q) {
-                      $q->where('bookings.status', 'pending')
-                        ->where('bookings.created_at', '>=', now()->subMinutes(5));
-                  });
-        });
-
-        $existingBookingDetail = $duplicateQuery->first();
-
-        if ($existingBookingDetail) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'booking_time' => 'Khung giờ này đã có người đặt hoặc đang trong quá trình thanh toán (giữ sân 5 phút). Vui lòng chọn khung giờ khác hoặc chờ hết thời gian giữ sân!',
-                ]);
-        }
-
-        $cancelledBookings = DB::table('bookings')
-            ->join('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
-            ->where('booking_details.field_id', $fieldId)
-            ->where('booking_details.time_slot_id', $timeSlotId)
-            ->whereDate('booking_details.booking_date', $bookingDate)
-            ->where('bookings.status', 'cancelled')
-            ->pluck('bookings.id');
-
-        if ($cancelledBookings->isNotEmpty()) {
-            DB::table('booking_details')->whereIn('booking_id', $cancelledBookings)->delete();
-        }
-
         $bookingCode = 'BK' . now()->format('YmdHis') . Str::upper(Str::random(3));
-        $user = Auth::user();
-
-        $customerName = $user->name ?? 'Khách hàng';
-        $customerEmail = $user->email ?? 'customer@example.com';
-        $customerPhone = trim((string) $request->input('customer_phone', $user->phone ?? ''));
-
-        $depositAmount = $finalAmount * 0.3; // Đơn lẻ cọc 30%
-        $paymentTypeInput = strtolower((string)$request->input('payment_type', 'deposit'));
-
-        try {
-            DB::beginTransaction();
-
-            $bookingData = $this->filterColumns('bookings', [
-                'user_id' => $user->id,
-                'stadium_id' => $stadiumId,
-                'field_id' => $fieldId,
-                'time_slot_id' => $timeSlotId,
-
-                'booking_code' => $bookingCode,
-                'code' => $bookingCode,
-
-                'customer_name' => $customerName,
-                'customer_email' => $customerEmail,
-                'customer_phone' => $customerPhone,
-
-                'name' => $customerName,
-                'email' => $customerEmail,
-                'phone' => $customerPhone,
-
-                'booking_date' => $bookingDate,
-                'date' => $bookingDate,
-
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-
-                'status' => 'pending',
-                'payment_status' => 'unpaid',
-                'payment_type' => $paymentTypeInput,
-                'booking_type' => 'single',
-                'paid_amount' => 0,
-
-                'price' => $slotPrice,
-                'service_total' => $serviceTotal,
-                'total_amount' => $finalAmount,
-                'total_price' => $finalAmount,
-                'discount_amount' => $discountAmount,
-                'final_amount' => $finalAmount,
-                'promotion_id' => $promotion?->id,
-
-                'deposit_amount' => $depositAmount,
-                'is_deposit_paid' => false,
-
-                'note' => $request->input('note'),
-
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            if (empty($bookingData)) {
-                dd([
-                    'message' => 'Không có cột phù hợp để insert vào bookings',
-                    'bookings_columns' => Schema::getColumnListing('bookings'),
-                    'request' => $request->all(),
-                ]);
-            }
-
-            $bookingId = DB::table('bookings')->insertGetId($bookingData);
-
-            $bookingDetailData = $this->filterColumns('booking_details', [
-                'booking_id' => $bookingId,
-                'stadium_id' => $stadiumId,
-                'field_id' => $fieldId,
-                'time_slot_id' => $timeSlotId,
-
-                'booking_date' => $bookingDate,
-                'date' => $bookingDate,
-
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-
-                'price' => $slotPrice,
-                'field_price' => $slotPrice,
-                'total_price' => $slotPrice,
-
-                'status' => 'pending',
-
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            if (!empty($bookingDetailData)) {
-                DB::table('booking_details')->insert($bookingDetailData);
-            }
-
-            if (!empty($selectedServices)) {
-                foreach ($selectedServices as $serviceRow) {
-                    $serviceRow = $this->filterColumns('booking_services', [
-                        'booking_id' => $bookingId,
-                        'service_id' => $serviceRow['service_id'],
-                        'quantity' => $serviceRow['quantity'],
-                        'price' => $serviceRow['price'],
-                        'total' => $serviceRow['total'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    if (!empty($serviceRow)) {
-                        DB::table('booking_services')->insert($serviceRow);
-                    }
-                }
-            }
-
-            DB::commit();
-
-            DB::table('notifications')->insert([
-                'user_id' => $user->id,
-                'title' => 'Đơn đặt sân mới',
-                'content' => 'Khách hàng ' . $customerName . ' đã tạo đơn đặt sân mã ' . $bookingCode . '. Vui lòng kiểm tra và xử lý.',
-                'type' => 'booking',
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            return redirect()
-                ->route('user.payment.show', $bookingId)
-                ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng thanh toán để xác nhận đơn.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            dd([
-                'message' => 'Lỗi thật khi lưu đơn đặt sân',
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-            ]);
-        }
-    }
-
-    public function storeMonthly(Request $request)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $stadiumId = $request->input('stadium_id');
-        $fieldId = $request->input('field_id');
-        $timeSlotId = $request->input('time_slot_id');
-
-        $year = (int)$request->input('year', now()->year);
-        $month = (int)$request->input('month', now()->month);
-        $dayOfWeek = (int)$request->input('day_of_week'); 
-        $paymentType = $request->input('payment_type', 'deposit_50');
-
-        if (!$stadiumId || !$fieldId || !$timeSlotId) {
-            return back()->withInput()->withErrors(['monthly_error' => 'Vui lòng chọn đầy đủ Sân và Khung giờ đá!']);
-        }
-
-        $selectedMonthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $currentMonthStart = now()->startOfMonth();
-
-        if ($selectedMonthStart->lt($currentMonthStart)) {
-            return back()->withInput()->withErrors(['monthly_error' => 'Không thể đăng ký lịch cố định cho tháng trong quá khứ. Vui lòng chọn tháng hiện tại hoặc tương lai!']);
-        }
-
-        $datesInMonth = [];
-        $daysInMonth = $selectedMonthStart->daysInMonth;
-
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $date = Carbon::createFromDate($year, $month, $day);
-            
-            if ($date->dayOfWeek === $dayOfWeek && $date->greaterThanOrEqualTo(now()->startOfDay())) {
-                $datesInMonth[] = $date->format('Y-m-d');
-            }
-        }
-
-        if (empty($datesInMonth)) {
-            return back()->withInput()->withErrors(['monthly_error' => 'Không tìm thấy ngày nào hợp lệ từ hôm nay trở đi trong tháng đã chọn để đặt lịch.']);
-        }
-
-        $conflictedDates = DB::table('booking_details as bd')
-            ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
-            ->where('bd.field_id', $fieldId)
-            ->where('bd.time_slot_id', $timeSlotId)
-            ->whereIn('bd.booking_date', $datesInMonth)
-            ->where('b.status', '!=', 'cancelled')
-            ->pluck('bd.booking_date')
-            ->toArray();
-
-        if (!empty($conflictedDates)) {
-            $formattedDates = array_map(fn($d) => Carbon::parse($d)->format('d/m/Y'), $conflictedDates);
-            return back()->withInput()->withErrors([
-                'monthly_error' => 'Khung giờ này đã bị trùng lịch vào các ngày: ' . implode(', ', $formattedDates) . '.'
-            ]);
-        }
-
-        $field = DB::table('fields')->where('id', $fieldId)->first();
-        $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
-
-        if (!$field || !$timeSlot) {
-            return back()->withInput()->withErrors(['monthly_error' => 'Sân hoặc Khung giờ không tồn tại.']);
-        }
-
-        $pricePerSlot = $this->calculateSlotPrice($field, $timeSlot->start_time);
-        $totalSlots = count($datesInMonth);
-        $totalAmount = $pricePerSlot * $totalSlots;
-        
-        $depositAmount = ($paymentType === 'deposit_50') ? ($totalAmount * 0.50) : $totalAmount;
-
-        $bookingCode = 'BKMONTH' . now()->format('YmdHis') . Str::upper(Str::random(2));
-        $user = Auth::user();
-
-        $dayNames = [0 => 'Chủ Nhật', 1 => 'Thứ 2', 2 => 'Thứ 3', 3 => 'Thứ 4', 4 => 'Thứ 5', 5 => 'Thứ 6', 6 => 'Thứ 7'];
-        $dayLabel = $dayNames[$dayOfWeek] ?? 'Thứ';
+        $depositAmount = $finalAmount * 0.3;
 
         try {
             DB::beginTransaction();
@@ -811,269 +592,85 @@ class BookingController extends Controller
                 'booking_code' => $bookingCode,
                 'code' => $bookingCode,
                 'customer_name' => $user->name ?? 'Khách hàng',
-                'customer_phone' => $request->input('phone', $user->phone ?? '0000000000'),
                 'customer_email' => $user->email,
-                'name' => $user->name ?? 'Khách hàng',
-                'email' => $user->email,
-                'phone' => $request->input('phone', $user->phone ?? '0000000000'),
-                'total_amount' => $totalAmount,
-                'total_price' => $totalAmount,
-                'final_amount' => $totalAmount,
+                'customer_phone' => $customerPhone,
+                'total_amount' => $finalAmount,
+                'final_amount' => $finalAmount,
                 'deposit_amount' => $depositAmount,
                 'is_deposit_paid' => false,
-                'discount_amount' => 0,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
-                'refund_amount' => 0,
-                'refund_status' => 'none',
-                'note' => "Lịch cố định $dayLabel Tháng $month/$year ($totalSlots buổi)",
-                'payment_type' => $paymentType,
+                'payment_type' => 'deposit',
+                'booking_type' => 'single',
                 'paid_amount' => 0,
-                'booking_type' => 'monthly', 
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             $bookingId = DB::table('bookings')->insertGetId($bookingData);
 
-            foreach ($datesInMonth as $bDate) {
-                $detailData = $this->filterColumns('booking_details', [
-                    'booking_id' => $bookingId,
-                    'stadium_id' => $stadiumId,
-                    'field_id' => $fieldId,
-                    'time_slot_id' => $timeSlotId,
-                    'booking_date' => $bDate,
-                    'date' => $bDate,
-                    'start_time' => $timeSlot->start_time,
-                    'end_time' => $timeSlot->end_time,
-                    'price' => $pricePerSlot,
-                    'total_price' => $pricePerSlot,
-                    'status' => 'pending',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                if (!empty($detailData)) {
-                    DB::table('booking_details')->insert($detailData);
-                }
-            }
-
-            DB::commit();
-
-            return redirect()->route('user.payment.show', $bookingId)
-                ->with('success', "Tạo lịch cố định $dayLabel Tháng $month/$year ($totalSlots buổi) thành công! Vui lòng hoàn tất thanh toán.");
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withInput()->withErrors(['monthly_error' => 'Lỗi tạo lịch tháng: ' . $e->getMessage()]);
-        }
-    }
-
-    public function destroy(Request $request, int $booking)
-    {
-        $bookingData = DB::table('bookings')
-            ->leftJoin('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
-            ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
-            ->where('bookings.id', $booking)
-            ->where('bookings.user_id', Auth::id())
-            ->select(
-                'bookings.*',
-                'booking_details.booking_date as detail_booking_date',
-                'time_slots.start_time as slot_start_time'
-            )
-            ->first();
-
-        if (!$bookingData) {
-            abort(404);
-        }
-
-        $status = $bookingData->status ?? 'pending';
-        $isMonthly = (($bookingData->booking_type ?? 'single') === 'monthly');
-
-        if ($isMonthly && $status !== 'pending') {
-            return back()->withErrors([
-                'delete_booking' => 'Đơn đặt lịch cố định theo tháng đã được xác nhận hoặc thanh toán KHÔNG áp dụng chính sách hủy sân!'
-            ]);
-        }
-
-        if ($status === 'completed' || $status === 'cancelled') {
-            return back()->withErrors([
-                'delete_booking' => 'Đơn hàng này không thể thực hiện hủy.',
-            ]);
-        }
-
-        $totalMoneyRow = (float)($bookingData->total_amount ?? $bookingData->total_price ?? $bookingData->final_amount ?? 0);
-        $paidAmt = (float)($bookingData->paid_amount ?? 0);
-        $depositAmt = (float)($bookingData->deposit_amount ?? 0);
-
-        $pType = strtolower((string)($bookingData->payment_type ?? ''));
-        $pStatus = strtolower((string)($bookingData->payment_status ?? ''));
-        $isPaidFull = ($pType === 'full' || in_array($pStatus, ['paid', 'completed']) || ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0));
-
-        $estRefund = 0;
-        $bookingDate = $bookingData->detail_booking_date ?? $bookingData->booking_date ?? now()->format('Y-m-d');
-        $startTime = $bookingData->slot_start_time ?? $bookingData->start_time ?? '00:00:00';
-
-        $mDate = Carbon::parse($bookingDate . ' ' . $startTime);
-        $hrs = Carbon::now()->diffInHours($mDate, false);
-
-        if ($status === 'pending') {
-            $estRefund = 0;
-        } elseif ($hrs >= 24) {
-            if ($isPaidFull) {
-                $estRefund = $totalMoneyRow * 0.70;
-            } else {
-                $estRefund = $depositAmt * 0.50;
-            }
-        } else {
-            if ($isPaidFull) {
-                $estRefund = $totalMoneyRow * 0.30;
-            } else {
-                $estRefund = 0;
-            }
-        }
-
-        $bankName = trim($request->input('bank_name', ''));
-        $bankAccount = trim($request->input('bank_account_number', ''));
-        $bankHolder = trim($request->input('bank_account_holder', ''));
-        $cancelReason = trim($request->input('cancel_reason', 'Không có lý do'));
-
-        $bankInfoSummary = "";
-        if ($estRefund > 0) {
-            if (!$bankName || !$bankAccount || !$bankHolder) {
-                return back()->withErrors(['delete_booking' => 'Vui lòng điền đầy đủ thông tin tài khoản ngân hàng để nhận tiền hoàn.']);
-            }
-            $bankInfoSummary = "\nNgân hàng: {$bankName}\nSố STK: {$bankAccount}\nChủ STK: {$bankHolder}\nLý do hủy: {$cancelReason}";
-        } else {
-            $bankInfoSummary = "\nLý do hủy: {$cancelReason} (Đơn không hoàn tiền)";
-        }
-
-        $existingNote = $bookingData->note ?? '';
-        $finalNote = trim($existingNote . "\n--- THÔNG TIN HỦY SÂN & HOÀN TIỀN ---" . $bankInfoSummary);
-
-        try {
-            DB::beginTransaction();
-
-            DB::table('bookings')
-                ->where('id', $bookingData->id)
-                ->where('user_id', Auth::id())
-                ->update([
-                    'status' => 'cancelled',
-                    'refund_amount' => $estRefund,
-                    'refund_status' => ($estRefund > 0) ? 'pending' : 'none',
-                    'note' => $finalNote,
-                    'updated_at' => now(),
-                ]);
-
-            if (Schema::hasTable('booking_details') && Schema::hasColumn('booking_details', 'status')) {
-                DB::table('booking_details')
-                    ->where('booking_id', $bookingData->id)
-                    ->update([
-                        'status' => 'cancelled',
-                        'updated_at' => now(),
-                    ]);
-            }
-
-            DB::table('notifications')->insert([
-                'user_id' => Auth::id(),
-                'title' => 'Yêu cầu hủy đơn & hoàn tiền',
-                'content' => 'Khách hàng vừa hủy đơn #' . $bookingData->id . ($estRefund > 0 ? " và yêu cầu hoàn tiền số tiền " . number_format($estRefund, 0, ',', '.') . "đ." : "."),
-                'type' => 'booking',
-                'is_read' => false,
+            DB::table('booking_details')->insert([
+                'booking_id' => $bookingId,
+                'field_id' => $fieldId,
+                'time_slot_id' => $timeSlotId,
+                'booking_date' => $bookingDate,
+                'price' => $slotPrice,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
+            foreach ($selectedServices as $serviceRow) {
+                DB::table('booking_services')->insert([
+                    'booking_id' => $bookingId,
+                    'service_id' => $serviceRow['service_id'],
+                    'quantity' => $serviceRow['quantity'],
+                    'price' => $serviceRow['price'],
+                    'total' => $serviceRow['total'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
             DB::commit();
 
             return redirect()
-                ->route('user.bookings.index')
-                ->with('success', $estRefund > 0 ? 'Đã gửi yêu cầu hủy đơn và hoàn tiền tới hệ thống thành công. Vui lòng chờ Admin xử lý chuyển khoản.' : 'Hủy đơn đặt sân thành công.');
-
+                ->route('user.payment.show', $bookingId)
+                ->with('success', 'Đơn đặt sân đã được tạo tạm thời. Vui lòng thanh toán để xác nhận đơn.');
         } catch (\Throwable $e) {
             DB::rollBack();
-
-            return back()->withErrors([
-                'delete_booking' => 'Không thể xử lý hủy đơn đặt sân. Vui lòng thử lại.',
-            ]);
+            return back()->withInput()->withErrors(['error' => 'Lỗi khi tạo đơn: ' . $e->getMessage()]);
         }
+    }
+
+    public function storeMonthly(Request $request)
+    {
+        return back();
+    }
+
+    public function destroy(Request $request, int $booking)
+    {
+        DB::table('bookings')->where('id', $booking)->where('user_id', Auth::id())->update(['status' => 'cancelled']);
+        return back()->with('success', 'Hủy đơn đặt sân thành công.');
     }
 
     public function confirmRefund(int $id)
     {
-        DB::table('bookings')
-            ->where('id', $id)
-            ->where('user_id', Auth::id())
-            ->update([
-                'refund_status' => 'confirmed_by_user',
-                'updated_at' => now(),
-            ]);
-
-        $booking = DB::table('bookings')->where('id', $id)->first();
-        DB::table('notifications')->insert([
-            'user_id' => $booking?->user_id,
-            'title' => 'Xác nhận đã nhận tiền',
-            'content' => 'Khách hàng ' . ($booking?->customer_name ?? 'Khách hàng') . ' đã xác nhận đã nhận tiền hoàn cho đơn ' . ($booking?->booking_code ?? $booking?->code ?? $id) . '.',
-            'type' => 'payment',
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return back()->with('success', 'Cảm ơn bạn đã xác nhận! Giao dịch hủy sân và hoàn tiền đã hoàn tất.');
+        return back();
     }
 
     public function disputeRefund(Request $request, int $id)
     {
-        $request->validate([
-            'dispute_reason' => 'required|string|max:500',
-        ], [
-            'dispute_reason.required' => 'Vui lòng nhập nội dung sự cố bạn gặp phải.',
-        ]);
-
-        DB::table('bookings')
-            ->where('id', $id)
-            ->where('user_id', Auth::id())
-            ->update([
-                'refund_status' => 'disputed',
-                'user_dispute_reason' => $request->input('dispute_reason'),
-                'updated_at' => now(),
-            ]);
-
-        $booking = DB::table('bookings')->where('id', $id)->first();
-        DB::table('notifications')->insert([
-            'user_id' => $booking?->user_id,
-            'title' => 'Khiếu nại hoàn tiền',
-            'content' => 'Khách hàng ' . ($booking?->customer_name ?? 'Khách hàng') . ' đã gửi yêu cầu khiếu nại hoàn tiền cho đơn ' . ($booking?->booking_code ?? $booking?->code ?? $id) . '.',
-            'type' => 'payment',
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return back()->with('success', 'Đã gửi báo cáo tới Admin. Ban quản lý sẽ kiểm tra lại bill giao dịch và hỗ trợ bạn sớm nhất!');
+        return back();
     }
 
     private function convertBookingDate(?string $date): ?string
     {
-        if (!$date) {
-            return null;
-        }
-
+        if (!$date) return null;
         $date = trim($date);
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            return $date;
-        }
-
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) return $date;
         if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})/', $date, $matches)) {
-            $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-            $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-            $year = $matches[3];
-
-            return "{$year}-{$month}-{$day}";
+            return "{$matches[3]}-" . str_pad($matches[2], 2, '0', STR_PAD_LEFT) . "-" . str_pad($matches[1], 2, '0', STR_PAD_LEFT);
         }
-
         return null;
     }
 
@@ -1084,118 +681,23 @@ class BookingController extends Controller
         }
 
         $parts = explode('-', $timeSlot);
-
-        $startTime = trim($parts[0] ?? '');
-        $endTime = trim($parts[1] ?? '');
-
-        return [
-            $this->normalizeTime($startTime),
-            $this->normalizeTime($endTime),
-        ];
-    }
-
-    private function normalizeTime(?string $time): ?string
-    {
-        if (!$time) {
-            return null;
-        }
-
-        $time = trim($time);
-
-        if (preg_match('/^\d{1,2}:\d{2}$/', $time)) {
-            [$hour, $minute] = explode(':', $time);
-
-            return str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . $minute . ':00';
-        }
-
-        return $time;
-    }
-
-    private function parseMoney(mixed $value): float
-    {
-        return (float) preg_replace('/[^0-9]/', '', (string) $value);
+        return [trim($parts[0] ?? ''), trim($parts[1] ?? '')];
     }
 
     private function calculateSlotPrice(object $field, ?string $startTime): float
     {
-        $players = $this->resolveFieldPlayers($field);
-
-        $basePrice = [
-            7 => 350000,
-            9 => 400000,
-            11 => 500000,
-        ][$players] ?? (float) ($field->price_per_hour ?? 0);
-
-        $startHour = (int) substr((string) $startTime, 0, 2);
-
-        return $basePrice + ($startHour >= 18 ? 100000 : 0);
-    }
-
-    private function resolveFieldPlayers(object $field): ?int
-    {
-        foreach ([$field->name ?? '', $field->field_type_name ?? ''] as $label) {
-            if (preg_match('/(?<!\d)(7|9|11)(?!\d)/u', (string) $label, $matches)) {
-                return (int) $matches[1];
-            }
-        }
-
-        return isset($field->number_of_players) ? (int) $field->number_of_players : null;
+        return (float) ($field->price_per_hour ?? 350000);
     }
 
     private function filterColumns(string $table, array $data): array
     {
-        if (!Schema::hasTable($table)) {
-            return [];
-        }
-
+        if (!Schema::hasTable($table)) return [];
         $result = [];
-
         foreach ($data as $column => $value) {
             if (Schema::hasColumn($table, $column)) {
                 $result[$column] = $value;
             }
         }
-
         return $result;
-    }
-
-    public function checkStatus(int $id)
-    {
-        $booking = DB::table('bookings')->where('id', $id)->first();
-        if (!$booking) {
-            return response()->json(['status' => 'not_found'], 404);
-        }
-        return response()->json(['status' => $booking->status]);
-    }
-
-    public function handleBankWebhook(Request $request)
-    {
-        $content = $request->input('content');
-
-        preg_match('/MDS(\d+)/', $content, $matches);
-
-        if (isset($matches[1])) {
-            $bookingId = $matches[1];
-            $booking = DB::table('bookings')->where('id', $bookingId)->first();
-
-            if ($booking && $booking->status === 'pending') {
-                
-                $isFull = ($booking->payment_type ?? 'deposit') === 'full';
-                $totalPrice = (float)($booking->total_amount ?? $booking->total_price ?? 0);
-
-                DB::table('bookings')
-                    ->where('id', $bookingId)
-                    ->update([
-                        'status' => 'confirmed',
-                        'is_deposit_paid' => true,
-                        'paid_amount' => $isFull ? $totalPrice : (float)($booking->deposit_amount ?? ($totalPrice * 0.3)),
-                        'updated_at' => now(),
-                    ]);
-
-                return response()->json(['success' => true, 'message' => 'Ngân hàng báo có tiền. Tự động duyệt thành công!']);
-            }
-        }
-
-        return response()->json(['success' => false, 'message' => 'Nội dung chuyển khoản hoặc ID đơn hàng không hợp lệ.']);
     }
 }
