@@ -255,7 +255,20 @@
                     clearInterval(timerInterval);
                     countdownTimer.innerHTML = "ĐÃ HẾT HẠN GIỮ SÂN!";
                     alert("Đơn hàng của bạn đã vượt quá thời gian giữ sân tạm thời (5 phút). Vui lòng thực hiện đặt lại lịch mới!");
-                    window.location.href = "{{ route('user.bookings.index') }}"; 
+                    
+                    // GỌI HỦY ĐƠN TRONG CƠ SỞ DỮ LIỆU RỒI CHUYỂN HƯỚNG
+                    fetch('{{ route("user.bookings.cancel-timeout", $booking->id) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    }).then(() => {
+                        window.location.href = "{{ route('user.bookings.index') }}";
+                    }).catch(() => {
+                        window.location.href = "{{ route('user.bookings.index') }}";
+                    });
+
                     return;
                 }
 

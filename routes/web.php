@@ -116,6 +116,10 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/dat-san', [UserBookingController::class, 'store'])
         ->name('user.bookings.store');
 
+    Route::post('/don-dat-san-cua-toi/{booking}/cancel-timeout', [UserBookingController::class, 'cancelTimeout'])
+        ->whereNumber('booking')
+        ->name('user.bookings.cancel-timeout');
+
     Route::post('/stadiums/{stadium}', [UserBookingController::class, 'storeFromStadium'])
         ->whereNumber('stadium')
         ->name('user.bookings.store.from-stadium');

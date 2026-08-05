@@ -875,6 +875,35 @@ class BookingController extends Controller
         return back();
     }
 
+    public function cancelTimeout(int $id)
+    {
+        $booking = DB::table('bookings')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->first();
+
+        if ($booking) {
+            DB::table('bookings')->where('id', $id)->update([
+                'status' => 'cancelled',
+                'note' => trim(($booking->note ?? '') . "\n--- ĐƠN HÀNG TỰ ĐỘNG HỦY DO QUÁ HẠN THANH TOÁN (5 PHÚT) ---"),
+                'updated_at' => now(),
+            ]);
+
+            // Cập nhật luôn chi tiết đơn sang hủy nếu bảng tồn tại
+            if (\Illuminate\Support\Facades\Schema::hasTable('booking_details') && \Illuminate\Support\Facades\Schema::hasColumn('booking_details', 'status')) {
+                DB::table('booking_details')
+                    ->where('booking_id', $id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     private function convertBookingDate(?string $date): ?string
     {
         if (!$date) return null;
