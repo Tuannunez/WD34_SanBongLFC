@@ -32,12 +32,17 @@
         </div>
     @endif
 
+    {{-- THẺ FORM ÔM TRỌN CẢ 2 CỘT ĐỂ ĐẢM BẢO GỬI ĐỦ DỮ LIỆU --}}
     <form action="{{ route('user.bookings.storeMonthly') }}" method="POST" id="monthlyBookingForm">
         @csrf
         <input type="hidden" name="stadium_id" value="{{ $stadium->id }}">
 
+        {{-- 2 THẺ ẨN TRUYỀN CHÍNH XÁC SỐ TIỀN TỪ JS SANG CONTROLLER --}}
+        <input type="hidden" name="calculated_total_amount" id="inputTotalAmount" value="0">
+        <input type="hidden" name="calculated_payable_amount" id="inputPayableAmount" value="0">
+
         <div class="row g-4">
-            {{-- CỘT CẤU HÌNH LỊCH THÁNG --}}
+            {{-- CỘT CẤU HÌNH LỊCH THÁNG (BÊN TRÁI) --}}
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                     <div class="card-header bg-success text-white p-3.5 px-4 border-0">
@@ -133,7 +138,7 @@
                 </div>
             </div>
 
-            {{-- CỘT HIỂN THỊ CHI TIẾT SỐ BUỔI & TỔNG TIỀN BÊN PHẢI --}}
+            {{-- CỘT HIỂN THỊ CHI TIẾT SỐ BUỔI & NÚT SUBMIT (BÊN PHẢI) --}}
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 20px;">
                     <div class="card-header bg-white border-0 py-3">
@@ -164,7 +169,8 @@
                             Chỉ tính tiền từ các buổi từ hôm nay trở đi trong tháng.
                         </div>
 
-                        <button type="submit" class="btn btn-success rounded-3 w-100 py-2.5 fw-bold shadow-sm fs-6">
+                        {{-- NÚT SUBMIT ĐẶT LỊCH THÁNG --}}
+                        <button type="submit" id="submitMonthlyBtn" class="btn btn-success rounded-3 w-100 py-2.5 fw-bold shadow-sm fs-6">
                             <i class="bi bi-calendar-plus me-1"></i> Tạo Đơn Đặt Lịch Tháng
                         </button>
                     </div>
@@ -182,6 +188,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
     const paymentTypeRadios = document.querySelectorAll('input[name="payment_type"]');
+    const monthlyBookingForm = document.getElementById('monthlyBookingForm');
+    const submitMonthlyBtn = document.getElementById('submitMonthlyBtn');
 
     const totalSlotsText = document.getElementById('totalSlotsText');
     const slotPriceText = document.getElementById('slotPriceText');
@@ -189,6 +197,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const payableAmountText = document.getElementById('payableAmountText');
     const payableLabel = document.getElementById('payableLabel');
     const noticeText = document.getElementById('noticeText');
+
+    const inputTotalAmount = document.getElementById('inputTotalAmount');
+    const inputPayableAmount = document.getElementById('inputPayableAmount');
 
     function calculateMonthlyBooking() {
         const year = parseInt(yearSelect.value);
@@ -204,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const date = new Date(year, month - 1, 1);
         while (date.getMonth() === month - 1) {
-            // Chỉ đếm các buổi từ hôm nay trở đi
             if (date.getDay() === dayOfWeek && date >= today) {
                 slotCount++;
             }
@@ -229,6 +239,10 @@ document.addEventListener('DOMContentLoaded', function () {
         slotPriceText.textContent = new Intl.NumberFormat('vi-VN').format(pricePerSlot) + 'đ';
         totalAmountText.textContent = new Intl.NumberFormat('vi-VN').format(totalAmount) + 'đ';
         payableAmountText.textContent = new Intl.NumberFormat('vi-VN').format(payableAmount) + 'đ';
+
+        // GÁN TRỰC TIẾP VÀO THẺ ẨN ĐỂ GỬI SANG CONTROLLER
+        if(inputTotalAmount) inputTotalAmount.value = totalAmount;
+        if(inputPayableAmount) inputPayableAmount.value = payableAmount;
     }
 
     fieldSelect.addEventListener('change', calculateMonthlyBooking);
@@ -239,6 +253,18 @@ document.addEventListener('DOMContentLoaded', function () {
     paymentTypeRadios.forEach(radio => radio.addEventListener('change', calculateMonthlyBooking));
 
     calculateMonthlyBooking();
+
+    if (monthlyBookingForm) {
+        monthlyBookingForm.addEventListener('submit', function (e) {
+            if (!fieldSelect.value || !timeSlotSelect.value) {
+                e.preventDefault();
+                alert('Vui lòng chọn đầy đủ Sân đá và Khung giờ cố định!');
+                return;
+            }
+            submitMonthlyBtn.disabled = true;
+            submitMonthlyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo đơn...';
+        });
+    }
 });
 </script>
 @endsection

@@ -120,9 +120,19 @@ class PaymentController extends Controller
 
         $discountAmount = min($discountAmount, $originalTotal);
         $finalPrice = max(0, $originalTotal - $discountAmount);
-        $depositPrice = $finalPrice * 0.3; // Cọc 30%
+        
+        $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
 
-        // Cập nhật lại thông tin vào database theo đúng cấu trúc bảng bookings của bạn
+        // PHÂN BIỆT RÕ RÀNG SỐ TIỀN CỌC GIỮA ĐƠN THÁNG VÀ ĐƠN LẺ
+        if ($isMonthly) {
+            // Đơn tháng giữ nguyên số tiền deposit_amount đã được thiết lập từ lúc tạo (50% hoặc 100%)
+            $depositPrice = (float)($booking->deposit_amount ?? $finalPrice);
+        } else {
+            // Đơn ngày lẻ cọc 30%
+            $depositPrice = $finalPrice * 0.3; 
+        }
+
+        // Cập nhật lại thông tin vào database theo đúng cấu trúc bảng bookings
         DB::table('bookings')->where('id', $booking->id)->update([
             'promotion_id' => !empty($promotionId) ? $promotionId : null,
             'discount_amount' => $discountAmount,
@@ -139,14 +149,15 @@ class PaymentController extends Controller
             ->select('bookings.*', 'promotions.code as promotion_code')
             ->first();
 
-        $isMonthly = (($booking->booking_type ?? 'single') === 'monthly');
         $paymentTypeToSave = 'deposit';
 
         if ($isMonthly) {
-            $amountToPay = $booking->deposit_amount ?? $booking->total_amount;
+            // ĐỐI VỚI ĐƠN THÁNG: Lấy chính xác số tiền cần thanh toán ngay ($booking->deposit_amount)
+            $amountToPay = (float)($booking->deposit_amount ?? $booking->total_amount);
             $vnp_OrderInfo = "Thanh toan lich co dinh thang don " . $booking->booking_code;
-            $paymentTypeToSave = 'deposit';
+            $paymentTypeToSave = ($booking->payment_type === 'full') ? 'full' : 'deposit';
         } else {
+            // ĐỐI VỚI ĐƠN LẺ: Xử lý theo phương thức thanh toán
             $methodId = $request->input('payment_method_id');
             $method = DB::table('payment_methods')->where('id', $methodId)->first();
 

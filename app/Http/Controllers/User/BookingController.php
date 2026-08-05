@@ -644,7 +644,135 @@ class BookingController extends Controller
 
     public function storeMonthly(Request $request)
     {
-        return back();
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'stadium_id' => 'required|exists:stadiums,id',
+            'field_id' => 'required|exists:fields,id',
+            'time_slot_id' => 'required|exists:time_slots,id',
+            'day_of_week' => 'required|integer|min:0|max:6',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2026',
+            'payment_type' => 'required|in:deposit_50,full',
+        ]);
+
+        $userId = Auth::id();
+        $stadiumId = $request->input('stadium_id');
+        $fieldId = $request->input('field_id');
+        $timeSlotId = $request->input('time_slot_id');
+        $dayOfWeek = (int) $request->input('day_of_week');
+        $month = (int) $request->input('month');
+        $year = (int) $request->input('year');
+        $paymentType = $request->input('payment_type');
+
+        // Lấy số tiền chuẩn xác từ giao diện truyền sang qua thẻ ẩn (hoặc tính lại nếu trống)
+        $totalAmount = (float) $request->input('calculated_total_amount', 0);
+        $payableNow = (float) $request->input('calculated_payable_amount', 0);
+
+        if ($totalAmount <= 0) {
+            // Tính lại phòng hờ nếu không có dữ liệu ẩn
+            $field = DB::table('fields')->where('id', $fieldId)->first();
+            $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
+            $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
+            $pricePerSlot = $startH >= 18 ? 450000 : ($field->price_per_hour ?? 350000);
+
+            $slotCount = 0;
+            $today = Carbon::today();
+            $date = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            while ($date->month === $month) {
+                if ($date->dayOfWeek === $dayOfWeek && $date >= $today) {
+                    $slotCount++;
+                }
+                $date->addDay();
+            }
+            $totalAmount = $slotCount * $pricePerSlot;
+            $payableNow = ($paymentType === 'full') ? $totalAmount : ($totalAmount * 0.50);
+        }
+
+        $bookingCode = 'BM' . now()->format('YmdHis') . Str::upper(Str::random(3));
+
+        try {
+            DB::beginTransaction();
+
+            $bookingData = $this->filterColumns('bookings', [
+                'user_id' => $userId,
+                'stadium_id' => $stadiumId,
+                'booking_code' => $bookingCode,
+                'code' => $bookingCode,
+                'customer_name' => Auth::user()->name ?? 'Khách hàng',
+                'customer_email' => Auth::user()->email,
+                'customer_phone' => Auth::user()->phone ?? '0123456789',
+                'total_amount' => $totalAmount,
+                'final_amount' => $totalAmount,
+                'deposit_amount' => $payableNow, // Lưu đúng số tiền thanh toán ngay (100% hoặc 50%)
+                'is_deposit_paid' => false,
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'payment_type' => ($paymentType === 'full') ? 'full' : 'deposit',
+                'booking_type' => 'monthly',
+                'paid_amount' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $bookingId = DB::table('bookings')->insertGetId($bookingData);
+
+            $date = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            $field = DB::table('fields')->where('id', $fieldId)->first();
+            $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
+            $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
+            $pricePerSlot = $startH >= 18 ? 450000 : ($field->price_per_hour ?? 350000);
+
+           while ($date->month === $month) {
+                if ($date->dayOfWeek === $dayOfWeek && $date >= Carbon::today()) {
+                    $bookingDateStr = $date->format('Y-m-d');
+
+                    // Kiểm tra xem sân này, giờ này, ngày này đã có đơn nào khác đặt chưa (tránh trùng lặp)
+                    $isBooked = DB::table('booking_details as bd')
+                        ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
+                        ->where('bd.field_id', $fieldId)
+                        ->where('bd.time_slot_id', $timeSlotId)
+                        ->whereDate('bd.booking_date', $bookingDateStr)
+                        ->where('b.status', '!=', 'cancelled')
+                        ->exists();
+
+                    if (!$isBooked) {
+                        // Kiểm tra xem đã insert trong transaction này chưa để tránh lỗi duplicate nội bộ
+                        $existsInCurrent = DB::table('booking_details')
+                            ->where('booking_id', $bookingId)
+                            ->where('field_id', $fieldId)
+                            ->where('time_slot_id', $timeSlotId)
+                            ->whereDate('booking_date', $bookingDateStr)
+                            ->exists();
+
+                        if (!$existsInCurrent) {
+                            DB::table('booking_details')->insert([
+                                'booking_id' => $bookingId,
+                                'field_id' => $fieldId,
+                                'time_slot_id' => $timeSlotId,
+                                'booking_date' => $bookingDateStr,
+                                'price' => $pricePerSlot,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+                $date->addDay();
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('user.payment.show', $bookingId)
+                ->with('success', 'Đơn đặt lịch tháng đã được tạo thành công. Vui lòng thanh toán để giữ lịch!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['error' => 'Lỗi khi tạo lịch tháng: ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(Request $request, int $booking)

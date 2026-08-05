@@ -50,7 +50,10 @@
                                     <div class="col-6">
                                         <span class="text-muted small d-block">Loại đơn:</span>
                                         <strong class="text-dark">
-                                            @if(($booking->booking_type ?? 'single') === 'monthly')
+                                            @php
+                                                $isMonthlyPay = (($booking->booking_type ?? 'single') === 'monthly');
+                                            @endphp
+                                            @if($isMonthlyPay)
                                                 <span class="badge bg-success">Đặt cố định tháng</span>
                                             @else
                                                 <span class="badge bg-primary">Đặt theo ngày lẻ</span>
@@ -61,21 +64,26 @@
                             </div>
                         </div>
 
-                        {{-- KHỐI HIỂN THỊ SỐ TIỀN --}}
+                        {{-- KHỐI HIỂN THỊ SỐ TIỀN CHUẨN XÁC CHO ĐƠN THÁNG VÀ ĐƠN LẺ --}}
+                        @php
+                            $isMonthlyPay = (($booking->booking_type ?? 'single') === 'monthly');
+                            $payAmount = $isMonthlyPay ? (float)($booking->deposit_amount ?? $booking->total_amount ?? 0) : (float)($booking->deposit_amount ?? (($booking->total_price ?? $booking->total_amount ?? 0) * 0.3));
+                            $payTitle = $isMonthlyPay ? "Tổng số tiền thanh toán lịch tháng" : "Số tiền cần thanh toán ngay";
+                        @endphp
                         <div class="col-md-5">
                             <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-center align-items-center text-center">
-                                <span class="text-muted small mb-1" id="amount-title">Số tiền cần thanh toán ngay</span>
+                                <span class="text-muted small mb-1" id="amount-title">{{ $payTitle }}</span>
                                 <h3 class="text-danger fw-bold mb-0">
-                                    <span id="display-amount">{{ number_format($booking->deposit_amount ?? $booking->total_amount, 0, ',', '.') }}</span> <span class="fs-6 text-secondary">VNĐ</span>
+                                    <span id="display-amount">{{ number_format($payAmount, 0, ',', '.') }}</span> <span class="fs-6 text-secondary">VNĐ</span>
                                 </h3>
-                                <span class="badge bg-warning text-dark mt-2 px-3 py-1.5 rounded-pill small" id="deposit-note">
-                                    Chờ thanh toán
+                                <span class="badge bg-{{ $isMonthlyPay ? 'success' : 'warning' }} text-{{ $isMonthlyPay ? 'white' : 'dark' }} mt-2 px-3 py-1.5 rounded-pill small" id="deposit-note">
+                                    {{ $isMonthlyPay ? 'Thanh toán lịch tháng' : 'Chờ thanh toán' }}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Kho dữ liệu ẩn phục vụ cho JavaScript đọc giá trị gốc --}}
+                    {{-- Kho dữ liệu ẩn phục vụ cho JavaScript (chỉ kích hoạt khi là đơn ngày lẻ) --}}
                     <input type="hidden" id="raw-total-price" value="{{ $booking->total_price ?? $booking->total_amount ?? 0 }}">
                     <input type="hidden" id="raw-deposit-amount" value="{{ $booking->deposit_amount ?? (($booking->total_price ?? $booking->total_amount ?? 0) * 0.3) }}">
 
@@ -95,27 +103,14 @@
                                                 data-amount="{{ $promo->discount_amount ?? 0 }}"
                                                 @if($booking->promotion_id == $promo->id) selected @endif>
                                             {{ $promo->code }} - {{ $promo->name ?? '' }} 
-                                            @if(!empty($promo->discount_percent)) 
-                                                (Giảm {{ $promo->discount_percent }}%)
-                                            @elseif(!empty($promo->discount_value) && $promo->discount_type === 'percent')
-                                                (Giảm {{ $promo->discount_value }}%)
-                                            @elseif(!empty($promo->discount_amount))
-                                                (Giảm {{ number_format($promo->discount_amount, 0, ',', '.') }}đ)
-                                            @elseif(!empty($promo->discount_value))
-                                                (Giảm {{ number_format($promo->discount_value, 0, ',', '.') }}đ)
-                                            @endif
                                         </option>
                                     @endforeach
                                 @endif
                             </select>
                         </div>
 
-                        @php 
-                            $isMonthlyBooking = (($booking->booking_type ?? 'single') === 'monthly'); 
-                        @endphp
-
-                        @if(!$isMonthlyBooking)
-                            {{-- ĐƠN LẺ: HIỆN CHỌN PHƯƠNG THỨC THANH TOÁN (TẠI SÂN / QR) --}}
+                        @if(!$isMonthlyPay)
+                            {{-- ĐƠN LẺ: GIỮ NGUYÊN TÍNH NĂNG CHỌN PHƯƠNG THỨC THANH TOÁN (TẠI SÂN / QR) NHƯ BÌNH THƯỜNG --}}
                             <h5 class="text-secondary border-bottom pb-2 mb-3">Chọn phương thức thanh toán</h5>
                             @if(isset($paymentMethods) && $paymentMethods->isNotEmpty())
                                 @foreach($paymentMethods as $method)
@@ -130,7 +125,7 @@
                                 @endforeach
                             @endif
                         @else
-                            {{-- ĐƠN THÁNG: ẨN HOÀN TOÀN TẠI SÂN/QR --}}
+                            {{-- ĐƠN THÁNG: ẨN TẠI SÂN/QR VÀ CỐ ĐỊNH SỐ TIỀN --}}
                             <div class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm bg-success bg-opacity-10 text-success-emphasis">
                                 <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận đơn lịch cố định tháng</h6>
                                 <p class="small mb-0">Hệ thống đã ghi nhận số tiền cần thanh toán cho đơn lịch tháng. Vui lòng bấm xác nhận bên dưới để hoàn tất.</p>
@@ -151,51 +146,44 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const isMonthly = @json($isMonthlyBooking);
+        const isMonthly = @json($isMonthlyPay);
         
-        const displayAmount = document.getElementById('display-amount');
-        const amountTitle = document.getElementById('amount-title');
-        const depositNote = document.getElementById('deposit-note');
-        const promotionSelect = document.getElementById('promotion-select');
-        
-        const rawTotalPriceInput = document.getElementById('raw-total-price');
-        const rawDepositAmountInput = document.getElementById('raw-deposit-amount');
+        // CHỈ CHẠY SCRIPT TÍNH TOÁN NẾU LÀ ĐƠN LẺ, CÒN ĐƠN THÁNG SẼ GIỮ NGUYÊN SỐ TIỀN ĐÃ CỐ ĐỊNH
+        if (!isMonthly) {
+            const displayAmount = document.getElementById('display-amount');
+            const amountTitle = document.getElementById('amount-title');
+            const depositNote = document.getElementById('deposit-note');
+            const promotionSelect = document.getElementById('promotion-select');
+            
+            const rawTotalPriceInput = document.getElementById('raw-total-price');
+            const rawDepositAmountInput = document.getElementById('raw-deposit-amount');
 
-        function formatMoney(amount) {
-            return new Intl.NumberFormat('vi-VN').format(amount > 0 ? Math.round(amount) : 0);
-        }
-
-        function updateDisplayPrice() {
-            let baseTotalPrice = parseFloat(rawTotalPriceInput.value) || 0;
-            let baseDepositAmount = parseFloat(rawDepositAmountInput.value) || (baseTotalPrice * 0.3);
-
-            if (promotionSelect && promotionSelect.selectedIndex > 0) {
-                let selectedOption = promotionSelect.options[promotionSelect.selectedIndex];
-                
-                let percent = parseFloat(selectedOption.getAttribute('data-percent')) || 0;
-                let fixedAmount = parseFloat(selectedOption.getAttribute('data-amount')) || 0;
-
-                if (percent > 0) {
-                    let discount = baseTotalPrice * (percent / 100);
-                    baseTotalPrice -= discount;
-                    baseDepositAmount -= discount * 0.3;
-                } else if (fixedAmount > 0) {
-                    baseTotalPrice -= fixedAmount;
-                    baseDepositAmount -= fixedAmount > baseDepositAmount ? baseDepositAmount : fixedAmount; 
-                }
+            function formatMoney(amount) {
+                return new Intl.NumberFormat('vi-VN').format(amount > 0 ? Math.round(amount) : 0);
             }
 
-            baseTotalPrice = Math.max(0, baseTotalPrice);
-            baseDepositAmount = Math.max(0, baseDepositAmount);
+            function updateDisplayPrice() {
+                let baseTotalPrice = parseFloat(rawTotalPriceInput.value) || 0;
+                let baseDepositAmount = parseFloat(rawDepositAmountInput.value) || (baseTotalPrice * 0.3);
 
-            if (isMonthly) {
-                if (displayAmount) displayAmount.textContent = formatMoney(baseTotalPrice);
-                if (amountTitle) amountTitle.textContent = "Tổng số tiền thanh toán lịch tháng";
-                if (depositNote) {
-                    depositNote.textContent = "Thanh toán lịch tháng";
-                    depositNote.className = "badge bg-success text-white mt-2 px-3 py-1.5 rounded-pill small";
+                if (promotionSelect && promotionSelect.selectedIndex > 0) {
+                    let selectedOption = promotionSelect.options[promotionSelect.selectedIndex];
+                    let percent = parseFloat(selectedOption.getAttribute('data-percent')) || 0;
+                    let fixedAmount = parseFloat(selectedOption.getAttribute('data-amount')) || 0;
+
+                    if (percent > 0) {
+                        let discount = baseTotalPrice * (percent / 100);
+                        baseTotalPrice -= discount;
+                        baseDepositAmount -= discount * 0.3;
+                    } else if (fixedAmount > 0) {
+                        baseTotalPrice -= fixedAmount;
+                        baseDepositAmount -= fixedAmount > baseDepositAmount ? baseDepositAmount : fixedAmount; 
+                    }
                 }
-            } else {
+
+                baseTotalPrice = Math.max(0, baseTotalPrice);
+                baseDepositAmount = Math.max(0, baseDepositAmount);
+
                 let selectedRadio = document.querySelector('.payment-method-radio:checked');
                 if (!selectedRadio) return;
 
@@ -224,21 +212,19 @@
                     }
                 }
             }
-        }
 
-        if (!isMonthly) {
             document.querySelectorAll('.payment-method-radio').forEach(radio => {
                 radio.addEventListener('change', updateDisplayPrice);
             });
+
+            if (promotionSelect) {
+                promotionSelect.addEventListener('change', updateDisplayPrice);
+            }
+
+            updateDisplayPrice();
         }
 
-        if (promotionSelect) {
-            promotionSelect.addEventListener('change', updateDisplayPrice);
-        }
-
-        updateDisplayPrice();
-
-        // Đếm ngược 5 phút giữ sân
+        // Đếm ngược 5 phút giữ sân (Áp dụng chung cho cả 2 loại đơn)
         const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";
         const createdAtTime = new Date(bookingCreatedAt.replace(/-/g, "/")).getTime();
         const limitMinutes = 5; 
@@ -256,7 +242,6 @@
                     countdownTimer.innerHTML = "ĐÃ HẾT HẠN GIỮ SÂN!";
                     alert("Đơn hàng của bạn đã vượt quá thời gian giữ sân tạm thời (5 phút). Vui lòng thực hiện đặt lại lịch mới!");
                     
-                    // GỌI HỦY ĐƠN TRONG CƠ SỞ DỮ LIỆU RỒI CHUYỂN HƯỚNG
                     fetch('{{ route("user.bookings.cancel-timeout", $booking->id) }}', {
                         method: 'POST',
                         headers: {
