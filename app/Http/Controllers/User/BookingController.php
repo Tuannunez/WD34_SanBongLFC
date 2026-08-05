@@ -649,13 +649,225 @@ class BookingController extends Controller
 
     public function destroy(Request $request, int $booking)
     {
-        DB::table('bookings')->where('id', $booking)->where('user_id', Auth::id())->update(['status' => 'cancelled']);
-        return back()->with('success', 'Hủy đơn đặt sân thành công.');
+        $bookingData = DB::table('bookings')
+            ->where('id', $booking)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$bookingData) {
+            abort(404);
+        }
+
+        $status = $bookingData->status ?? 'pending';
+
+        if ($status === 'completed' || $status === 'cancelled') {
+            return back()->withErrors([
+                'delete_booking' => 'Đơn hàng này không thể thực hiện hủy.',
+            ]);
+        }
+
+        $totalMoneyRow = (float)($bookingData->total_amount ?? $bookingData->total_price ?? $bookingData->final_amount ?? 0);
+        $paidAmt = (float)($bookingData->paid_amount ?? 0);
+        $depositAmt = (float)($bookingData->deposit_amount ?? 0);
+
+        $pType = strtolower((string)($bookingData->payment_type ?? ''));
+        $pStatus = strtolower((string)($bookingData->payment_status ?? ''));
+        $isPaidFull = ($pType === 'full' || in_array($pStatus, ['paid', 'completed']) || ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0));
+
+        // Tính toán số tiền hoàn dựa trên thời gian
+        $estRefund = 0;
+        $bookingDate = $bookingData->booking_date ?? now()->format('Y-m-d');
+        $startTime = $bookingData->start_time ?? '00:00:00';
+
+        try {
+            $mDate = Carbon::parse($bookingDate . ' ' . $startTime);
+            $hrs = Carbon::now()->diffInHours($mDate, false);
+
+            if ($status === 'pending') {
+                $estRefund = 0;
+            } elseif ($hrs >= 24) {
+                $estRefund = $isPaidFull ? ($totalMoneyRow * 0.70) : ($depositAmt * 0.50);
+            } else {
+                $estRefund = $isPaidFull ? ($totalMoneyRow * 0.30) : 0;
+            }
+        } catch (\Throwable) {
+            $estRefund = 0;
+        }
+
+        $bankName = trim($request->input('bank_name', ''));
+        $bankAccount = trim($request->input('bank_account_number', ''));
+        $bankHolder = trim($request->input('bank_account_holder', ''));
+        $cancelReason = trim($request->input('cancel_reason', 'Không có lý do'));
+
+        $bankInfoSummary = "";
+        if ($estRefund > 0) {
+            if (!$bankName || !$bankAccount || !$bankHolder) {
+                return back()->withErrors(['delete_booking' => 'Vui lòng điền đầy đủ thông tin tài khoản ngân hàng để nhận tiền hoàn.']);
+            }
+            $bankInfoSummary = "\nNgân hàng: {$bankName}\nSố STK: {$bankAccount}\nChủ STK: {$bankHolder}\nLý do hủy: {$cancelReason}";
+        } else {
+            $bankInfoSummary = "\nLý do hủy: {$cancelReason} (Đơn không hoàn tiền)";
+        }
+
+        $existingNote = $bookingData->note ?? '';
+        $finalNote = trim($existingNote . "\n--- THÔNG TIN HỦY SÂN & HOÀN TIỀN ---" . $bankInfoSummary);
+
+        try {
+            DB::beginTransaction();
+
+            // Cập nhật trạng thái đơn thành cancelled và lưu thông tin hoàn tiền
+            DB::table('bookings')
+                ->where('id', $bookingData->id)
+                ->update([
+                    'status' => 'cancelled',
+                    'refund_amount' => $estRefund,
+                    'refund_status' => ($estRefund > 0) ? 'pending' : 'none',
+                    'note' => $finalNote,
+                    'updated_at' => now(),
+                ]);
+
+            if (Schema::hasTable('booking_details') && Schema::hasColumn('booking_details', 'status')) {
+                DB::table('booking_details')
+                    ->where('booking_id', $bookingData->id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            // Gửi thông báo sang chuông thông báo của Admin
+            DB::table('notifications')->insert([
+                'user_id' => Auth::id(),
+                'title' => 'Yêu cầu hủy đơn & hoàn tiền',
+                'content' => 'Khách hàng vừa hủy đơn #' . $bookingData->id . ($estRefund > 0 ? " và yêu cầu hoàn số tiền " . number_format($estRefund, 0, ',', '.') . "đ." : "."),
+                'type' => 'booking',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('user.bookings.index')
+                ->with('success', $estRefund > 0 ? 'Đã gửi yêu cầu hủy đơn và hoàn tiền tới Admin thành công. Vui lòng chờ xét duyệt.' : 'Hủy đơn đặt sân thành công.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withErrors([
+                'delete_booking' => 'Không thể xử lý hủy đơn: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function disputeRefundWithImage(Request $request, int $id)
+    {
+        $request->validate([
+            'dispute_reason' => 'required|string|max:500',
+            'dispute_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'dispute_reason.required' => 'Vui lòng nhập nội dung sự cố bạn gặp phải.',
+        ]);
+
+        $booking = DB::table('bookings')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$booking) {
+            abort(404);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('dispute_image')) {
+            $file = $request->file('dispute_image');
+            $filename = 'dispute_' . $id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/disputes'), $filename);
+            $imagePath = 'uploads/disputes/' . $filename;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Lưu nội dung phản hồi sự cố vào cột user_dispute_reason (và gộp đường dẫn ảnh vào note để tránh lỗi thiếu cột trong CSDL)
+            $existingNote = $booking->note ?? '';
+            $disputeText = "\n[BÁO CÁO SỰ CỐ]: " . $request->input('dispute_reason');
+            if ($imagePath) {
+                $disputeText .= " (Ảnh minh chứng: " . $imagePath . ")";
+            }
+
+            $updateData = [
+                'refund_status' => 'disputed',
+                'user_dispute_reason' => $request->input('dispute_reason'),
+                'note' => $existingNote . $disputeText,
+                'updated_at' => now(),
+            ];
+
+            // Nếu cẩn thận, chỉ cập nhật dispute_image nếu bảng thực sự có cột đó
+            if ($imagePath && \Illuminate\Support\Facades\Schema::hasColumn('bookings', 'dispute_image')) {
+                $updateData['dispute_image'] = $imagePath;
+            }
+
+            DB::table('bookings')->where('id', $id)->update($updateData);
+
+            // Gửi thông báo chuông cho Admin
+            DB::table('notifications')->insert([
+                'user_id' => $booking->user_id,
+                'title' => 'Khách hàng báo cáo sự cố hoàn tiền',
+                'content' => 'Đơn #' . $id . ' có phản hồi sự cố từ khách: "' . $request->input('dispute_reason') . '"',
+                'type' => 'payment',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Đã gửi báo cáo sự cố tới Admin thành công. Bộ phận hỗ trợ sẽ kiểm tra lại!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi khi gửi báo cáo: ' . $e->getMessage());
+        }
     }
 
     public function confirmRefund(int $id)
     {
-        return back();
+        $booking = DB::table('bookings')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$booking) {
+            abort(404);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Cập nhật trạng thái hoàn tiền thành confirmed_by_user (Đã hoàn thành / Khách đã nhận tiền)
+            DB::table('bookings')->where('id', $id)->update([
+                'refund_status' => 'confirmed_by_user',
+                'updated_at' => now(),
+            ]);
+
+            // Gửi thông báo chuông cho Admin
+            DB::table('notifications')->insert([
+                'user_id' => $booking->user_id,
+                'title' => 'Khách hàng đã xác nhận nhận tiền hoàn',
+                'content' => 'Khách hàng đã xác nhận nhận đủ tiền hoàn cho đơn #' . $id . '. Giao dịch hoàn tất.',
+                'type' => 'payment',
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Xác nhận đã nhận tiền thành công. Cảm ơn bạn!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
     }
 
     public function disputeRefund(Request $request, int $id)

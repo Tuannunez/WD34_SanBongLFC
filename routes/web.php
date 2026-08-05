@@ -159,6 +159,11 @@ Route::middleware('auth')->group(function (): void {
         ->whereNumber('booking')
         ->name('user.bookings.disputeRefund');
 
+    // ĐÃ ĐƯA ROUTE NÀY VỀ ĐÚNG KHU VỰC USER
+    Route::post('/don-dat-san-cua-toi/{booking}/dispute-refund-with-image', [UserBookingController::class, 'disputeRefundWithImage'])
+        ->whereNumber('booking')
+        ->name('user.bookings.disputeRefundWithImage');
+
     /*
     |--------------------------------------------------------------------------
     | User profile and notifications

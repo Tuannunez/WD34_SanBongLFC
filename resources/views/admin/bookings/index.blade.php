@@ -372,6 +372,9 @@
                                 ['cancelled', 'completed'],
                                 true
                             ) && $usageStatus !== 'checked_in';
+
+                            $rfStatus = $booking->refund_status ?? 'none';
+                            $refundAmt = (float)($booking->refund_amount ?? 0);
                         @endphp
 
                         <tr>
@@ -419,10 +422,47 @@
                                 </span>
                             </td>
 
+                            {{-- TRẠNG THÁI ĐƠN & HOÀN TIỀN CHI TIẾT --}}
                             <td>
                                 <span class="badge bg-{{ $orderColor }}-subtle text-{{ $orderColor }}">
                                     {{ $orderText }}
                                 </span>
+
+                                @if($orderStatus === 'cancelled')
+                                    @if($refundAmt > 0)
+                                        @if($rfStatus === 'completed')
+                                            <div class="mt-1">
+                                                <span class="badge bg-success text-white px-2 py-0.5" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Đã hoàn tiền
+                                                </span>
+                                            </div>
+                                        @elseif($rfStatus === 'confirmed_by_user')
+                                            <div class="mt-1">
+                                                <span class="badge bg-primary text-white px-2 py-0.5" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-check-all me-1"></i> Khách đã nhận tiền
+                                                </span>
+                                            </div>
+                                        @elseif($rfStatus === 'disputed')
+                                            <div class="mt-1">
+                                                <span class="badge bg-danger text-white px-2 py-0.5 animate-pulse" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Phản hồi sự cố (Khách chưa nhận được tiền)
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div class="mt-1">
+                                                <span class="badge bg-warning text-dark px-2 py-0.5" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-clock-history me-1"></i> Chờ CK hoàn tiền ({{ number_format($refundAmt, 0, ',', '.') }}đ)
+                                                </span>
+                                            </div>
+                                        @endif
+                                    @else
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary-subtle text-secondary px-2 py-0.5" style="font-size: 0.7rem;">
+                                                Không hoàn tiền
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endif
 
                                 @if($isNoShow)
                                     <div class="small text-danger mt-1">

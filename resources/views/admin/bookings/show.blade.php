@@ -168,7 +168,7 @@
     );
     $phaseDescription = (string) (
         $lifecycle['description']
-         ?? 'Chưa có thông tin vòng đời.'
+        ?? 'Chưa có thông tin vòng đời.'
     );
     $phaseColor = (string) ($lifecycle['color'] ?? 'secondary');
     $phaseIcon = (string) ($lifecycle['icon'] ?? 'bi-question-circle');
@@ -271,7 +271,7 @@
 
     $customerEmail = data_get($booking, 'user.email')
         ?? $booking->customer_email
-         ?? $booking->email
+        ?? $booking->email
         ?? '-';
 
     $confirmStep = in_array(
@@ -760,7 +760,6 @@
                         </strong>
                     </div>
 
-                    {{-- ĐÃ ĐÓNG --}}
                     <div class="admin-info-row">
                         <span class="text-muted">Đã đóng</span>
                         <strong class="text-end text-success">
@@ -768,7 +767,6 @@
                         </strong>
                     </div>
 
-                    {{-- CÒN LẠI --}}
                     <div class="admin-info-row">
                         <span class="text-muted">Còn lại</span>
                         <strong class="text-end text-danger">
@@ -846,31 +844,68 @@
         </div>
     @endif
 
-    @if(
-        $status === 'cancelled'
-        && $refundAmount > 0
-        && \Illuminate\Support\Facades\Route::has('admin.bookings.processRefund')
-    )
-        <div class="card admin-booking-card mb-4">
+    {{-- KHU VỰC XỬ LÝ HOÀN TIỀN & XEM PHẢN HỒI SỰ CỐ CỦA KHÁCH --}}
+    @if($status === 'cancelled' && $refundAmount > 0)
+        <div class="card admin-booking-card mb-4 {{ ($booking->refund_status ?? '') === 'disputed' ? 'border border-danger' : '' }}">
             <div class="card-header bg-white border-0 p-4">
                 <h5 class="fw-bold text-danger mb-1">
                     <i class="bi bi-arrow-counterclockwise me-2"></i>
-                    Xử lý hoàn tiền
+                    Xử lý hoàn tiền & Phản hồi sự cố
                 </h5>
                 <div class="text-muted small">
-                    Tiền bị giữ:
-                    <strong>{{ number_format($forfeitedAmount, 0, ',', '.') }}đ</strong>.
-                    Số tiền cần hoàn:
-                    <strong>{{ number_format($refundAmount, 0, ',', '.') }}đ</strong>.
+                    Tiền bị giữ: <strong>{{ number_format($forfeitedAmount, 0, ',', '.') }}đ</strong>.
+                    Số tiền cần hoàn: <strong>{{ number_format($refundAmount, 0, ',', '.') }}đ</strong>.
+                    <br>Trạng thái hiện tại: 
+                    <strong class="text-uppercase">
+                        @php $rStt = $booking->refund_status ?? 'pending'; @endphp
+                        @if($rStt === 'disputed')
+                            <span class="text-danger">Khách báo cáo sự cố (Chưa nhận được tiền)</span>
+                        @elseif($rStt === 'completed')
+                            <span class="text-success">Đã gửi Bill / Đã hoàn tiền</span>
+                        @elseif($rStt === 'confirmed_by_user')
+                            <span class="text-primary">Khách đã xác nhận nhận đủ tiền</span>
+                        @else
+                            <span class="text-warning">Đang chờ chuyển khoản</span>
+                        @endif
+                    </strong>
                 </div>
             </div>
 
             <div class="card-body p-4">
-                @if(in_array(
-                    (string) ($booking->refund_status ?? 'pending'),
-                    ['pending', 'disputed'],
-                    true
-                ))
+                {{-- NẾU KHÁCH CÓ BÁO SỰ CỐ THÌ HIỂN THỊ CẢNH BÁO, NỘI DUNG VÀ ẢNH KHÁCH GỬI --}}
+                @if(!empty($booking->user_dispute_reason))
+                    <div class="alert alert-danger mb-3 rounded-3">
+                        <strong><i class="bi bi-chat-square-exclamation me-1"></i> Nội dung khách phản hồi sự cố:</strong><br>
+                        "{{ $booking->user_dispute_reason }}"
+                    </div>
+                @endif
+
+                @php
+                    $disputeImg = $booking->dispute_image ?? null;
+                    if(!$disputeImg && !empty($booking->note) && preg_match('/\(Ảnh minh chứng: (.*?)\)/', $booking->note, $matches)) {
+                        $disputeImg = $matches[1];
+                    }
+                @endphp
+
+                @if(!empty($disputeImg))
+                    <div class="mb-4 p-3 bg-light border rounded-3 text-start">
+                        <span class="small fw-semibold text-danger d-block mb-2">
+                            <i class="bi bi-image me-1"></i> Ảnh minh chứng sự cố khách gửi kèm:
+                        </span>
+                        <a href="{{ asset($disputeImg) }}" target="_blank">
+                            <img src="{{ asset($disputeImg) }}" alt="Ảnh sự cố khách gửi" class="img-thumbnail rounded-3 shadow-sm" style="max-height: 250px;" title="Click để xem ảnh lớn">
+                        </a>
+                    </div>
+                @endif
+
+                {{-- LUÔN HIỆN FORM GỬI/GỬI LẠI BILL HOÀN TIỀN CHO ĐẾN KHI KHÁCH XÁC NHẬN NHẬN ĐỦ TIỀN --}}
+                @if($rStt !== 'confirmed_by_user')
+                    @if($rStt === 'completed' || $rStt === 'disputed')
+                        <div class="alert alert-info py-2 px-3 small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i> Bạn có thể gửi lại hoặc cập nhật chứng từ chuyển khoản mới bên dưới nếu đơn hàng gặp sự cố.
+                        </div>
+                    @endif
+
                     <form
                         action="{{ route('admin.bookings.processRefund', $booking->id) }}"
                         method="POST"
@@ -882,7 +917,7 @@
                         <div class="row g-3">
                             <div class="col-lg-7">
                                 <label class="form-label fw-semibold">
-                                    Ảnh chứng từ chuyển khoản
+                                    Ảnh chứng từ chuyển khoản hoàn tiền
                                 </label>
                                 <input
                                     type="file"
@@ -901,22 +936,22 @@
                                     type="text"
                                     name="refund_proof_note"
                                     class="form-control"
-                                    placeholder="Ví dụ: Đã chuyển khoản lúc 15:30"
+                                    placeholder="Ví dụ: Đã kiểm tra và chuyển lại tiền"
                                 >
                             </div>
 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-danger">
                                     <i class="bi bi-cloud-arrow-up me-1"></i>
-                                    Xác nhận đã hoàn tiền
+                                    Xác nhận & Gửi Bill hoàn tiền
                                 </button>
                             </div>
                         </div>
                     </form>
                 @else
-                    <div class="alert alert-success mb-0">
+                    <div class="alert alert-success mb-0 rounded-3">
                         <i class="bi bi-check-circle-fill me-2"></i>
-                        Chứng từ hoàn tiền đã được ghi nhận.
+                        Khách hàng đã xác nhận nhận đủ tiền. Giao dịch hoàn tất!
                     </div>
                 @endif
             </div>
