@@ -676,7 +676,7 @@
 
             <div class="summary-row total">
                 <span>Tổng thanh toán</span>
-                <span>{{ number_format($finalAmount, 0, ',', '.') }}đ</span>
+                <span>{{ number_format($remainingAmount, 0, ',', '.') }}đ</span>
             </div>
         </div>
 
