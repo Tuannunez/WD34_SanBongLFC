@@ -116,6 +116,7 @@ class BookingController extends Controller
         $currentEndTime = $currentTimeSlot->end_time;
         $durationMinutes = (int) $request->input('duration_minutes', 60);
 
+        // Tìm khung giờ tiếp theo dựa theo giờ kết thúc
         $nextSlot = DB::table('time_slots')
             ->where('start_time', $currentEndTime)
             ->where('status', true)
@@ -125,7 +126,8 @@ class BookingController extends Controller
             return back()->with('error', 'Rất tiếc, đã hết khung giờ trong ngày hoặc không tìm thấy khung giờ tiếp theo để thêm giờ.');
         }
 
-        $isConflict = DB::table('booking_details as bd')
+        // KIỂM TRA TOÀN DIỆN: Khung giờ này đã tồn tại trong DB (do ràng buộc unique_field_time_date)
+        $isSlotTaken = DB::table('booking_details as bd')
             ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
             ->where('bd.field_id', $fieldId)
             ->where('bd.time_slot_id', $nextSlot->id)
@@ -133,8 +135,8 @@ class BookingController extends Controller
             ->where('b.status', '!=', 'cancelled')
             ->exists();
 
-        if ($isConflict) {
-            return back()->with('error', 'Sân này đã có người đặt ở khung giờ tiếp theo rồi, bạn không thể thêm giờ!');
+        if ($isSlotTaken) {
+            return back()->with('error', 'Khung giờ tiếp theo (' . substr($nextSlot->start_time, 0, 5) . ' - ' . substr($nextSlot->end_time, 0, 5) . ') đã có đơn đặt hoặc đã được sử dụng, không thể gia hạn thêm!');
         }
 
         $field = DB::table('fields')->where('id', $fieldId)->first();
@@ -172,6 +174,10 @@ class BookingController extends Controller
 
         } catch (\Throwable $e) {
             DB::rollBack();
+            // Bắt trọn lỗi SQL trùng lặp unique để hiển thị thông báo thân thiện thay vì crash trang
+            if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                return back()->with('error', 'Khung giờ này đã tồn tại trong hệ thống lịch đặt của sân, không thể thêm trùng.');
+            }
             return back()->with('error', 'Lỗi khi thêm giờ: ' . $e->getMessage());
         }
     }
@@ -211,7 +217,6 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Thêm vào bảng booking_services
             DB::table('booking_services')->insert([
                 'booking_id' => $bookingId,
                 'service_id' => $serviceId,
@@ -222,7 +227,6 @@ class BookingController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // 2. Cộng tiền vào tổng tiền của đơn hàng (bookings)
             $currentTotal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
             $newTotalAmount = $currentTotal + $totalLinePrice;
 
@@ -236,7 +240,6 @@ class BookingController extends Controller
 
             DB::table('bookings')->where('id', $bookingId)->update($updateData);
 
-            // 3. Gửi thông báo cho Admin hiển thị bên trang quản trị
             DB::table('notifications')->insert([
                 'user_id' => $booking->user_id,
                 'title' => 'Khách gọi thêm dịch vụ',
@@ -667,29 +670,56 @@ class BookingController extends Controller
         $year = (int) $request->input('year');
         $paymentType = $request->input('payment_type');
 
-        // Lấy số tiền chuẩn xác từ giao diện truyền sang qua thẻ ẩn (hoặc tính lại nếu trống)
-        $totalAmount = (float) $request->input('calculated_total_amount', 0);
-        $payableNow = (float) $request->input('calculated_payable_amount', 0);
+        $field = DB::table('fields')->where('id', $fieldId)->first();
+        $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
 
-        if ($totalAmount <= 0) {
-            // Tính lại phòng hờ nếu không có dữ liệu ẩn
-            $field = DB::table('fields')->where('id', $fieldId)->first();
-            $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
-            $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
-            $pricePerSlot = $startH >= 18 ? 450000 : ($field->price_per_hour ?? 350000);
-
-            $slotCount = 0;
-            $today = Carbon::today();
-            $date = Carbon::createFromDate($year, $month, 1)->startOfDay();
-            while ($date->month === $month) {
-                if ($date->dayOfWeek === $dayOfWeek && $date >= $today) {
-                    $slotCount++;
-                }
-                $date->addDay();
-            }
-            $totalAmount = $slotCount * $pricePerSlot;
-            $payableNow = ($paymentType === 'full') ? $totalAmount : ($totalAmount * 0.50);
+        if (!$field || !$timeSlot) {
+            return back()->withInput()->withErrors(['error' => 'Sân hoặc khung giờ không hợp lệ.']);
         }
+
+        $slotCountCalc = 0;
+        $todayCalc = Carbon::today();
+        $dateCalc = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        while ($dateCalc->month === $month) {
+            if ($dateCalc->dayOfWeek === $dayOfWeek && $dateCalc >= $todayCalc) {
+                $slotCountCalc++;
+            }
+            $dateCalc->addDay();
+        }
+
+        $inputTotalAmount = (float) $request->input('calculated_total_amount', 0);
+        
+        if ($inputTotalAmount > 0 && $slotCountCalc > 0) {
+            $pricePerSlot = $inputTotalAmount / $slotCountCalc;
+        } else {
+            $pricePerSlot = 250000; 
+            if (isset($field->price_per_hour) && (float)$field->price_per_hour > 0) {
+                $pricePerSlot = (float) $field->price_per_hour;
+            } elseif (isset($timeSlot->price) && (float)$timeSlot->price > 0) {
+                $pricePerSlot = (float) $timeSlot->price;
+            } else {
+                $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
+                $pricePerSlot = $startH >= 18 ? 450000 : 250000;
+            }
+        }
+
+        $slotCount = 0;
+        $today = Carbon::today();
+        $date = Carbon::createFromDate($year, $month, 1)->startOfDay();
+
+        while ($date->month === $month) {
+            if ($date->dayOfWeek === $dayOfWeek && $date >= $today) {
+                $slotCount++;
+            }
+            $date->addDay();
+        }
+
+        if ($slotCount <= 0) {
+            return back()->withInput()->withErrors(['error' => 'Không tìm thấy buổi đá nào hợp lệ từ hôm nay trở đi trong tháng đã chọn.']);
+        }
+
+        $totalAmount = $slotCount * $pricePerSlot;
+        $payableNow = ($paymentType === 'full') ? $totalAmount : ($totalAmount * 0.50);
 
         $bookingCode = 'BM' . now()->format('YmdHis') . Str::upper(Str::random(3));
 
@@ -706,7 +736,7 @@ class BookingController extends Controller
                 'customer_phone' => Auth::user()->phone ?? '0123456789',
                 'total_amount' => $totalAmount,
                 'final_amount' => $totalAmount,
-                'deposit_amount' => $payableNow, // Lưu đúng số tiền thanh toán ngay (100% hoặc 50%)
+                'deposit_amount' => $payableNow,
                 'is_deposit_paid' => false,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
@@ -720,16 +750,10 @@ class BookingController extends Controller
             $bookingId = DB::table('bookings')->insertGetId($bookingData);
 
             $date = Carbon::createFromDate($year, $month, 1)->startOfDay();
-            $field = DB::table('fields')->where('id', $fieldId)->first();
-            $timeSlot = DB::table('time_slots')->where('id', $timeSlotId)->first();
-            $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
-            $pricePerSlot = $startH >= 18 ? 450000 : ($field->price_per_hour ?? 350000);
-
-           while ($date->month === $month) {
+            while ($date->month === $month) {
                 if ($date->dayOfWeek === $dayOfWeek && $date >= Carbon::today()) {
                     $bookingDateStr = $date->format('Y-m-d');
 
-                    // Kiểm tra xem sân này, giờ này, ngày này đã có đơn nào khác đặt chưa (tránh trùng lặp)
                     $isBooked = DB::table('booking_details as bd')
                         ->join('bookings as b', 'bd.booking_id', '=', 'b.id')
                         ->where('bd.field_id', $fieldId)
@@ -739,7 +763,6 @@ class BookingController extends Controller
                         ->exists();
 
                     if (!$isBooked) {
-                        // Kiểm tra xem đã insert trong transaction này chưa để tránh lỗi duplicate nội bộ
                         $existsInCurrent = DB::table('booking_details')
                             ->where('booking_id', $bookingId)
                             ->where('field_id', $fieldId)
@@ -802,10 +825,13 @@ class BookingController extends Controller
         $pStatus = strtolower((string)($bookingData->payment_status ?? ''));
         $isPaidFull = ($pType === 'full' || in_array($pStatus, ['paid', 'completed']) || ($paidAmt >= $totalMoneyRow && $totalMoneyRow > 0));
 
-        // Tính toán số tiền hoàn dựa trên thời gian
         $estRefund = 0;
-        $bookingDate = $bookingData->booking_date ?? now()->format('Y-m-d');
-        $startTime = $bookingData->start_time ?? '00:00:00';
+        
+        $firstDetail = DB::table('booking_details')->where('booking_id', $bookingData->id)->orderBy('booking_date')->first();
+        $bookingDate = $firstDetail->booking_date ?? ($bookingData->booking_date ?? now()->format('Y-m-d'));
+        
+        $firstSlot = $firstDetail ? DB::table('time_slots')->where('id', $firstDetail->time_slot_id)->first() : null;
+        $startTime = $firstSlot->start_time ?? ($bookingData->start_time ?? '00:00:00');
 
         try {
             $mDate = Carbon::parse($bookingDate . ' ' . $startTime);
@@ -814,7 +840,11 @@ class BookingController extends Controller
             if ($status === 'pending') {
                 $estRefund = 0;
             } elseif ($hrs >= 24) {
-                $estRefund = $isPaidFull ? ($totalMoneyRow * 0.70) : ($depositAmt * 0.50);
+                // Lấy CHÍNH XÁC số tiền thực tế khách đã đóng (nếu khách đóng cọc thì lấy tiền cọc, đóng đủ lấy tổng tiền)
+                $actualPaidMoney = $paidAmt > 0 ? $paidAmt : ($depositAmt > 0 ? $depositAmt : $totalMoneyRow);
+                
+                // Hoàn 50% hoặc 70% tùy thuộc vào việc khách đã đóng full hay đóng cọc
+                $estRefund = $isPaidFull ? ($totalMoneyRow * 0.70) : ($actualPaidMoney * 0.50);
             } else {
                 $estRefund = $isPaidFull ? ($totalMoneyRow * 0.30) : 0;
             }
@@ -843,7 +873,6 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            // Cập nhật trạng thái đơn thành cancelled và lưu thông tin hoàn tiền
             DB::table('bookings')
                 ->where('id', $bookingData->id)
                 ->update([
@@ -863,7 +892,6 @@ class BookingController extends Controller
                     ]);
             }
 
-            // Gửi thông báo sang chuông thông báo của Admin
             DB::table('notifications')->insert([
                 'user_id' => Auth::id(),
                 'title' => 'Yêu cầu hủy đơn & hoàn tiền',
@@ -917,7 +945,6 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            // Lưu nội dung phản hồi sự cố vào cột user_dispute_reason (và gộp đường dẫn ảnh vào note để tránh lỗi thiếu cột trong CSDL)
             $existingNote = $booking->note ?? '';
             $disputeText = "\n[BÁO CÁO SỰ CỐ]: " . $request->input('dispute_reason');
             if ($imagePath) {
@@ -931,14 +958,12 @@ class BookingController extends Controller
                 'updated_at' => now(),
             ];
 
-            // Nếu cẩn thận, chỉ cập nhật dispute_image nếu bảng thực sự có cột đó
-            if ($imagePath && \Illuminate\Support\Facades\Schema::hasColumn('bookings', 'dispute_image')) {
+            if ($imagePath && Schema::hasColumn('bookings', 'dispute_image')) {
                 $updateData['dispute_image'] = $imagePath;
             }
 
             DB::table('bookings')->where('id', $id)->update($updateData);
 
-            // Gửi thông báo chuông cho Admin
             DB::table('notifications')->insert([
                 'user_id' => $booking->user_id,
                 'title' => 'Khách hàng báo cáo sự cố hoàn tiền',
@@ -972,13 +997,11 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            // Cập nhật trạng thái hoàn tiền thành confirmed_by_user (Đã hoàn thành / Khách đã nhận tiền)
             DB::table('bookings')->where('id', $id)->update([
                 'refund_status' => 'confirmed_by_user',
                 'updated_at' => now(),
             ]);
 
-            // Gửi thông báo chuông cho Admin
             DB::table('notifications')->insert([
                 'user_id' => $booking->user_id,
                 'title' => 'Khách hàng đã xác nhận nhận tiền hoàn',
@@ -1018,8 +1041,7 @@ class BookingController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Cập nhật luôn chi tiết đơn sang hủy nếu bảng tồn tại
-            if (\Illuminate\Support\Facades\Schema::hasTable('booking_details') && \Illuminate\Support\Facades\Schema::hasColumn('booking_details', 'status')) {
+            if (Schema::hasTable('booking_details') && Schema::hasColumn('booking_details', 'status')) {
                 DB::table('booking_details')
                     ->where('booking_id', $id)
                     ->update([

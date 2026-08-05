@@ -63,7 +63,7 @@
                                 <select name="field_id" id="fieldSelect" class="form-select rounded-3 py-2.5" required>
                                     <option value="">-- Chọn sân --</option>
                                     @foreach($fields as $field)
-                                        <option value="{{ $field->id }}" data-price="{{ $field->price_per_hour ?? 350000 }}" @selected(request()->input('field') == $field->id)>
+                                        <option value="{{ $field->id }}" data-price="{{ $field->price_per_hour ?? 250000 }}" @selected(request()->input('field') == $field->id)>
                                             {{ $field->name }}
                                         </option>
                                     @endforeach
@@ -76,11 +76,11 @@
                                     <option value="">-- Chọn khung giờ đá --</option>
                                     @foreach($timeSlots as $timeSlot)
                                         @php
-                                            $startH = (int)substr($timeSlot->start_time, 0, 2);
-                                            $slotPrice = $startH >= 18 ? 450000 : 350000;
+                                            // Lấy giá chuẩn trực tiếp từ cơ sở dữ liệu của time_slot hoặc fallback về 250000 khớp với đơn lẻ
+                                            $slotPrice = $timeSlot->price ?? $timeSlot->slot_price ?? 250000;
                                         @endphp
                                         <option value="{{ $timeSlot->id }}" data-price="{{ $slotPrice }}">
-                                            {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}
+                                            {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }} ({{ number_format($slotPrice, 0, ',', '.') }}đ)
                                         </option>
                                     @endforeach
                                 </select>
@@ -207,7 +207,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const dayOfWeek = parseInt(dayOfWeekSelect.value);
 
         const selectedSlot = timeSlotSelect.options[timeSlotSelect.selectedIndex];
-        let pricePerSlot = selectedSlot ? parseFloat(selectedSlot.getAttribute('data-price')) || 350000 : 350000;
+        // Đọc trực tiếp data-price từ option khung giờ được chọn để đồng bộ với đơn lẻ (250k)
+        let pricePerSlot = selectedSlot ? parseFloat(selectedSlot.getAttribute('data-price')) || 250000 : 250000;
 
         let slotCount = 0;
         const today = new Date();
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
         totalAmountText.textContent = new Intl.NumberFormat('vi-VN').format(totalAmount) + 'đ';
         payableAmountText.textContent = new Intl.NumberFormat('vi-VN').format(payableAmount) + 'đ';
 
-        // GÁN TRỰC TIẾP VÀO THẺ ẨN ĐỂ GỬI SANG CONTROLLER
+        // GÁN TRỰC TIẾP VÀO THẺ ẨN ĐỂ GỬI SANG CONTROLLER CHÍNH XÁC
         if(inputTotalAmount) inputTotalAmount.value = totalAmount;
         if(inputPayableAmount) inputPayableAmount.value = payableAmount;
     }

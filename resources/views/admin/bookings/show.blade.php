@@ -679,10 +679,11 @@
                                         ?? data_get($detail, 'end_time')
                                         ?? data_get($detail, 'timeSlot.end_time');
 
-                                    $detailPrice = data_get($detail, 'price')
-                                        ?? data_get($detail, 'field_price')
-                                        ?? data_get($detail, 'field_price_per_hour')
-                                        ?? 0;
+                                    // Ép buộc ưu tiên lấy chuẩn đơn giá từ database (ví dụ 250k), nếu không có mới fallback
+                                    $detailPrice = (float) data_get($detail, 'price', 0);
+                                    if ($detailPrice <= 0) {
+                                        $detailPrice = (float) (data_get($detail, 'field_price') ?? data_get($detail, 'field_price_per_hour') ?? 250000);
+                                    }
 
                                     $fieldName = data_get($detail, 'field.name')
                                         ?? data_get($detail, 'field.field_name')
@@ -703,7 +704,7 @@
                                         </span>
                                     </td>
                                     <td class="text-end pe-4 fw-bold text-success">
-                                        {{ number_format((float) $detailPrice, 0, ',', '.') }}đ
+                                        {{ number_format($detailPrice, 0, ',', '.') }}đ
                                     </td>
                                 </tr>
                             @empty
