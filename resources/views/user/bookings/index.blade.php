@@ -67,12 +67,11 @@
     }
 
     .booking-history-page .booking-action-group .btn {
-        width: 34px;
         height: 34px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0 !important;
+        padding-inline: 10px !important;
         border-radius: 9px !important;
     }
 
@@ -360,7 +359,7 @@
                                     <th>Khung giờ</th>
                                     <th>Tổng tiền</th>
                                     <th>Trạng thái</th>
-                                    <th class="text-end pe-4" style="width: 22%;">Thao tác</th>
+                                    <th class="text-end pe-4" style="width: 25%;">Thao tác</th>
                                 </tr>
                             </thead>
 
@@ -405,6 +404,11 @@
                                         $pType = strtolower(trim((string)($booking->payment_type ?? '')));
                                         $pStatus = strtolower(trim((string)($booking->payment_status ?? '')));
                                         $paidAmt = (float)($booking->paid_amount ?? 0);
+                                        $remainingAmount = max(0, $totalMoneyRow - $paidAmt);
+
+                                        // KIỂM TRA ĐIỀU KIỆN ĐÃ CHECK-OUT HOẶC SỬ DỤNG XONG SÂN
+                                        $usageStatus = strtolower((string)($booking->usage_status ?? 'not_checked_in'));
+                                        $isFinishedUsing = in_array($usageStatus, ['checked_out', 'completed']) || ($status === 'completed');
 
                                         $isPaidFull = false;
                                         if ($totalMoneyRow > 0) {
@@ -555,7 +559,16 @@
 
                                         {{-- CỘT THAO TÁC --}}
                                         <td class="text-end pe-4">
-                                            <div class="d-inline-flex gap-1 booking-action-group">
+                                            <div class="d-inline-flex gap-1 align-items-center flex-wrap justify-content-end booking-action-group">
+                                                {{-- NÚT THANH TOÁN SỐ TIỀN CÒN LẠI (Chỉ hiện khi đã check-out / đá xong) --}}
+                                                @if($remainingAmount > 0 && $isFinishedUsing && !in_array($status, ['cancelled', 'pending']))
+                                                    <a href="{{ route('user.payment.show', $booking->id) }}" 
+                                                       class="btn btn-sm btn-warning rounded-3 d-inline-flex align-items-center gap-1 fw-bold px-2.5 py-1.5 shadow-sm text-dark" 
+                                                       title="Thanh toán số tiền còn lại">
+                                                        <i class="bi bi-wallet2"></i> Thanh toán ({{ number_format($remainingAmount, 0, ',', '.') }}đ)
+                                                    </a>
+                                                @endif
+
                                                 @if($status === 'pending')
                                                     <a href="{{ route('user.payment.show', $booking->id) }}" 
                                                        class="btn btn-sm btn-success rounded-3 d-inline-flex align-items-center gap-1 py-1.5 shadow-sm fw-medium" 
@@ -816,7 +829,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- MODAL CHI TIẾT (ĐÃ ĐẦY ĐỦ THÊM GIỜ & GỌI DỊCH VỤ) -->
+                                            <!-- MODAL CHI TIẾT (ĐẦY ĐỦ MÃ TRA CỨU, TRẠNG THÁI, TỔNG TIỀN, THÔNG TIN NGƯỜI ĐẶT & FORM BÁO SỰ CỐ GỬI ẢNH) -->
                                             <div class="modal fade text-start" id="detailModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -830,7 +843,7 @@
 
                                                         <div class="modal-body p-4">
                                                             
-                                                            {{-- TIẾN ĐỘ HOÀN TIỀN --}}
+                                                            {{-- TIẾN ĐỘ HOÀN TIỀN VÀ 2 NÚT XÁC NHẬN / BÁO SỰ CỐ KÈM FORM ẢNH --}}
                                                             @if($status === 'cancelled' && isset($booking->refund_amount) && $booking->refund_amount > 0)
                                                                 <div class="card border-danger-subtle bg-danger-subtle bg-opacity-10 rounded-4 p-3 mb-4">
                                                                     <div class="d-flex align-items-center justify-content-between mb-2 border-bottom border-danger-subtle pb-2">
@@ -839,11 +852,11 @@
                                                                         </h6>
                                                                     </div>
                                                                     @if($rfStatus === 'pending')
-                                                                        <div class="alert alert-warning border-0 rounded-3 py-2 px-3 small mb-0">
+                                                                        <div class="alert alert-warning border-0 rounded-3 py-2 px-3 small mb-2">
                                                                             <i class="bi bi-hourglass-split me-1"></i> Admin đang rà soát thông tin STK và tiến hành chuyển khoản hoàn tiền. Vui lòng chờ!
                                                                         </div>
                                                                     @elseif($rfStatus === 'completed')
-                                                                        <div class="alert alert-success border-0 rounded-3 py-2 px-3 small mb-3">
+                                                                        <div class="alert alert-success border-0 rounded-3 py-2 px-3 small mb-2">
                                                                             <i class="bi bi-check-circle-fill me-1"></i> Admin đã xác nhận chuyển khoản hoàn tiền thành công!
                                                                         </div>
                                                                         @if(!empty($booking->refund_proof_image))
@@ -854,9 +867,78 @@
                                                                                 </a>
                                                                             </div>
                                                                         @endif
+
+                                                                        <div class="d-flex gap-2 mt-3">
+                                                                            @if(\Illuminate\Support\Facades\Route::has('user.bookings.confirmRefund'))
+                                                                                <form action="{{ route('user.bookings.confirmRefund', $booking->id) }}" method="POST" class="flex-grow-1">
+                                                                                    @csrf
+                                                                                    <button type="submit" class="btn btn-success btn-sm w-100 fw-bold shadow-sm rounded-3 py-2">
+                                                                                        <i class="bi bi-check-circle-fill me-1"></i> Tôi đã nhận đủ tiền
+                                                                                    </button>
+                                                                                </form>
+                                                                            @endif
+
+                                                                            @if(\Illuminate\Support\Facades\Route::has('user.bookings.disputeRefundWithImage'))
+                                                                                <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-bold shadow-sm rounded-3 py-2" data-bs-toggle="collapse" data-bs-target="#disputeForm{{ $booking->id }}">
+                                                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Báo sự cố (Chưa nhận được tiền)
+                                                                                </button>
+                                                                            @endif
+                                                                        </div>
+
+                                                                        @if(\Illuminate\Support\Facades\Route::has('user.bookings.disputeRefundWithImage'))
+                                                                            <div class="collapse mt-3" id="disputeForm{{ $booking->id }}">
+                                                                                <div class="card card-body border bg-white rounded-3 shadow-sm">
+                                                                                    <form action="{{ route('user.bookings.disputeRefundWithImage', $booking->id) }}" method="POST" enctype="multipart/form-data">
+                                                                                        @csrf
+                                                                                        <div class="mb-2">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Nội dung báo cáo sự cố:</label>
+                                                                                            <textarea name="dispute_reason" class="form-control form-control-sm rounded-3" rows="2" placeholder="Nhập lý do chưa nhận được tiền..." required></textarea>
+                                                                                        </div>
+                                                                                        <div class="mb-2">
+                                                                                            <label class="form-label small fw-semibold text-secondary">Đính kèm ảnh (nếu có):</label>
+                                                                                            <input type="file" name="dispute_image" class="form-control form-control-sm rounded-3" accept="image/*">
+                                                                                        </div>
+                                                                                        <button type="submit" class="btn btn-danger btn-sm w-100 fw-bold rounded-3">
+                                                                                            Gửi báo cáo sự cố về Admin
+                                                                                        </button>
+                                                                                    </form>
+                                                                                </div>
+                                                                            </div>
+                                                                        @endif
+
+                                                                    @elseif($rfStatus === 'confirmed_by_user')
+                                                                        <div class="alert alert-primary border-0 rounded-3 py-2 px-3 small mb-0">
+                                                                            <i class="bi bi-check-all me-1"></i> Bạn đã xác nhận nhận đủ tiền hoàn. Cảm ơn bạn!
+                                                                        </div>
+                                                                    @elseif($rfStatus === 'disputed')
+                                                                        <div class="alert alert-danger border-0 rounded-3 py-2 px-3 small mb-0">
+                                                                            <i class="bi bi-exclamation-triangle me-1"></i> Bạn đã báo cáo sự cố về tiền hoàn. Admin sẽ kiểm tra lại giao dịch!
+                                                                        </div>
                                                                     @endif
                                                                 </div>
                                                             @endif
+
+                                                            {{-- KHỐI 3 Ô THÔNG TIN: MÃ TRA CỨU, TRẠNG THÁI, TỔNG TIỀN THỰC TẾ --}}
+                                                            <div class="row g-3 mb-4">
+                                                                <div class="col-md-4">
+                                                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                                                        <span class="text-muted small d-block mb-1">Mã tra cứu:</span>
+                                                                        <strong class="text-dark small font-monospace">{{ $booking->booking_code ?? $booking->code ?? '#'.$booking->id }}</strong>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                                                        <span class="text-muted small d-block mb-1">Trạng thái:</span>
+                                                                        <span class="badge {{ $statusClass }} px-2.5 py-1 fw-semibold">{{ $statusText }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                                                        <span class="text-muted small d-block mb-1">Tổng tiền thực tế:</span>
+                                                                        <strong class="text-success fs-6">{{ number_format($totalMoneyRow, 0, ',', '.') }}đ</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
                                                             {{-- 1. FORM THÊM GIỜ --}}
                                                             @if($status === 'confirmed')
@@ -991,6 +1073,17 @@
                                                                     </table>
                                                                 </div>
                                                             @endif
+
+                                                            {{-- 5. THÔNG TIN NGƯỜI ĐẶT --}}
+                                                            <div class="p-3 bg-light rounded-3 border mt-4">
+                                                                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-person-lines-fill text-primary me-1"></i> Thông tin người đặt</h6>
+                                                                <div class="row g-2 small text-secondary">
+                                                                    <div class="col-6"><strong>Họ tên:</strong> {{ Auth::user()->name ?? 'Khách hàng' }}</div>
+                                                                    <div class="col-6"><strong>SDT:</strong> {{ Auth::user()->phone ?? 'Chưa cập nhật' }}</div>
+                                                                    <div class="col-6"><strong>Email:</strong> {{ Auth::user()->email ?? 'Chưa có email' }}</div>
+                                                                    <div class="col-6"><strong>Ngày đặt:</strong> {{ !empty($booking->created_at) ? \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y H:i') : '-' }}</div>
+                                                                </div>
+                                                            </div>
                                                         </div>
 
                                                         <div class="modal-footer border-0 p-3 pt-0 d-flex justify-content-between">

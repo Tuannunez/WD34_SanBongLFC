@@ -365,6 +365,9 @@
                                 ?? $booking->total
                                 ?? 0;
 
+                            $paidMoney = (float)($booking->paid_amount ?? 0);
+                            $debtAmount = max(0, (float)$totalMoney - $paidMoney);
+
                             $isNoShow = !empty($booking->no_show_at);
 
                             $canDelete = in_array(
@@ -416,10 +419,26 @@
                                 {{ number_format((float) $totalMoney, 0, ',', '.') }}đ
                             </td>
 
+                            {{-- HIỂN THỊ TRẠNG THÁI THANH TOÁN VÀ SỐ TIỀN CÒN THIẾU CHO ADMIN --}}
                             <td>
                                 <span class="badge bg-{{ $paymentColor }}-subtle text-{{ $paymentColor }}">
                                     {{ $paymentText }}
                                 </span>
+                                <div class="mt-1">
+                                    @if($paidMoney <= 0)
+                                        <span class="text-danger small fw-semibold">
+                                            <i class="bi bi-exclamation-circle me-1"></i>Chưa trả cọc
+                                        </span>
+                                    @elseif($debtAmount > 0)
+                                        <span class="text-warning-emphasis small fw-bold" title="Đã trả: {{ number_format($paidMoney, 0, ',', '.') }}đ">
+                                            <i class="bi bi-wallet2 me-1"></i>Còn thiếu: {{ number_format($debtAmount, 0, ',', '.') }}đ
+                                        </span>
+                                    @else
+                                        <span class="text-success small fw-semibold">
+                                            <i class="bi bi-check-all me-1"></i>Đã trả đủ 100%
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             {{-- TRẠNG THÁI ĐƠN & HOÀN TIỀN CHI TIẾT --}}

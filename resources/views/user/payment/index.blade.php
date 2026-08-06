@@ -23,12 +23,22 @@
                         </div>
                     @endif
 
-                    {{-- THANH HIỂN THỊ ĐẾM NGƯỢC THỜI GIAN GIỮ SÂN 5 PHÚT --}}
-                    <div class="alert alert-warning text-center fw-bold mb-4 shadow-sm border-0 rounded-3">
-                        <i class="bi bi-clock-history me-2 text-danger"></i>
-                        Thời gian giữ sân còn lại để thanh toán: 
-                        <span id="countdown-timer" class="text-danger fs-5 ms-1 fw-extrabold">05:00</span>
-                    </div>
+                    @php
+                        $totalAmountVal = (float)($booking->total_amount ?? $booking->final_amount ?? $booking->total_price ?? 0);
+                        $currentPaidAmt = (float)($booking->paid_amount ?? 0);
+                        $remainingAmt = max(0, $totalAmountVal - $currentPaidAmt);
+                        $isMonthlyPay = (($booking->booking_type ?? 'single') === 'monthly');
+                        $isRemainingPayment = ($currentPaidAmt > 0 && $remainingAmt > 0);
+                    @endphp
+
+                    {{-- CHỈ HIỆN ĐỒNG HỒ ĐẾM NGƯỢC 5P KHI LÀ ĐƠN MỚI TẠO, ẨN ĐI KHI THANH TOÁN NỐT SAU KHI CHECK-OUT --}}
+                    @if(!$isRemainingPayment)
+                        <div class="alert alert-warning text-center fw-bold mb-4 shadow-sm border-0 rounded-3">
+                            <i class="bi bi-clock-history me-2 text-danger"></i>
+                            Thời gian giữ sân còn lại để thanh toán: 
+                            <span id="countdown-timer" class="text-danger fs-5 ms-1 fw-extrabold">05:00</span>
+                        </div>
+                    @endif
                     
                     <h5 class="text-secondary border-bottom pb-2 mb-3">Thông tin lượt đặt sân</h5>
                     <div class="row g-3 mb-4">
@@ -50,9 +60,6 @@
                                     <div class="col-6">
                                         <span class="text-muted small d-block">Loại đơn:</span>
                                         <strong class="text-dark">
-                                            @php
-                                                $isMonthlyPay = (($booking->booking_type ?? 'single') === 'monthly');
-                                            @endphp
                                             @if($isMonthlyPay)
                                                 <span class="badge bg-success">Đặt cố định tháng</span>
                                             @else
@@ -64,34 +71,52 @@
                             </div>
                         </div>
 
-                        {{-- KHỐI HIỂN THỊ SỐ TIỀN CHUẨN XÁC CHO ĐƠN THÁNG VÀ ĐƠN LẺ --}}
+                        {{-- KHỐI TÍNH TOÁN VÀ HIỂN THỊ SỐ TIỀN THÔNG MINH --}}
                         @php
-                            $isMonthlyPay = (($booking->booking_type ?? 'single') === 'monthly');
-                            $payAmount = $isMonthlyPay ? (float)($booking->deposit_amount ?? $booking->total_amount ?? 0) : (float)($booking->deposit_amount ?? (($booking->total_price ?? $booking->total_amount ?? 0) * 0.3));
-                            $payTitle = $isMonthlyPay ? "Tổng số tiền thanh toán lịch tháng" : "Số tiền cần thanh toán ngay";
+                            if ($isRemainingPayment) {
+                                $payAmount = $remainingAmt;
+                                $payTitle = "Số tiền còn lại cần thanh toán nốt";
+                                $badgeText = "Thanh toán phần còn thiếu";
+                                $badgeClass = "bg-warning text-dark";
+                            } elseif ($isMonthlyPay) {
+                                $payAmount = (float)($booking->deposit_amount ?? $totalAmountVal);
+                                $payTitle = "Tổng số tiền thanh toán lịch tháng";
+                                $badgeText = "Thanh toán lịch tháng";
+                                $badgeClass = "bg-success text-white";
+                            } else {
+                                $payAmount = (float)($booking->deposit_amount ?? ($totalAmountVal * 0.3));
+                                $payTitle = "Số tiền cần thanh toán ngay";
+                                $badgeText = "Chờ thanh toán";
+                                $badgeClass = "bg-warning text-dark";
+                            }
                         @endphp
+
                         <div class="col-md-5">
                             <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-center align-items-center text-center">
                                 <span class="text-muted small mb-1" id="amount-title">{{ $payTitle }}</span>
                                 <h3 class="text-danger fw-bold mb-0">
                                     <span id="display-amount">{{ number_format($payAmount, 0, ',', '.') }}</span> <span class="fs-6 text-secondary">VNĐ</span>
                                 </h3>
-                                <span class="badge bg-{{ $isMonthlyPay ? 'success' : 'warning' }} text-{{ $isMonthlyPay ? 'white' : 'dark' }} mt-2 px-3 py-1.5 rounded-pill small" id="deposit-note">
-                                    {{ $isMonthlyPay ? 'Thanh toán lịch tháng' : 'Chờ thanh toán' }}
-                                </span>
+                                @if($isRemainingPayment)
+                                    <span class="badge bg-success-subtle text-success small mt-2 px-3 py-1.5 rounded-pill">
+                                        Đã trả trước đó: {{ number_format($currentPaidAmt, 0, ',', '.') }}đ
+                                    </span>
+                                @else
+                                    <span class="badge {{ $badgeClass }} mt-2 px-3 py-1.5 rounded-pill small" id="deposit-note">
+                                        {{ $badgeText }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
 
-                    {{-- Kho dữ liệu ẩn phục vụ cho JavaScript (chỉ kích hoạt khi là đơn ngày lẻ) --}}
-                    <input type="hidden" id="raw-total-price" value="{{ $booking->total_price ?? $booking->total_amount ?? 0 }}">
-                    <input type="hidden" id="raw-deposit-amount" value="{{ $booking->deposit_amount ?? (($booking->total_price ?? $booking->total_amount ?? 0) * 0.3) }}">
+                    <input type="hidden" id="raw-total-price" value="{{ $totalAmountVal }}">
+                    <input type="hidden" id="raw-deposit-amount" value="{{ $payAmount }}">
 
                     <form action="{{ route('user.payment.process') }}" method="POST" id="payment-form">
                         @csrf
                         <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
-                        {{-- PHẦN CHỌN MÃ KHUYẾN MÃI --}}
                         <h5 class="text-secondary border-bottom pb-2 mb-3">Mã khuyến mãi</h5>
                         <div class="mb-4">
                             <select name="promotion_id" id="promotion-select" class="form-select rounded-3 py-2 border">
@@ -109,8 +134,7 @@
                             </select>
                         </div>
 
-                        @if(!$isMonthlyPay)
-                            {{-- ĐƠN LẺ: GIỮ NGUYÊN TÍNH NĂNG CHỌN PHƯƠNG THỨC THANH TOÁN (TẠI SÂN / QR) NHƯ BÌNH THƯỜNG --}}
+                        @if(!$isMonthlyPay && !$isRemainingPayment)
                             <h5 class="text-secondary border-bottom pb-2 mb-3">Chọn phương thức thanh toán</h5>
                             @if(isset($paymentMethods) && $paymentMethods->isNotEmpty())
                                 @foreach($paymentMethods as $method)
@@ -125,10 +149,9 @@
                                 @endforeach
                             @endif
                         @else
-                            {{-- ĐƠN THÁNG: ẨN TẠI SÂN/QR VÀ CỐ ĐỊNH SỐ TIỀN --}}
                             <div class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm bg-success bg-opacity-10 text-success-emphasis">
-                                <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận đơn lịch cố định tháng</h6>
-                                <p class="small mb-0">Hệ thống đã ghi nhận số tiền cần thanh toán cho đơn lịch tháng. Vui lòng bấm xác nhận bên dưới để hoàn tất.</p>
+                                <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận thanh toán trực tuyến</h6>
+                                <p class="small mb-0">Hệ thống ghi nhận số tiền của đơn hàng. Vui lòng bấm xác nhận bên dưới để hoàn tất.</p>
                             </div>
                         @endif
 
@@ -147,9 +170,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const isMonthly = @json($isMonthlyPay);
+        const isRemainingPayment = @json($isRemainingPayment);
         
-        // CHỈ CHẠY SCRIPT TÍNH TOÁN NẾU LÀ ĐƠN LẺ, CÒN ĐƠN THÁNG SẼ GIỮ NGUYÊN SỐ TIỀN ĐÃ CỐ ĐỊNH
-        if (!isMonthly) {
+        if (!isMonthly && !isRemainingPayment) {
             const displayAmount = document.getElementById('display-amount');
             const amountTitle = document.getElementById('amount-title');
             const depositNote = document.getElementById('deposit-note');
@@ -224,15 +247,15 @@
             updateDisplayPrice();
         }
 
-        // Đếm ngược 5 phút giữ sân (Áp dụng chung cho cả 2 loại đơn)
-        const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";
-        const createdAtTime = new Date(bookingCreatedAt.replace(/-/g, "/")).getTime();
-        const limitMinutes = 5; 
-        const expireTime = createdAtTime + limitMinutes * 60 * 1000; 
-
+        // Đếm ngược 5 phút giữ sân (Chỉ chạy cho đơn mới tạo, không chạy khi thanh toán nốt)
         const countdownTimer = document.getElementById('countdown-timer');
 
-        if (countdownTimer) {
+        if (countdownTimer && !isRemainingPayment) {
+            const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";
+            const createdAtTime = new Date(bookingCreatedAt.replace(/-/g, "/")).getTime();
+            const limitMinutes = 5; 
+            const expireTime = createdAtTime + limitMinutes * 60 * 1000; 
+
             const timerInterval = setInterval(function() {
                 const now = new Date().getTime();
                 const timeLeft = expireTime - now;
