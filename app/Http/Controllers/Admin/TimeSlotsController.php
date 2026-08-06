@@ -8,6 +8,7 @@ use App\Models\TimeSlot;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
 use App\Models\Stadium;
+use App\Models\FieldTimeSlotPrice;
 
 class TimeSlotsController extends Controller
 {
@@ -49,7 +50,17 @@ class TimeSlotsController extends Controller
             ];
         });
 
-        return view('admin.time-slots.show', compact('stadium', 'timeSlots', 'fields', 'priceTable'));
+        // Load any field-specific prices (overrides)
+        $fieldPricesRaw = FieldTimeSlotPrice::whereIn('field_id', $fields->pluck('id'))
+            ->get()
+            ->groupBy('field_id');
+
+        $fieldPrices = [];
+        foreach ($fieldPricesRaw as $fieldId => $items) {
+            $fieldPrices[$fieldId] = $items->mapWithKeys(fn($it) => [$it->time_slot_id => $it->price])->all();
+        }
+
+        return view('admin.time-slots.show', compact('stadium', 'timeSlots', 'fields', 'priceTable', 'fieldPrices'));
     }
 
     public function storeForStadium(Request $request, $stadiumId)
@@ -72,6 +83,30 @@ class TimeSlotsController extends Controller
 
         return redirect()->route('admin.time-slots.show', $stadium->id)
             ->with('success', 'Lưu giá cố định theo sân thành công.');
+    }
+
+    public function storeFieldSlot(Request $request, $stadiumId, $fieldId, $timeSlotId)
+    {
+        $stadium = Stadium::findOrFail($stadiumId);
+        $field = \App\Models\Field::where('stadium_id', $stadium->id)->where('id', $fieldId)->firstOrFail();
+
+        $data = $request->validate([
+            'price' => 'nullable',
+        ]);
+
+        $price = isset($data['price']) ? (float) preg_replace('/[^0-9.]/', '', (string) $data['price']) : null;
+
+        if ($price === null) {
+            // delete override if exists
+            FieldTimeSlotPrice::where('field_id', $field->id)->where('time_slot_id', $timeSlotId)->delete();
+        } else {
+            FieldTimeSlotPrice::updateOrCreate(
+                ['field_id' => $field->id, 'time_slot_id' => $timeSlotId],
+                ['price' => $price]
+            );
+        }
+
+        return redirect()->route('admin.time-slots.show', $stadium->id)->with('success', 'Lưu giá khung giờ cho sân con thành công.');
     }
 
     public function update(Request $request, $stadiumId, $timeSlotId)

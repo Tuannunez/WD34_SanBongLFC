@@ -48,7 +48,9 @@
                         </thead>
                         <tbody>
                             @foreach($priceTable as $row)
-                                @php($slot = $row['slot'])
+                                @php
+                                    $slot = $row['slot'];
+                                @endphp
                                 <tr>
                                     <td class="text-center">
                                         <form id="slot-form-{{ $slot->id }}" action="{{ route('admin.time-slots.update', [$stadium->id, $slot->id]) }}" method="POST" class="row g-2 align-items-center">
@@ -63,8 +65,17 @@
                                         </form>
                                     </td>
                                     @foreach($fields as $field)
-                                        <td class="text-end text-success fw-bold text-nowrap">
-                                            {{ number_format((float) ($row['prices'][$field->id] ?? 0), 0, ',', '.') }}đ
+                                        @php
+                                            $override = $fieldPrices[$field->id][$slot->id] ?? null;
+                                            $base = $row['prices'][$field->id] ?? 0;
+                                            $value = $override !== null ? $override : $base;
+                                        @endphp
+                                        <td class="text-center">
+                                            <form action="{{ route('admin.time-slots.field.store', [$stadium->id, $field->id, $slot->id]) }}" method="POST" class="d-flex gap-1 justify-content-center align-items-center">
+                                                @csrf
+                                                <input type="text" name="price" class="form-control form-control-sm text-end" style="width:110px" value="{{ $value }}">
+                                                <button class="btn btn-sm btn-primary">Lưu</button>
+                                            </form>
                                         </td>
                                     @endforeach
                                     <td class="text-center">

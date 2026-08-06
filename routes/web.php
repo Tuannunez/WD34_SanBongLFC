@@ -275,6 +275,12 @@ Route::prefix('admin')
             ->whereNumber('stadium')
             ->name('time-slots.store');
 
+        Route::post('time-slots/{stadium}/fields/{field}/slot/{timeSlot}/price', [TimeSlotsController::class, 'storeFieldSlot'])
+            ->whereNumber('stadium')
+            ->whereNumber('field')
+            ->whereNumber('timeSlot')
+            ->name('time-slots.field.store');
+
         Route::post('time-slots/{stadium}/add', [TimeSlotsController::class, 'addForStadium'])
             ->whereNumber('stadium')
             ->name('time-slots.add');
