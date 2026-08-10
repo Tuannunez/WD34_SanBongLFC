@@ -168,47 +168,55 @@
                     <p class="text-muted">Tất cả tiện nghi cần thiết để bạn có buổi đá bóng thoải mái và an toàn.</p>
                 </div>
 
-                <div class="row g-4">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card feature-card h-100">
-                            <div class="card-body">
-                                <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
-                                    <i class="bi bi-droplet-half fs-3"></i>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 align-items-stretch">
+                    <div class="col d-flex">
+                        <div class="card feature-card h-100 flex-fill rounded-4 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between gap-3">
+                                <div>
+                                    <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
+                                        <i class="bi bi-droplet-half fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold">Nước uống & phục vụ</h5>
                                 </div>
-                                <h5 class="fw-bold">Nước uống & phục vụ</h5>
                                 <p class="text-muted mb-0">Nước suối, nước ngọt và dịch vụ order nhanh tại sân.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card feature-card h-100">
-                            <div class="card-body">
-                                <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
-                                    <i class="bi bi-people-fill fs-3"></i>
+                    <div class="col d-flex">
+                        <div class="card feature-card h-100 flex-fill rounded-4 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between gap-3">
+                                <div>
+                                    <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
+                                        <i class="bi bi-people-fill fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold">Phòng thay đồ</h5>
                                 </div>
-                                <h5 class="fw-bold">Phòng thay đồ</h5>
                                 <p class="text-muted mb-0">Phòng thay đồ sạch sẽ, khóa an toàn và tiện nghi cho đội nhóm.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card feature-card h-100">
-                            <div class="card-body">
-                                <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
-                                    <i class="bi bi-car-front-fill fs-3"></i>
+                    <div class="col d-flex">
+                        <div class="card feature-card h-100 flex-fill rounded-4 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between gap-3">
+                                <div>
+                                    <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
+                                        <i class="bi bi-car-front-fill fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold">Bãi đỗ xe rộng</h5>
                                 </div>
-                                <h5 class="fw-bold">Bãi đỗ xe rộng</h5>
                                 <p class="text-muted mb-0">Bãi đỗ xe rộng rãi, an ninh 24/7 và vị trí thuận tiện.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card feature-card h-100">
-                            <div class="card-body">
-                                <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
-                                    <i class="bi bi-lightning-charge-fill fs-3"></i>
+                    <div class="col d-flex">
+                        <div class="card feature-card h-100 flex-fill rounded-4 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between gap-3">
+                                <div>
+                                    <div class="feature-icon rounded-circle bg-success bg-opacity-10 text-success mb-3">
+                                        <i class="bi bi-lightning-charge-fill fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold">Chiếu sáng chất lượng</h5>
                                 </div>
-                                <h5 class="fw-bold">Chiếu sáng chất lượng</h5>
                                 <p class="text-muted mb-0">Đèn sáng đều, phù hợp thi đấu buổi tối và tối thiểu bóng chói.</p>
                             </div>
                         </div>
@@ -253,17 +261,27 @@
                             <div class="card-body">
                                 <span class="badge text-bg-success rounded-pill mb-3">Tin tức</span>
                                 @if(!empty($news) && $news->isNotEmpty())
-                                    <div class="row g-3">
+                                    <div class="row row-cols-1 g-3">
                                         @foreach($news->take(2) as $item)
-                                            <div class="col-12">
-                                                <article class="card news-card small-card border-0 shadow-sm overflow-hidden">
-                                                    @if($item->image)
-                                                        <img src="{{ $item->image }}" alt="{{ $item->title }}" class="w-100">
-                                                    @endif
+                                            <div class="col">
+                                                <article class="card news-highlight-card border-0 shadow-sm overflow-hidden">
                                                     <div class="card-body p-3">
-                                                        <p class="news-card-meta mb-1">{{ $item->published_at?->format('d/m/Y') }}</p>
+                                                        <div class="d-flex align-items-start gap-3 mb-3">
+                                                            @if($item->image)
+                                                                <div class="news-thumb overflow-hidden rounded-3">
+                                                                    <img src="{{ $item->image }}" alt="{{ $item->title }}" class="img-fluid">
+                                                                </div>
+                                                            @else
+                                                                <div class="news-icon bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center rounded-3">
+                                                                    <i class="bi bi-newspaper"></i>
+                                                                </div>
+                                                            @endif
+                                                            <div class="flex-grow-1">
+                                                                <p class="news-card-meta mb-0">{{ $item->published_at?->format('d/m/Y') }}</p>
+                                                            </div>
+                                                        </div>
                                                         <h5 class="news-card-title mb-2">{{ $item->title }}</h5>
-                                                        <p class="news-card-text mb-2">{{ \Illuminate\Support\Str::limit($item->excerpt ?: $item->content, 100) }}</p>
+                                                        <p class="news-card-text mb-3">{{ \Illuminate\Support\Str::limit($item->excerpt ?: $item->content, 90) }}</p>
                                                         <a href="{{ route('news.show', $item->id) }}" class="text-success fw-semibold">Xem thêm →</a>
                                                     </div>
                                                 </article>
@@ -281,45 +299,45 @@
                     </div>
 
                     <div class="col-lg-6" id="contact">
-                        <div class="card contact-card border-0 shadow-sm rounded-4 h-100">
-                            <div class="card-body">
+                        <div class="card contact-card border-0 shadow-sm rounded-4">
+                            <div class="card-body p-3 p-md-4">
                                 <span class="badge text-bg-warning rounded-pill mb-3">Liên hệ</span>
-                                <h5 class="fw-bold">Hỗ trợ khách hàng</h5>
-                                <p class="text-muted mb-4">Bạn cần tư vấn giờ mở, sân phù hợp hoặc phương thức thanh toán? Liên hệ với đội ngũ SanBongLFC để được hỗ trợ tận tình.</p>
-                                <div class="row g-3">
+                                <h5 class="fw-bold mb-2">Hỗ trợ khách hàng</h5>
+                                <p class="text-muted mb-3">Bạn cần tư vấn giờ mở, sân phù hợp hoặc phương thức thanh toán? Liên hệ với đội ngũ SanBongLFC để được hỗ trợ tận tình.</p>
+                                <div class="row g-2">
                                     <div class="col-12">
-                                        <div class="d-flex align-items-start gap-3">
-                                            <span class="contact-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center"><i class="bi bi-telephone-fill"></i></span>
+                                        <div class="contact-line d-flex align-items-center gap-3">
+                                            <span class="contact-dot bg-success"></span>
                                             <div>
-                                                <div class="fw-semibold">Hotline</div>
+                                                <div class="fw-semibold mb-1">Hotline</div>
                                                 <div class="text-muted">1900 1234</div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <div class="d-flex align-items-start gap-3">
-                                            <span class="contact-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center"><i class="bi bi-envelope-fill"></i></span>
+                                        <div class="contact-line d-flex align-items-center gap-3">
+                                            <span class="contact-dot bg-success"></span>
                                             <div>
-                                                <div class="fw-semibold">Email</div>
+                                                <div class="fw-semibold mb-1">Email</div>
                                                 <div class="text-muted">support@sanbonglfc.vn</div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <div class="d-flex align-items-start gap-3">
-                                            <span class="contact-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center"><i class="bi bi-geo-alt-fill"></i></span>
+                                        <div class="contact-line d-flex align-items-center gap-3">
+                                            <span class="contact-dot bg-success"></span>
                                             <div>
-                                                <div class="fw-semibold">Địa chỉ</div>
+                                                <div class="fw-semibold mb-1">Địa chỉ</div>
                                                 <div class="text-muted">Hoài Đức, Hà Nội</div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <div class="d-flex align-items-start gap-3">
-                                            <span class="contact-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center"><i class="bi bi-clock-fill"></i></span>
+                                        <div class="contact-line d-flex align-items-center gap-3">
+                                            <span class="contact-dot bg-success"></span>
                                             <div>
-                                                <div class="fw-semibold">Giờ làm việc</div>
-                                                <div class="text-muted">07:00 - 22:00 mọi ngày</div>
+                                                <div class="fw-semibold mb-1">Giờ làm việc</div>
+                                                <div class="text-muted">07:00 - 22:00</div>
                                             </div>
                                         </div>
                                     </div>

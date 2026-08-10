@@ -27,7 +27,7 @@ body {
 }
 .chart-tab:hover,
 .chart-tab.active {
-    background: #206bc4;
+    background: #047637;
     color: #fff;
     transform: translateY(-2px);
 }
@@ -125,10 +125,10 @@ body {
     transform: none;
 }
 .custom-date-day.is-selected {
-    background: linear-gradient(135deg, #206bc4, #4299e1);
+    background: linear-gradient(135deg, #047637, #035F2C);
     color: #ffffff;
     border-color: transparent;
-    box-shadow: 0 12px 28px rgba(32, 107, 196, .18);
+    box-shadow: 0 12px 28px rgba(4, 118, 55, .18);
 }
 .custom-date-day.is-range {
     background: #dbeafe;
@@ -194,9 +194,9 @@ body {
     color: #fff;
     font-size: 24px;
 }
-.bg-blue { background: #206bc4; }
-.bg-green { background: #2fb344; }
-.bg-orange { background: #f59f00; }
+.bg-blue { background: #047637; }
+.bg-green { background: #047637; }
+.bg-orange { background: #F59E0B; }
 .bg-red { background: #d63939; }
 .sparkline { height: 50px; margin-top: 15px; }
 .dashboard-card {
