@@ -204,7 +204,7 @@ function openAddSlotModal() {
     document.getElementById('slot-end').name = 'end_time';
     document.getElementById('slot-start').value = '';
     document.getElementById('slot-end').value = '';
-    document.getElementById('slot-price-inputs').innerHTML = '';
+    document.getElementById('slot-price-inputs').innerHTML = buildSlotPriceInputs(null, {});
     new bootstrap.Modal(modal).show();
 }
 
@@ -247,10 +247,11 @@ function buildSlotPriceInputs(slotId, prices) {
     const fields = window.timeSlotFields || [];
     return fields.map(field => {
         const value = prices?.[field.id] ?? '';
+        const name = slotId ? `prices[${field.id}][${slotId}]` : `prices[${field.id}]`;
         return `
             <div class="mb-3">
                 <label class="form-label">Giá ${field.name}</label>
-                <input type="number" min="0" step="1000" class="form-control" name="prices[${field.id}][${slotId}]" value="${value}" placeholder="Nhập giá cho ${field.name}">
+                <input type="number" min="0" step="1000" class="form-control" name="${name}" value="${value}" placeholder="Nhập giá cho ${field.name}">
             </div>
         `;
     }).join('');
