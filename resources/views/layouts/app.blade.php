@@ -55,21 +55,23 @@
 
         .hero-section {
             position: relative;
-            min-height: 620px;
-            background: linear-gradient(180deg, rgba(16, 185, 129, 0.24), rgba(6, 95, 70, 0.22)), url('/images/banner1.png') center/cover no-repeat;
-            background-size: cover;
-            color: #ffffff;
+            height: 550px;
+            min-height: 420px;
+            max-height: 550px;
+            background: url('/images/banner1.png') center center / cover no-repeat;
+            color: #0f172a;
             overflow: hidden;
-            padding: 68px 0 46px;
+            padding: 20px 0 16px;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
         }
 
         .hero-section::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(5, 75, 34, .58), rgba(15, 23, 42, .10));
+            background: rgba(255, 255, 255, 0);
             pointer-events: none;
         }
 
@@ -90,63 +92,68 @@
         .hero-content {
             position: relative;
             z-index: 2;
-            padding: 0 10px;
+            width: 100%;
+            max-width: 840px;
+            padding: 0 40px;
+            display: grid;
+            gap: 10px;
+            margin: 0;
         }
 
         .hero-text-wrap {
-            max-width: 760px;
+            max-width: 680px;
             margin: 0;
             text-align: left;
-            padding-right: 20px;
+            padding: 32px 28px;
+            background: rgba(255, 255, 255, .45);
+            border-radius: 24px;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
+            backdrop-filter: blur(10px);
         }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: rgba(32, 50, 16, .28);
-            border: 1px solid rgba(199, 255, 79, .22);
+            background: rgba(255, 255, 255, .94);
+            border: 1px solid rgba(16, 185, 129, .22);
             border-radius: 999px;
-            padding: 10px 20px;
-            margin-bottom: 24px;
-            color: #e8ffd0;
+            padding: 8px 16px;
+            margin-bottom: 18px;
+            color: #064e3b;
+            box-shadow: 0 10px 25px rgba(10, 60, 30, .05);
         }
 
         .hero-title {
-            font-size: clamp(3rem, 4vw, 5rem);
-            line-height: 1.02;
+            font-size: clamp(2.2rem, 3.5vw, 3rem);
+            line-height: 1.05;
             font-weight: 900;
-            letter-spacing: -0.04em;
-            color: #ffffff;
-            text-shadow: 0 28px 70px rgba(0, 0, 0, .52);
+            letter-spacing: -0.03em;
+            color: #064e3b;
+            text-shadow: 0 6px 16px rgba(255, 255, 255, .6);
+            margin-bottom: 0.4rem;
         }
 
         .hero-title span {
-            color: #c7ff4f;
+            color: #047637;
+            display: block;
+            font-size: 0.85em;
+            line-height: 1.2;
+            margin-top: 0.35rem;
         }
 
         .hero-description {
-            font-size: 1rem;
-            max-width: 640px;
-            margin: 1.2rem 0 1.7rem;
-            color: rgba(255,255,255,0.92);
-            line-height: 1.85;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, .24);
-            text-align: left;
+            display: none;
         }
 
         .hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            align-items: center;
-            margin-top: 1.5rem;
+            display: none;
         }
 
         .hero-actions .btn {
-            min-width: 170px;
-            padding: 14px 24px;
-            font-size: 1rem;
+            min-width: 150px;
+            padding: 12px 20px;
+            font-size: .95rem;
             font-weight: 700;
             border-radius: 999px;
         }
@@ -155,6 +162,7 @@
             background-color: #d9f99d;
             border-color: #d9f99d;
             color: #0f172a;
+            box-shadow: 0 18px 35px rgba(16, 185, 129, .18);
         }
 
         .hero-actions .btn-success:hover {
@@ -208,15 +216,17 @@
 
         .home-page-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 340px;
-            gap: 32px;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 28px;
             align-items: start;
             margin-top: 40px;
         }
 
         .home-sidebar {
             display: grid;
-            gap: 20px;
+            gap: 12px;
+            align-items: flex-start;
+            max-width: 100%;
         }
 
         @media (max-width: 1140px) {
@@ -359,26 +369,28 @@
         .home-sidebar .sidebar-card {
             background: rgba(237, 253, 245, .95);
             border: 1px solid rgba(16, 185, 129, .18);
-            border-radius: 24px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 16px;
             transition: transform .2s ease, box-shadow .2s ease;
         }
 
         .home-sidebar .sidebar-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 18px 35px rgba(16, 185, 129, .14);
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(16, 185, 129, .1);
         }
 
         .home-sidebar .sidebar-card h3 {
             margin-top: 0;
-            margin-bottom: 0.75rem;
-            font-size: 1.05rem;
+            margin-bottom: 0.55rem;
+            font-size: 1rem;
             color: #0f5132;
         }
 
         .home-sidebar .sidebar-card p {
             margin-bottom: 0;
             color: #475569;
+            font-size: .95rem;
+            line-height: 1.6;
         }
 
         .home-sidebar .sidebar-card .card-icon {
@@ -422,16 +434,19 @@
         }
 
         .home-sidebar .sidebar-cta {
-            display: grid;
-            gap: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             margin-top: 0;
         }
 
         .home-sidebar .sidebar-cta .btn {
             width: 100%;
-            padding: 14px 18px;
+            padding: 10px 16px;
             font-weight: 700;
-            border-radius: 16px;
+            border-radius: 14px;
+            min-height: auto;
+            font-size: .95rem;
         }
 
         .home-sidebar .sidebar-cta .btn-outline-success {
@@ -711,6 +726,87 @@
             box-shadow: 0 28px 60px rgba(15, 23, 42, .16);
         }
 
+        .news-highlight-card {
+            background: rgba(237, 253, 245, .95);
+            border: 1px solid rgba(16, 185, 129, .18);
+            border-radius: 24px;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .news-highlight-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 35px rgba(16, 185, 129, .14);
+        }
+
+        .news-highlight-card .card-body {
+            padding: 0.9rem 0.95rem 0.9rem 0.95rem;
+        }
+
+        .news-highlight-card .news-thumb {
+            width: 72px;
+            height: 72px;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: #f8faf7;
+        }
+
+        .news-highlight-card .news-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .news-highlight-card .news-icon {
+            min-width: 40px;
+            width: 40px;
+            height: 40px;
+            border-radius: 16px;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .news-highlight-card .news-card-meta {
+            color: #065f46;
+            font-size: .82rem;
+            font-weight: 700;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+
+        .news-highlight-card .news-card-title {
+            font-size: 1.03rem;
+            font-weight: 800;
+            margin-bottom: .55rem;
+            color: #0f172a;
+            letter-spacing: -.02em;
+        }
+
+        .news-highlight-card .news-card-text {
+            margin-bottom: .75rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .news-highlight-card a {
+            font-size: .95rem;
+        }
+
+        .contact-line {
+            gap: 0.9rem;
+        }
+
+        .contact-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .contact-card .card-body {
+            padding: 1rem 1rem 1rem 1rem;
+        }
+
         .news-card img {
             height: 240px;
             object-fit: cover;
@@ -948,11 +1044,46 @@
             padding: 1.5rem;
             background: #ffffff;
             transition: transform .2s ease, box-shadow .2s ease;
+            min-height: 210px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            min-width: 0;
+            text-align: left;
+            white-space: normal;
         }
 
         .feature-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 50px rgba(15, 23, 42, .1);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, .12);
+        }
+
+        .feature-card h5 {
+            margin-bottom: 0.75rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            writing-mode: horizontal-tb;
+            text-orientation: mixed;
+        }
+
+        .feature-card p {
+            margin-bottom: 0;
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            writing-mode: horizontal-tb;
+            text-orientation: mixed;
+        }
+
+        .feature-card .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+            min-width: 0;
         }
 
         .feature-icon {
@@ -1045,11 +1176,19 @@
 
         @media (max-width: 768px) {
             .hero-title {
-                font-size: 36px;
+                font-size: 32px;
+            }
+
+            .hero-description {
+                font-size: .95rem;
+            }
+
+            .hero-actions {
+                gap: 10px;
             }
 
             .hero-content {
-                padding: 55px 0;
+                padding: 35px 0;
             }
         }
 
@@ -1288,52 +1427,10 @@
     <section class="hero-section">
         <div class="container hero-content">
             <div class="hero-text-wrap">
-                <div class="hero-top-logo mb-4">
-                    <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC" />
-                    <span>Đặt sân trực tuyến nhanh, linh hoạt và an toàn</span>
-                </div>
-
-                <div class="hero-badge mb-4">
-                    <span class="badge-circle">⚽</span>
-                    <span class="badge-text">Đặt sân trực tuyến #1</span>
-                </div>
-
-                <h1 class="hero-title mb-3">
+                <h1 class="hero-title mb-0">
                     Đặt sân bóng<br>
                     <span>chưa bao giờ dễ đến thế</span>
                 </h1>
-
-                <p class="hero-description mb-4">
-                    Đặt sân 5 • 7 • 11 người<br>
-                    Kiểm tra lịch trống theo thời gian thực<br>
-                    Thanh toán an toàn - Xác nhận tức thì
-                </p>
-
-                <div class="hero-actions">
-                    <a href="#stadiums" class="btn btn-success btn-lg shadow-sm">Tìm sân ngay</a>
-                    <a href="#about" class="btn btn-outline-light btn-lg">Tìm hiểu dịch vụ</a>
-                </div>
-
-                <div class="hero-divider"></div>
-
-                <div class="hero-stat-grid mt-4">
-                    <div class="hero-stat-item">
-                        <span class="hero-stat-icon">⚽</span>
-                        <span>Sân đạt chuẩn</span>
-                    </div>
-                    <div class="hero-stat-item">
-                        <span class="hero-stat-icon">⚡</span>
-                        <span>Đặt trong 30 giây</span>
-                    </div>
-                    <div class="hero-stat-item">
-                        <span class="hero-stat-icon">⭐</span>
-                        <span>4.9/5 đánh giá</span>
-                    </div>
-                    <div class="hero-stat-item">
-                        <span class="hero-stat-icon">🛡</span>
-                        <span>Thanh toán an toàn</span>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
