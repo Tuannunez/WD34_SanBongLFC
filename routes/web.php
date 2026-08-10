@@ -264,9 +264,6 @@ Route::prefix('admin')
             ->whereNumber('field')
             ->name('stadiums.fields.destroy');
 
-        Route::get('time-slots', [TimeSlotsController::class, 'index'])
-            ->name('time-slots.index');
-
         Route::get('time-slots/{stadium}', [TimeSlotsController::class, 'show'])
             ->whereNumber('stadium')
             ->name('time-slots.show');
@@ -294,6 +291,19 @@ Route::prefix('admin')
             ->whereNumber('stadium')
             ->whereNumber('timeSlot')
             ->name('time-slots.destroy');
+
+        Route::post('time-slots/{stadium}/bulk-update-prices', [TimeSlotsController::class, 'bulkUpdatePrices'])
+            ->whereNumber('stadium')
+            ->name('time-slots.bulk-update-prices');
+
+        Route::get('time-slots/{stadium}/export', [TimeSlotsController::class, 'exportPrices'])
+            ->whereNumber('stadium')
+            ->name('time-slots.export');
+
+        Route::put('time-slots/{timeSlot}/info', [TimeSlotsController::class, 'updateTimeSlotInfo'])
+            ->whereNumber('timeSlot')
+            ->name('time-slots.info.update');
+
 
         Route::get('stadiums/{stadium}/prices', [StadiumsController::class, 'prices'])
             ->whereNumber('stadium')

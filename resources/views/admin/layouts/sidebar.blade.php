@@ -107,8 +107,8 @@
                 Sân bóng
             </a>
 
-            <a href="{{ url('/admin/time-slots') }}"
-                class="sidebar-link ps-5 {{ request()->is('admin/time-slots*') ? 'active':'' }}">
+            <a href="{{ url('/admin/time-slots/4') }}"
+                class="sidebar-link ps-5 {{ request()->is('admin/time-slots/4*') ? 'active':'' }}">
                 <i class="bi bi-clock"></i>
                 Khung giờ
             </a>
@@ -287,14 +287,6 @@
             >
                 <i class="bi bi-map"></i>
                 <span>Sân bóng</span>
-            </a>
-
-            <a
-                href="{{ route('admin.time-slots.index') }}"
-                class="sidebar-link ps-5 {{ request()->routeIs('admin.time-slots.*') ? 'active' : '' }}"
-            >
-                <i class="bi bi-clock"></i>
-                <span>Khung giờ</span>
             </a>
 
             @if(\Illuminate\Support\Facades\Route::has('admin.field-images.index'))
