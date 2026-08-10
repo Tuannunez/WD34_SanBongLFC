@@ -33,14 +33,11 @@
 
                         <th width="120">Hình ảnh</th>
 
-                        <th>Tên sân</th>
+                        <th>Tên cơ sở sân</th>
 
                         
                         <th>Giờ hoạt động</th>
-
-                        <th>Khung Giờ Đặc Biệt</th>
                         <th width="180">Thao tác</th>
-
                     </tr>
 
                 </thead>
@@ -126,7 +123,7 @@
 
                     <tr>
 
-                        <td colspan="10" class="text-center text-danger">
+                        <td colspan="9" class="text-center text-danger">
 
                             Chưa có dữ liệu sân bóng.
 
