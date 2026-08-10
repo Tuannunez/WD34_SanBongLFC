@@ -90,24 +90,6 @@
                        
 
                         <td class="text-center">
-                            @php
-                                $specialCount = 0;
-                                try {
-                                    if (\Illuminate\Support\Facades\Schema::hasTable('stadium_time_slot_prices')) {
-                                        $specialCount = \App\Models\StadiumTimeSlotPrice::where('stadium_id', $stadium->id)->count();
-                                    }
-                                } catch (\Throwable $e) {
-                                    $specialCount = 0;
-                                }
-                            @endphp
-
-                            <a href="{{ url('admin/stadiums/' . $stadium->id . '/prices') }}" class="btn btn-primary btn-sm mb-1">
-                                Quản lý Giá ({{ $specialCount }})
-                            </a>
-
-                        </td>
-
-                        <td class="text-center">
 
                             <a href="{{ route('admin.stadiums.show',$stadium->id) }}"
                                class="btn btn-info btn-sm me-1">

@@ -14,7 +14,6 @@
                 </div>
                 <div class="btn-group">
                     <a href="{{ route('admin.stadiums.index') }}" class="btn btn-secondary">Quay lại</a>
-                    <a href="{{ route('admin.stadiums.prices.index', $stadium->id) }}" class="btn btn-info">Giá sân</a>
                     <a href="{{ route('admin.time-slots.export', $stadium->id) }}" class="btn btn-success">Xuất Excel</a>
                 </div>
             </div>

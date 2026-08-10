@@ -304,24 +304,6 @@ Route::prefix('admin')
             ->whereNumber('timeSlot')
             ->name('time-slots.info.update');
 
-
-        Route::get('stadiums/{stadium}/prices', [StadiumsController::class, 'prices'])
-            ->whereNumber('stadium')
-            ->name('stadiums.prices.index');
-
-        Route::post('stadiums/{stadium}/prices', [StadiumsController::class, 'storePrices'])
-            ->whereNumber('stadium')
-            ->name('stadiums.prices.store');
-
-        Route::post('stadiums/{stadium}/prices/custom', [StadiumsController::class, 'storeCustom'])
-            ->whereNumber('stadium')
-            ->name('stadiums.prices.custom.store');
-
-        Route::delete('stadiums/{stadium}/prices/custom/{slot}', [StadiumsController::class, 'destroyCustom'])
-            ->whereNumber('stadium')
-            ->whereNumber('slot')
-            ->name('stadiums.prices.custom.destroy');
-
         Route::resource('field-types', FieldTypeController::class);
 
         Route::get('fields', [FieldController::class, 'index'])
