@@ -157,6 +157,8 @@ class TimeSlotsController extends Controller
         $data = $request->validate([
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
+            'prices' => 'nullable|array',
+            'prices.*' => 'nullable|numeric|min:0',
         ]);
 
         $start = $data['start_time'];
@@ -179,7 +181,7 @@ class TimeSlotsController extends Controller
                 ->withErrors(['start_time' => 'Khung giờ không được trùng hoặc chồng lên khung giờ hiện có.']);
         }
 
-        if (!$timeSlot) {
+        if (! $timeSlot) {
             $timeSlotId = \Illuminate\Support\Facades\DB::table('time_slots')->insertGetId([
                 'start_time' => $startFull,
                 'end_time' => $endFull,
@@ -191,8 +193,32 @@ class TimeSlotsController extends Controller
             $timeSlot = TimeSlot::find($timeSlotId);
         }
 
+        if (! empty($data['prices']) && is_array($data['prices'])) {
+            $fieldIds = $stadium->fields()->where('status', true)->pluck('id')->toArray();
+
+            foreach ($data['prices'] as $fieldId => $priceValue) {
+                if (! in_array($fieldId, $fieldIds, true)) {
+                    continue;
+                }
+
+                if ($priceValue === null || $priceValue === '') {
+                    FieldTimeSlotPrice::where('field_id', $fieldId)
+                        ->where('time_slot_id', $timeSlot->id)
+                        ->delete();
+                } else {
+                    FieldTimeSlotPrice::updateOrCreate(
+                        [
+                            'field_id' => $fieldId,
+                            'time_slot_id' => $timeSlot->id,
+                        ],
+                        ['price' => (float) $priceValue]
+                    );
+                }
+            }
+        }
+
         return redirect()->route('admin.time-slots.show', $stadium->id)
-            ->with('success', 'Đã thêm khung giờ thành công.');
+            ->with('success', 'Đã thêm khung giờ và giá cho sân con thành công.');
     }
 
     public function destroy($stadiumId, $timeSlotId)
