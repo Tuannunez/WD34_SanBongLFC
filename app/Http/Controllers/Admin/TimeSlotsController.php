@@ -13,7 +13,9 @@ use App\Models\FieldTypeBasePrice;
 use App\Models\TimeSlotSurcharge;
 use App\Models\FieldType;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 class TimeSlotsController extends Controller
 {
     public function index()
@@ -619,7 +621,7 @@ class TimeSlotsController extends Controller
         $timeSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
         $fields = $stadium->fields()->where('status', true)->with('fieldType')->get();
 
-        $fileName = 'gia-' . str_slug($stadium->name) . '-' . now()->format('Y-m-d-Hi') . '.csv';
+        $fileName = 'gia-' . Str::slug($stadium->name) . '-' . now()->format('Y-m-d-Hi') . '.csv';
         
         $callback = function () use ($stadium, $timeSlots, $fields) {
             $file = fopen('php://output', 'w');
