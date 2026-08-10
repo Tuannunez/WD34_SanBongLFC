@@ -118,12 +118,15 @@
         .header-menu .nav-link.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 3px; border-radius: 999px; background: #22c55e; }
         .header-menu .nav-link:hover { color: #fff; }
         .header-actions { display: flex; align-items: center; gap: 12px; }
+        .header-actions .btn { color: #fff; }
         .icon-btn { width: 48px; height: 48px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #fff; display: inline-flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
         .icon-btn .badge { position: absolute; top: 8px; right: 8px; min-width: 18px; height: 18px; border-radius: 999px; background: #22c55e; color: #000; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; font-weight: 700; }
         .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; border: 1px solid transparent; padding: 12px 20px; font-weight: 700; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; text-decoration: none; }
         .btn-primary { background: #047637; color: #fff; border-color: #047637; }
-        .btn-secondary { background: transparent; color: #fff; border-color: rgba(255,255,255,0.18); }
-        .btn-outline-blue { background: rgba(255,255,255,0.09); color: #eff6ff; border-color: rgba(255,255,255,0.16); }
+        .btn-secondary { background: #22c55e; color: #fff; border-color: #22c55e; box-shadow: 0 12px 30px rgba(34, 197, 94, 0.18); }
+        .btn-secondary:hover { background: #16a34a; color: #fff; }
+        .btn-outline-blue { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25); }
+        .btn-outline-blue:hover { background: rgba(255,255,255,0.18); color: #fff; }
         .btn-white { background: #fff; color: #111827; border-color: transparent; }
         .banner { background: linear-gradient(180deg, rgba(255,255,255,0.38), rgba(255,255,255,0.12)), url('/images/banner1.png') no-repeat center/cover; background-blend-mode: lighten; filter: brightness(1.12); color: #fff; padding: 96px 30px 64px; overflow: hidden; position: relative; }
         .banner::after { content: ''; position: absolute; right: -120px; top: -30px; width: 520px; height: 520px; background: rgba(255,255,255,0.12); border-radius: 50%; }
