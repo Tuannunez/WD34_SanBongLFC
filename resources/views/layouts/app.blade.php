@@ -55,23 +55,65 @@
 
         .hero-section {
             position: relative;
-            height: 550px;
-            min-height: 420px;
-            max-height: 550px;
-            background: url('/images/banner1.png') center center / cover no-repeat;
+            min-height: 550px;
+            max-height: 560px;
             color: #0f172a;
             overflow: hidden;
-            padding: 20px 0 16px;
+            padding: 0;
             display: flex;
             align-items: center;
             justify-content: flex-start;
+        }
+
+        .hero-slides {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            background-color: #0d311b;
+        }
+
+        .hero-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center center;
+            opacity: 0;
+            animation: heroSlide 18s infinite linear;
+            animation-fill-mode: both;
+            will-change: opacity, transform;
+            transform: translateZ(0);
+            filter: brightness(1.03) contrast(1.06) saturate(1.08);
+            background-attachment: scroll;
+            backface-visibility: hidden;
+        }
+
+        .hero-slide.slide1 {
+            background-image: url('/images/banner1.png');
+            animation-delay: 0s;
+        }
+
+        .hero-slide.slide2 {
+            background-image: url('/images/banner2.png');
+            animation-delay: 6s;
+        }
+
+        .hero-slide.slide3 {
+            background-image: url('/images/banner3.png');
+            animation-delay: 12s;
+        }
+
+        @keyframes heroSlide {
+            0%, 10% { opacity: 0; }
+            15%, 30% { opacity: 1; }
+            32%, 100% { opacity: 0; }
         }
 
         .hero-section::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0);
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.02));
             pointer-events: none;
         }
 
@@ -104,11 +146,12 @@
             max-width: 680px;
             margin: 0;
             text-align: left;
-            padding: 32px 28px;
-            background: rgba(255, 255, 255, .45);
+            padding: 28px 24px;
+            background: rgba(255, 255, 255, .32);
             border-radius: 24px;
             box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, .45);
         }
 
         .hero-badge {
@@ -1425,6 +1468,12 @@
 
 @if(request()->routeIs('home'))
     <section class="hero-section">
+        <div class="hero-slides">
+            <div class="hero-slide slide1"></div>
+            <div class="hero-slide slide2"></div>
+            <div class="hero-slide slide3"></div>
+        </div>
+
         <div class="container hero-content">
             <div class="hero-text-wrap">
                 <h1 class="hero-title mb-0">
