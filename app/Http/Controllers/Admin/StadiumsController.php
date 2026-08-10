@@ -7,8 +7,6 @@ use App\Models\Stadium;
 use App\Models\Field;
 use App\Models\Service;
 use App\Models\TimeSlot;
-use App\Models\StadiumTimeSlotPrice;
-use App\Models\StadiumSpecialTimeSlot;
 use App\Models\FieldType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -232,70 +230,6 @@ class StadiumsController extends Controller
 
         return redirect()->route('admin.stadiums.show', $stadium->id)
             ->with('success', 'Xóa sân con thành công.');
-    }
-
-    public function prices($id)
-    {
-        $stadium = Stadium::findOrFail($id);
-
-        $timeSlots = TimeSlot::where('status', true)->orderBy('start_time')->get();
-
-        $existing = StadiumTimeSlotPrice::where('stadium_id', $stadium->id)
-            ->pluck('price', 'time_slot_id')
-            ->toArray();
-
-        $customSlots = StadiumSpecialTimeSlot::where('stadium_id', $stadium->id)
-            ->orderBy('start_time')
-            ->get();
-
-        return view('admin.stadiums.prices', compact('stadium', 'timeSlots', 'existing', 'customSlots'));
-    }
-
-    public function storeCustom(Request $request, $id)
-    {
-        $stadium = Stadium::findOrFail($id);
-
-        $data = $request->validate([
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'price' => 'required',
-        ]);
-
-        StadiumSpecialTimeSlot::create([
-            'stadium_id' => $stadium->id,
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'price' => (float) preg_replace('/[^0-9.]/', '', (string) $data['price']),
-        ]);
-
-        return redirect(url('admin/stadiums/' . $stadium->id . '/prices'))->with('success', 'Thêm khung giờ đặc biệt thành công.');
-    }
-
-    public function destroyCustom($stadiumId, $slotId)
-    {
-        $slot = StadiumSpecialTimeSlot::where('stadium_id', $stadiumId)->where('id', $slotId)->firstOrFail();
-        $slot->delete();
-
-        return redirect(url('admin/stadiums/' . $stadiumId . '/prices'))->with('success', 'Xóa khung giờ đặc biệt thành công.');
-    }
-
-    public function storePrices(Request $request, $id)
-    {
-        $stadium = Stadium::findOrFail($id);
-
-        $prices = $request->input('prices', []);
-
-        foreach ($prices as $timeSlotId => $value) {
-            $price = (float) preg_replace('/[^0-9.]/', '', (string) $value);
-
-            StadiumTimeSlotPrice::updateOrCreate(
-                ['stadium_id' => $stadium->id, 'time_slot_id' => $timeSlotId],
-                ['price' => $price]
-            );
-        }
-
-        return redirect(url('admin/stadiums/' . $stadium->id . '/prices'))
-            ->with('success', 'Cập nhật giá theo khung giờ thành công.');
     }
 
     public function edit(Stadium $stadium)
