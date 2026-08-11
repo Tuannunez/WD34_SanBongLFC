@@ -54,8 +54,8 @@
                                     <div class="mt-auto">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
+                                                <small class="text-muted">Giá chỉ từ</small>
                                                 <div class="h5 mb-0 text-success">{{ number_format((float) $price, 0, ',', '.') }}đ</div>
-                                                <small class="text-muted">Giá tham khảo</small>
                                             </div>
                                             
                                             {{-- NÚT NỔI POP-UP CHỌN HÌNH THỨC ĐẶT --}}
