@@ -58,7 +58,6 @@
                                                 <div class="h5 mb-0 text-success">{{ number_format((float) $price, 0, ',', '.') }}đ</div>
                                             </div>
                                             
-                                            {{-- NÚT NỔI POP-UP CHỌN HÌNH THỨC ĐẶT --}}
                                             <button type="button" 
                                                     class="btn btn-success rounded-3 px-3 py-2 fw-bold shadow-sm" 
                                                     data-bs-toggle="modal" 
@@ -75,7 +74,6 @@
                             </div>
                         </div>
 
-                        {{-- MODAL POP-UP HỎI CHỌN ĐẶT THEO NGÀY HOẶC THEO THÁNG --}}
                         <div class="modal fade text-start" id="chooseBookingTypeModal{{ $field->id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -91,7 +89,6 @@
                                         <p class="text-secondary small mb-3 text-center">Vui lòng chọn hình thức đặt sân phù hợp với nhu cầu của bạn:</p>
 
                                         <div class="d-grid gap-3">
-                                            {{-- 1. ĐẶT LẺ: DẪN ĐẾN TRANG CHI TIẾT SÂN BÌNH THƯỜNG --}}
                                             <a href="{{ route('stadiums.show', ['id' => $stadiumId, 'field' => $field->id]) }}" 
                                                class="btn btn-white border border-2 border-primary-subtle rounded-4 p-3 text-start shadow-sm d-flex align-items-center justify-content-between text-decoration-none">
                                                 <div>
@@ -103,7 +100,6 @@
                                                 <i class="bi bi-chevron-right text-primary fs-5 ms-2"></i>
                                             </a>
 
-                                            {{-- 2. ĐẶT THÁNG: DẪN ĐẾN TRANG THIẾT KẾ RIÊNG BÊN DƯỚI --}}
                                             <a href="{{ route('user.bookings.createMonthly', ['stadium' => $stadiumId, 'field' => $field->id]) }}" 
                                                class="btn btn-white border border-2 border-success-subtle rounded-4 p-3 text-start shadow-sm d-flex align-items-center justify-content-between text-decoration-none">
                                                 <div>
@@ -122,6 +118,12 @@
 
                     @endforeach
                 </div>
+
+                @if(method_exists($fields, 'links'))
+                    <div class="mt-4 d-flex justify-content-center">
+                        {{ $fields->links('vendor.pagination.no-arrows') }}
+                    </div>
+                @endif
             </div>
         </section>
     @endif
@@ -349,12 +351,6 @@
             </div>
         </section>
 
-        @if(method_exists($fields, 'links'))
-            <div class="mt-4">
-                {{ $fields->links() }}
-            </div>
-        @endif
-        
         <div class="container-fluid bg-light py-4 mt-4" id="services-full">
             <div class="container">
                 <div class="mb-3">

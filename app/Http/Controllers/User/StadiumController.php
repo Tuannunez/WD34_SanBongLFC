@@ -24,7 +24,7 @@ class StadiumController extends Controller
     // Trang chủ
     public function index(Request $request)
     {
-        $data = $this->loadFieldsWithSchedule($request);
+        $data = $this->loadFieldsWithSchedule($request, 3);
 
         return view('user.stadiums.index', $data);
     }
@@ -36,12 +36,12 @@ class StadiumController extends Controller
         return view('user.stadiums.list', $data);
     }
 
-    private function loadFieldsWithSchedule(Request $request): array
+    private function loadFieldsWithSchedule(Request $request, int $perPage = null): array
     {
         $keyword = $request->keyword;
         $fieldTypeId = $request->input('field_type');
 
-        $fields = Field::query()
+        $query = Field::query()
             ->with([
                 'stadium',
                 'fieldType',
@@ -60,8 +60,9 @@ class StadiumController extends Controller
             ->when($fieldTypeId, function ($query) use ($fieldTypeId) {
                 $query->where('field_type_id', $fieldTypeId);
             })
-            ->latest()
-            ->get();
+            ->latest();
+
+        $fields = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
 
         $timeSlots = TimeSlot::where('status', true)
             ->orderBy('start_time')
