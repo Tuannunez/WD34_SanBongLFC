@@ -33,7 +33,6 @@
     <section class="banner">
         <div class="hero">
             <span class="hero-badge">Đặt sân trực tuyến #1</span>
-            <h1 class="hero-title">Đặt sân bóng <span class="highlight">chưa bao giờ dễ đến thế</span></h1>
             <div class="hero-info">
                 <div class="info-item">Đặt sân 5 · 7 · 11 người</div>
                 <div class="info-item">Kiểm tra lịch trống theo thời gian thực</div>
@@ -128,8 +127,8 @@
         .btn-outline-blue { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25); }
         .btn-outline-blue:hover { background: rgba(255,255,255,0.18); color: #fff; }
         .btn-white { background: #fff; color: #111827; border-color: transparent; }
-        .banner { background: linear-gradient(180deg, rgba(255,255,255,0.38), rgba(255,255,255,0.12)), url('/images/banner1.png') no-repeat center/cover; background-blend-mode: lighten; filter: brightness(1.12); color: #fff; padding: 96px 30px 64px; overflow: hidden; position: relative; }
-        .banner::after { content: ''; position: absolute; right: -120px; top: -30px; width: 520px; height: 520px; background: rgba(255,255,255,0.12); border-radius: 50%; }
+        .banner { background: url('/images/banner1.png') no-repeat center/cover; filter: brightness(1.05); color: #fff; padding: 96px 30px 64px; overflow: hidden; position: relative; }
+        .banner::after { display: none; }
         .hero { max-width: 760px; margin: 0; position: relative; z-index: 1; text-align: left; }
         .hero-badge { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18); color: #e7f7ee; font-size: 13px; margin-bottom: 26px; }
         .hero-title { font-size: clamp(3rem, 4vw, 4.5rem); line-height: 1.02; margin-bottom: 24px; font-weight: 900; }

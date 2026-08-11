@@ -55,8 +55,8 @@
 
         .hero-section {
             position: relative;
-            min-height: 550px;
-            max-height: 560px;
+            min-height: 420px;
+            height: 420px;
             color: #0f172a;
             overflow: hidden;
             padding: 0;
@@ -70,7 +70,7 @@
             inset: 0;
             overflow: hidden;
             z-index: 0;
-            background-color: #0d311b;
+            background: transparent;
         }
 
         .hero-slide {
@@ -79,42 +79,43 @@
             background-size: cover;
             background-position: center center;
             opacity: 0;
-            animation: heroSlide 18s infinite linear;
-            animation-fill-mode: both;
-            will-change: opacity, transform;
-            transform: translateZ(0);
-            filter: brightness(1.03) contrast(1.06) saturate(1.08);
+            transition: opacity 1.4s ease-in-out;
+            will-change: opacity;
+            filter: brightness(1.04) contrast(1.08) saturate(1.08);
             background-attachment: scroll;
             backface-visibility: hidden;
+            z-index: 0;
+        }
+
+        .hero-slide.active {
+            opacity: 1;
         }
 
         .hero-slide.slide1 {
             background-image: url('/images/banner1.png');
-            animation-delay: 0s;
         }
 
         .hero-slide.slide2 {
             background-image: url('/images/banner2.png');
-            animation-delay: 6s;
         }
 
         .hero-slide.slide3 {
             background-image: url('/images/banner3.png');
-            animation-delay: 12s;
-        }
-
-        @keyframes heroSlide {
-            0%, 10% { opacity: 0; }
-            15%, 30% { opacity: 1; }
-            32%, 100% { opacity: 0; }
         }
 
         .hero-section::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.02));
+            background: none;
             pointer-events: none;
+        }
+
+        .hero-text-wrap {
+            background: transparent;
+            box-shadow: none;
+            border: none;
+            padding: 0;
         }
 
         .about-banner,
@@ -143,15 +144,7 @@
         }
 
         .hero-text-wrap {
-            max-width: 680px;
-            margin: 0;
-            text-align: left;
-            padding: 28px 24px;
-            background: rgba(255, 255, 255, .32);
-            border-radius: 24px;
-            box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, .45);
+            display: none;
         }
 
         .hero-badge {
@@ -1474,18 +1467,9 @@
 @if(request()->routeIs('home'))
     <section class="hero-section">
         <div class="hero-slides">
-            <div class="hero-slide slide1"></div>
+            <div class="hero-slide slide1 active"></div>
             <div class="hero-slide slide2"></div>
             <div class="hero-slide slide3"></div>
-        </div>
-
-        <div class="container hero-content">
-            <div class="hero-text-wrap">
-                <h1 class="hero-title mb-0">
-                    Đặt sân bóng<br>
-                    <span>chưa bao giờ dễ đến thế</span>
-                </h1>
-            </div>
         </div>
     </section>
 
@@ -1663,6 +1647,24 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const slides = Array.from(document.querySelectorAll('.hero-slide'));
+        if (!slides.length) return;
+
+        let activeIndex = slides.findIndex(slide => slide.classList.contains('active'));
+        if (activeIndex < 0) {
+            activeIndex = 0;
+            slides[0].classList.add('active');
+        }
+
+        setInterval(() => {
+            slides[activeIndex].classList.remove('active');
+            activeIndex = (activeIndex + 1) % slides.length;
+            slides[activeIndex].classList.add('active');
+        }, 6000);
+    });
+</script>
 
 @stack('scripts')
 
