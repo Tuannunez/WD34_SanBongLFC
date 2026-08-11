@@ -11,6 +11,7 @@ use App\Models\Review;
 use App\Models\Service;
 use App\Models\StadiumTimeSlotPrice;
 use App\Models\StadiumSpecialTimeSlot;
+use App\Models\FieldTimeSlotPrice;
 use App\Models\TimeSlot;
 use App\Models\News;
 use Carbon\Carbon;
@@ -66,6 +67,13 @@ class StadiumController extends Controller
             ->orderBy('start_time')
             ->get();
 
+        $fieldSlotPrices = FieldTimeSlotPrice::whereIn('field_id', $fields->pluck('id'))
+            ->whereNotNull('price')
+            ->where('price', '>', 0)
+            ->get()
+            ->groupBy('field_id')
+            ->map(fn ($items) => $items->min('price'));
+
         $dates = collect(range(0, 6))->map(fn ($offset) => Carbon::today()->addDays($offset));
 
         $bookingMap = DB::table('booking_details as bd')
@@ -76,10 +84,10 @@ class StadiumController extends Controller
             ->get()
             ->groupBy(fn ($item) => $item->field_id . '-' . $item->booking_date . '-' . $item->time_slot_id);
 
-        $fields->each(function (Field $field) use ($timeSlots, $bookingMap, $dates) {
+        $fields->each(function (Field $field) use ($timeSlots, $bookingMap, $dates, $fieldSlotPrices) {
             $field->setAttribute(
                 'display_price',
-                $this->calculateSlotPrice($field, '06:00:00')
+                $fieldSlotPrices[$field->id] ?? $this->calculateSlotPrice($field, '06:00:00')
             );
 
             $field->setAttribute('scheduleDates', $dates->map(function (Carbon $date) use ($field, $timeSlots, $bookingMap) {
@@ -407,7 +415,7 @@ class StadiumController extends Controller
 
         $players ??= $field->fieldType?->number_of_players ?? null;
 
-        $basePrice = [7 => 350000, 9 => 400000, 11 => 500000][$players]
+        $basePrice = [7 => 400000, 9 => 450000, 11 => 500000][$players]
             ?? (float) ($field->price_per_hour ?? 0);
 
         return $basePrice + ((int) substr((string) $startTime, 0, 2) >= 18 ? 100000 : 0);
