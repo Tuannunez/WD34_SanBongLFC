@@ -78,10 +78,13 @@
             inset: 0;
             background-size: cover;
             background-position: center center;
+            background-repeat: no-repeat;
             opacity: 0;
             transition: opacity 1.4s ease-in-out;
-            will-change: opacity;
+            will-change: opacity, transform;
             filter: brightness(1.04) contrast(1.08) saturate(1.08);
+            transform: scale(1.06);
+            transform-origin: center center;
             background-attachment: scroll;
             backface-visibility: hidden;
             z-index: 0;
