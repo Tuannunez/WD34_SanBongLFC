@@ -129,6 +129,89 @@
             background-blend-mode: multiply;
         }
 
+        .about-hero {
+            min-height: 420px;
+            height: 420px;
+            position: relative;
+            background: linear-gradient(90deg, rgba(5, 37, 25, 0.72), rgba(5, 75, 34, 0.35)), url('/images/banner1.png') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 30px;
+            overflow: hidden;
+        }
+
+        .about-hero .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .about-hero .hero-content {
+            max-width: 760px;
+            text-align: left;
+            color: #ffffff;
+            padding: 0;
+            margin: 0;
+        }
+
+        .about-hero .hero-text-wrap {
+            display: block;
+            max-width: 760px;
+        }
+
+        .about-hero .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #e7f7ee;
+            font-size: 13px;
+            margin-bottom: 26px;
+        }
+
+        .about-hero .hero-title {
+            color: #ffffff;
+            text-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            margin-bottom: 18px;
+            font-size: clamp(2.6rem, 4vw, 4.2rem);
+            line-height: 1.05;
+            font-weight: 900;
+        }
+
+        .about-hero .lead {
+            color: rgba(255,255,255,0.92) !important;
+            font-size: 1.08rem;
+            line-height: 1.8;
+            max-width: 620px;
+            margin-bottom: 28px !important;
+        }
+
+        .about-hero .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .about-hero .hero-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.92);
+            font-size: 15px;
+        }
+
+        .about-hero .hero-meta-item::before {
+            content: '•';
+            color: #22c55e;
+            font-size: 20px;
+            line-height: 1;
+        }
+
         .news-hero {
             min-height: 420px;
             padding-top: 100px;
@@ -147,7 +230,7 @@
         }
 
         .hero-text-wrap {
-            display: none;
+            display: block;
         }
 
         .hero-badge {
@@ -1521,13 +1604,20 @@
     </main>
 @elseif(request()->routeIs('about'))
     <section class="hero-section about-hero">
-        <div class="container hero-content text-center">
-            <div class="hero-text-wrap mx-auto" style="max-width: 780px;">
-                <h1 class="hero-title mb-3">Giới thiệu cơ sở sân bóng LFC</h1>
-                <p class="lead mb-4">
-                    Tìm hiểu về LFC, dịch vụ đặt sân chuyên nghiệp và tiện ích tại cơ sở sân bóng của chúng tôi ở Hoài Đức, Hà Nội.
-                </p>
-                <img src="{{ asset('images/logo.png') }}" alt="SanBongLFC Logo" class="img-fluid mx-auto" style="max-width: 180px; object-fit: contain;" />
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text-wrap">
+                    <span class="hero-badge">Đặt sân trực tuyến #1</span>
+                    <h1 class="hero-title">Giới thiệu cơ sở sân bóng LFC</h1>
+                    <p class="lead mb-4">
+                        Tìm hiểu về LFC, dịch vụ đặt sân chuyên nghiệp và tiện ích tại cơ sở sân bóng của chúng tôi ở Hoài Đức, Hà Nội.
+                    </p>
+                    <div class="hero-meta">
+                        <span class="hero-meta-item">Sân cỏ chất lượng cao</span>
+                        <span class="hero-meta-item">Đặt sân nhanh chóng</span>
+                        <span class="hero-meta-item">Hỗ trợ chuyên nghiệp</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
