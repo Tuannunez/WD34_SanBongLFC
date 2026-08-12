@@ -216,6 +216,8 @@
             min-height: 420px;
             padding-top: 100px;
             padding-bottom: 90px;
+            background: linear-gradient(180deg, rgba(4, 25, 18, 0.78), rgba(7, 57, 42, 0.62)), url('/images/banner1.png') center/cover no-repeat;
+            color: #ffffff;
         }
 
         .hero-content {
@@ -585,11 +587,18 @@
             max-width: 860px;
             margin: 0 auto;
             text-align: center;
+            color: #ffffff;
         }
 
         .news-hero h1,
-        .news-hero p {
+        .news-hero p,
+        .news-hero .news-banner-label {
+            color: #ffffff;
             text-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+        }
+
+        .news-hero p {
+            color: rgba(255,255,255,0.92);
         }
 
         .news-banner-label {
@@ -599,7 +608,7 @@
             padding: 10px 18px;
             background: rgba(255, 255, 255, .12);
             border-radius: 999px;
-            color: #d1fae5;
+            color: #ffffff;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
