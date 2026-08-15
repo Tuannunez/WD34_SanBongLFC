@@ -323,12 +323,37 @@ Route::prefix('admin')
         Route::resource('services', AdminServiceController::class);
         Route::resource('booking-services', BookingServiceController::class);
 
-        Route::get('bookings/check-in', [BookingCheckInScannerController::class, 'index'])
-            ->name('bookings.check-in.index');
+        /*
+        |--------------------------------------------------------------------------
+        | Booking QR / Check-in Scanner
+        |--------------------------------------------------------------------------
+        |
+        | PHẢI đặt trước route động bookings/{booking} để "check-in"
+        | không bị Laravel hiểu là tham số {booking}.
+        |
+        | GET  /admin/bookings/check-in:
+        |   - Mở trang scanner.
+        |   - Quét QR bằng camera hoặc nhập mã đơn.
+        |   - Có thể truyền ?booking_code=... để tra cứu booking.
+        |
+        | POST /admin/bookings/check-in:
+        |   - Xác nhận check-in.
+        |   - Nếu request có payment_confirmed=1 thì controller xử lý
+        |     thanh toán phần còn lại + check-in trong cùng transaction.
+        |
+        */
 
-        Route::post('bookings/check-in', [BookingCheckInScannerController::class, 'store'])
-            ->middleware('throttle:20,1')
-            ->name('bookings.check-in.store');
+        Route::controller(BookingCheckInScannerController::class)
+            ->prefix('bookings/check-in')
+            ->name('bookings.check-in.')
+            ->group(function (): void {
+                Route::get('/', 'index')
+                    ->name('index');
+
+                Route::post('/', 'store')
+                    ->middleware('throttle:20,1')
+                    ->name('store');
+            });
 
         Route::get('bookings', [AdminBookingController::class, 'index'])
             ->name('bookings.index');
