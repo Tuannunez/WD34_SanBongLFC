@@ -348,8 +348,42 @@ class PaymentController extends Controller
                     $msg = ($newPaidAmount >= $totalAmountVal && $currentPaid > 0)
                         ? 'Thanh toán số tiền còn lại thành công! Đơn hàng đã chuyển sang trạng thái Hoàn thành.'
                         : 'Tuyệt vời! Thanh toán thành công. Đơn đặt sân đã được xác nhận!';
+if ($request->input('vnp_ResponseCode') == '00') {
+                    $totalAmountVal = (float)($booking->total_amount ?? $booking->final_amount ?? 0);
+                    $currentPaid = (float)($booking->paid_amount ?? 0);
+                    $paidAmountVnpay = (float)($request->input('vnp_Amount') / 100);
 
-                    return redirect()->route('user.bookings.index')->with('success', $msg);
+                    $newPaidAmount = $currentPaid + $paidAmountVnpay;
+                    if ($newPaidAmount > $totalAmountVal) {
+                        $newPaidAmount = $totalAmountVal;
+                    }
+
+                    $updateData = [
+                        'is_deposit_paid' => true,
+                        'paid_amount' => $newPaidAmount,
+                        'updated_at' => now()
+                    ];
+
+                    if ($newPaidAmount >= $totalAmountVal) {
+                        $updateData['status'] = ($currentPaid > 0) ? 'completed' : 'confirmed';
+                        $updateData['payment_status'] = 'paid';
+                    } else {
+                        $updateData['status'] = 'confirmed';
+                        $updateData['payment_status'] = 'deposit_paid';
+                    }
+
+                    // Lưu dữ liệu
+                    DB::table('bookings')->where('booking_code', $bookingCode)->update($updateData);
+
+                    // --- ĐOẠN NÀY QUAN TRỌNG: Lấy lại thông tin mới nhất để truyền sang view ---
+                    $booking = DB::table('bookings')->where('booking_code', $bookingCode)->first();
+                    
+                    // Trả về view thành công kèm biến booking
+                    return view('user.payment.success', compact('booking'));
+                } else {
+                    return redirect()->route('user.bookings.index')
+                        ->with('error', 'Thanh toán không thành công hoặc giao dịch đã bị hủy.');
+                }
                 } else {
                     return redirect()->route('user.bookings.index')
                         ->with('error', 'Thanh toán không thành công hoặc giao dịch đã bị hủy.');
