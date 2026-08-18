@@ -293,8 +293,19 @@
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
                     countdownTimer.innerHTML = "ĐÃ HẾT HẠN!";
-                    alert("Đơn hàng đã hết hạn giữ sân!");
-                    window.location.href = "{{ route('user.bookings.index') }}";
+                    
+                    // GỌI AJAX VÀO ROUTE ĐÃ CÓ SẴN TRONG WEB.PHP ĐỂ CẬP NHẬT DATABASE
+                    $.ajax({
+                        url: "{{ route('user.bookings.cancel-timeout', $booking->id) }}",
+                        type: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        complete: function() {
+                            alert("Đơn hàng đã hết hạn giữ sân (quá 5 phút)!");
+                            window.location.href = "{{ route('user.bookings.index') }}";
+                        }
+                    });
                     return;
                 }
 
