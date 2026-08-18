@@ -76,6 +76,14 @@ class PaymentController extends Controller
             return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
         }
 
+        $paymentStartedAt = $booking->payment_started_at ?? null;
+        if (empty($paymentStartedAt)) {
+            $paymentStartedAt = now();
+            DB::table('bookings')->where('id', $booking->id)->update([
+                'payment_started_at' => $paymentStartedAt
+            ]);
+        }
+
         if (($booking->status ?? 'pending') === 'pending') {
             $createdAt = Carbon::parse($booking->created_at);
             $now = Carbon::now();
@@ -203,14 +211,18 @@ class PaymentController extends Controller
         if ($vnp_IpAddr === '::1' || empty($vnp_IpAddr)) {
             $vnp_IpAddr = '127.0.0.1';
         }
+        // Dùng mốc thời gian cố định từ database để đồng hồ không bị reset khi khách quay lại
+        $startTime = Carbon::parse($paymentStartedAt)->format('YmdHis');
+        $expireTime = Carbon::parse($paymentStartedAt)->addMinutes(5)->format('YmdHis');
 
         $inputData = array(
             "vnp_Version" => "2.1.0",
             "vnp_TmnCode" => $vnp_TmnCode,
             "vnp_Amount" => $vnp_Amount,
             "vnp_Command" => "pay",
-            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CreateDate" => $startTime,
             "vnp_CurrCode" => "VND",
+            "vnp_ExpireDate" => $expireTime,
             "vnp_IpAddr" => $vnp_IpAddr,
             "vnp_Locale" => $vnp_Locale,
             "vnp_OrderInfo" => $vnp_OrderInfo,

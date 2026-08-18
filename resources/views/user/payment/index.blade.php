@@ -134,29 +134,25 @@
 
                         @if(!$isMonthlyPay && !$isRemainingPayment)
                             <h5 class="text-secondary border-bottom pb-2 mb-3">Chọn phương thức thanh toán</h5>
-                            <!-- Lựa chọn 1: Cọc 30% -->
+                            
+                            <!-- Lựa chọn Cọc 30% (Giả sử ID trong database của bạn là 1 hoặc tùy ý) -->
                             <div class="card p-3 mb-2 border border-success d-flex flex-row align-items-center payment-method-block" style="gap: 12px;">
                                 <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
-                                    id="method-deposit" value="deposit_30" data-code="DEPOSIT_30" checked required>
+                                    id="method-deposit" value="1" data-code="DEPOSIT_30" checked required>
                                 <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-deposit" style="cursor: pointer;">
                                     Cọc 30% tiền sân
-                                    <span class="d-block text-muted small fw-normal">Thanh toán trước 30% giá trị để giữ sân</span>
+                                    <span class="d-block text-muted small fw-normal">Thanh toán trước 30% giá trị để giữ sân qua mã QR</span>
                                 </label>
                             </div>
 
-                            <!-- Lựa chọn 2: Thanh toán 100% -->
+                            <!-- Lựa chọn Thanh toán 100% (Giả sử ID trong database của bạn là 2) -->
                             <div class="card p-3 mb-2 border d-flex flex-row align-items-center payment-method-block" style="gap: 12px;">
                                 <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
-                                    id="method-full" value="paid_100" data-code="PAID_100" required>
+                                    id="method-full" value="2" data-code="PAID_100" required>
                                 <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-full" style="cursor: pointer;">
                                     Thanh toán 100%
-                                    <span class="d-block text-muted small fw-normal">Thanh toán toàn bộ tiền sân</span>
+                                    <span class="d-block text-muted small fw-normal">Thanh toán toàn bộ tiền sân qua mã QR</span>
                                 </label>
-                            </div>
-                        @else
-                            <div class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm bg-success bg-opacity-10 text-success-emphasis">
-                                <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận thanh toán trực tuyến</h6>
-                                <p class="small mb-0">Hệ thống ghi nhận số tiền của đơn hàng. Vui lòng bấm xác nhận bên dưới để hoàn tất.</p>
                             </div>
                         @endif
 
@@ -247,7 +243,7 @@
 
         const countdownTimer = document.getElementById('countdown-timer');
         if (countdownTimer && !isRemainingPayment) {
-            const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";
+            const bookingCreatedAt = "{{ $booking->payment_started_at ?? $booking->created_at ?? now() }}";
             const createdAtTime = new Date(bookingCreatedAt.replace(/-/g, "/")).getTime();
             const limitMinutes = 5; 
             const expireTime = createdAtTime + limitMinutes * 60 * 1000; 
