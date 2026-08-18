@@ -31,7 +31,6 @@
                         $isRemainingPayment = ($currentPaidAmt > 0 && $remainingAmt > 0);
                     @endphp
 
-                    {{-- CHỈ HIỆN ĐỒNG HỒ ĐẾM NGƯỢC 5P KHI LÀ ĐƠN MỚI TẠO, ẨN ĐI KHI THANH TOÁN NỐT SAU KHI CHECK-OUT --}}
                     @if(!$isRemainingPayment)
                         <div class="alert alert-warning text-center fw-bold mb-4 shadow-sm border-0 rounded-3">
                             <i class="bi bi-clock-history me-2 text-danger"></i>
@@ -71,7 +70,6 @@
                             </div>
                         </div>
 
-                        {{-- KHỐI TÍNH TOÁN VÀ HIỂN THỊ SỐ TIỀN THÔNG MINH --}}
                         @php
                             if ($isRemainingPayment) {
                                 $payAmount = $remainingAmt;
@@ -136,18 +134,25 @@
 
                         @if(!$isMonthlyPay && !$isRemainingPayment)
                             <h5 class="text-secondary border-bottom pb-2 mb-3">Chọn phương thức thanh toán</h5>
-                            @if(isset($paymentMethods) && $paymentMethods->isNotEmpty())
-                                @foreach($paymentMethods as $method)
-                                    <div class="card p-3 mb-2 border @if($loop->first) border-success @endif d-flex flex-row align-items-center payment-method-block" style="gap: 12px;">
-                                        <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
-                                            id="method-{{ $method->id }}" value="{{ $method->id }}" data-code="{{ $method->code }}"
-                                            @if($loop->first) checked @endif required>
-                                        <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-{{ $method->id }}" style="cursor: pointer;">
-                                            {{ $method->name }}
-                                        </label>
-                                    </div>
-                                @endforeach
-                            @endif
+                            <!-- Lựa chọn 1: Cọc 30% -->
+                            <div class="card p-3 mb-2 border border-success d-flex flex-row align-items-center payment-method-block" style="gap: 12px;">
+                                <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
+                                    id="method-deposit" value="deposit_30" data-code="DEPOSIT_30" checked required>
+                                <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-deposit" style="cursor: pointer;">
+                                    Cọc 30% tiền sân
+                                    <span class="d-block text-muted small fw-normal">Thanh toán trước 30% giá trị để giữ sân</span>
+                                </label>
+                            </div>
+
+                            <!-- Lựa chọn 2: Thanh toán 100% -->
+                            <div class="card p-3 mb-2 border d-flex flex-row align-items-center payment-method-block" style="gap: 12px;">
+                                <input class="form-check-input payment-method-radio m-0" type="radio" name="payment_method_id" 
+                                    id="method-full" value="paid_100" data-code="PAID_100" required>
+                                <label class="fw-bold text-dark method-name-text m-0 w-100" for="method-full" style="cursor: pointer;">
+                                    Thanh toán 100%
+                                    <span class="d-block text-muted small fw-normal">Thanh toán toàn bộ tiền sân</span>
+                                </label>
+                            </div>
                         @else
                             <div class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm bg-success bg-opacity-10 text-success-emphasis">
                                 <h6 class="fw-bold mb-1"><i class="bi bi-shield-check-fill me-1"></i> Xác nhận thanh toán trực tuyến</h6>
@@ -187,7 +192,7 @@
 
             function updateDisplayPrice() {
                 let baseTotalPrice = parseFloat(rawTotalPriceInput.value) || 0;
-                let baseDepositAmount = parseFloat(rawDepositAmountInput.value) || (baseTotalPrice * 0.3);
+                let baseDepositAmount = baseTotalPrice * 0.3;
 
                 if (promotionSelect && promotionSelect.selectedIndex > 0) {
                     let selectedOption = promotionSelect.options[promotionSelect.selectedIndex];
@@ -197,10 +202,10 @@
                     if (percent > 0) {
                         let discount = baseTotalPrice * (percent / 100);
                         baseTotalPrice -= discount;
-                        baseDepositAmount -= discount * 0.3;
+                        baseDepositAmount = baseTotalPrice * 0.3;
                     } else if (fixedAmount > 0) {
                         baseTotalPrice -= fixedAmount;
-                        baseDepositAmount -= fixedAmount > baseDepositAmount ? baseDepositAmount : fixedAmount; 
+                        baseDepositAmount = baseTotalPrice * 0.3;
                     }
                 }
 
@@ -212,14 +217,11 @@
 
                 document.querySelectorAll('.payment-method-block').forEach(c => c.classList.remove('border-success'));
                 const currentBlock = selectedRadio.closest('.payment-method-block');
-                if (currentBlock) {
-                    currentBlock.classList.add('border-success');
-                }
+                if (currentBlock) currentBlock.classList.add('border-success');
 
                 const methodCode = (selectedRadio.getAttribute('data-code') || '').toUpperCase();
-                const methodText = currentBlock ? currentBlock.querySelector('.method-name-text').textContent.trim().toLowerCase() : '';
 
-                if (methodCode.includes('FIELD') || methodCode.includes('TIEN_MAT') || methodText.includes('tại sân') || methodText.includes('tai san')) {
+                if (methodCode === 'DEPOSIT_30') {
                     if (displayAmount) displayAmount.textContent = formatMoney(baseDepositAmount);
                     if (amountTitle) amountTitle.textContent = "Số tiền cần cọc trước (30%)";
                     if (depositNote) {
@@ -240,16 +242,10 @@
                 radio.addEventListener('change', updateDisplayPrice);
             });
 
-            if (promotionSelect) {
-                promotionSelect.addEventListener('change', updateDisplayPrice);
-            }
-
-            updateDisplayPrice();
+            if (promotionSelect) promotionSelect.addEventListener('change', updateDisplayPrice);
         }
 
-        // Đếm ngược 5 phút giữ sân (Chỉ chạy cho đơn mới tạo, không chạy khi thanh toán nốt)
         const countdownTimer = document.getElementById('countdown-timer');
-
         if (countdownTimer && !isRemainingPayment) {
             const bookingCreatedAt = "{{ $booking->created_at ?? now() }}";
             const createdAtTime = new Date(bookingCreatedAt.replace(/-/g, "/")).getTime();
@@ -262,29 +258,15 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    countdownTimer.innerHTML = "ĐÃ HẾT HẠN GIỮ SÂN!";
-                    alert("Đơn hàng của bạn đã vượt quá thời gian giữ sân tạm thời (5 phút). Vui lòng thực hiện đặt lại lịch mới!");
-                    
-                    fetch('{{ route("user.bookings.cancel-timeout", $booking->id) }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
-                    }).then(() => {
-                        window.location.href = "{{ route('user.bookings.index') }}";
-                    }).catch(() => {
-                        window.location.href = "{{ route('user.bookings.index') }}";
-                    });
-
+                    countdownTimer.innerHTML = "ĐÃ HẾT HẠN!";
+                    alert("Đơn hàng đã hết hạn giữ sân!");
+                    window.location.href = "{{ route('user.bookings.index') }}";
                     return;
                 }
 
                 const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                countdownTimer.innerHTML = 
-                    (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                countdownTimer.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
             }, 1000);
         }
     });
