@@ -38,18 +38,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 32px 24px;
         }
 
         .auth-box {
             width: 100%;
             max-width: 560px;
+            min-height: 680px;
             background: #fff;
             border-radius: 34px;
             padding: 44px 38px 36px;
             position: relative;
             border: 1px solid rgba(229, 231, 235, .9);
             box-shadow: 0 30px 80px rgba(15, 23, 42, .14);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .close-btn {
