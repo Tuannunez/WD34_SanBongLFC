@@ -234,7 +234,7 @@ class StadiumController extends Controller
                         'status' => $status,
                         'label' => $label,
                         'time' => substr($startTime, 0, 5),
-                        'price' => $this->calculateSlotPrice($field, $startTime),
+                        'price' => $this->calculateSlotPrice($field, $startTime, $slot->id),
                     ];
                 });
 
@@ -274,7 +274,7 @@ class StadiumController extends Controller
 
         foreach ($fixedTimeSlots as $slot) {
             $price = $selectedField
-                ? $this->calculateSlotPrice($selectedField, $slot->start_time)
+                ? $this->calculateSlotPrice($selectedField, $slot->start_time, $slot->id)
                 : ($slotPrices[$slot->id] ?? $stadium->price ?? 0);
 
             $hour = \Carbon\Carbon::createFromFormat('H:i:s', $slot->start_time)->hour;
@@ -296,7 +296,7 @@ class StadiumController extends Controller
 
             $fieldPrices = [];
             foreach ($fields as $field) {
-                $fieldPrices[$field->id] = $this->calculateSlotPrice($field, $slot->start_time);
+                $fieldPrices[$field->id] = $this->calculateSlotPrice($field, $slot->start_time, $slot->id);
             }
 
             $priceTable[$session]['slots'][] = [
@@ -403,8 +403,28 @@ class StadiumController extends Controller
     }
 
     /** Giá cho một ca 90 phút; ca bắt đầu từ 18:00 được cộng 100.000đ. */
-    private function calculateSlotPrice(Field $field, ?string $startTime): float
+    private function calculateSlotPrice(Field $field, ?string $startTime, ?int $timeSlotId = null): float
     {
+        if ($timeSlotId !== null) {
+            $fieldPrice = FieldTimeSlotPrice::query()
+                ->where('field_id', $field->id)
+                ->where('time_slot_id', $timeSlotId)
+                ->value('price');
+
+            if ($fieldPrice !== null) {
+                return (float) $fieldPrice;
+            }
+
+            $stadiumPrice = StadiumTimeSlotPrice::query()
+                ->where('stadium_id', $field->stadium_id)
+                ->where('time_slot_id', $timeSlotId)
+                ->value('price');
+
+            if ($stadiumPrice !== null) {
+                return (float) $stadiumPrice;
+            }
+        }
+
         $players = null;
 
         foreach ([$field->name ?? '', $field->fieldType?->name ?? ''] as $label) {

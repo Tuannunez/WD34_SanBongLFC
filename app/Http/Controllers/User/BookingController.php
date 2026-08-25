@@ -319,10 +319,18 @@ class BookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
+        $fieldSlotPrices = DB::table('field_time_slot_prices')
+            ->whereIn('field_id', $fields->pluck('id'))
+            ->get()
+            ->groupBy('field_id')
+            ->map(fn ($prices) => $prices->pluck('price', 'time_slot_id')->all())
+            ->all();
+
         return view('user.bookings.create_monthly', [
             'stadium' => $stadiumData,
             'fields' => $fields,
             'timeSlots' => $timeSlots,
+            'fieldSlotPrices' => $fieldSlotPrices,
         ]);
     }
 
@@ -400,7 +408,7 @@ class BookingController extends Controller
             $slots[] = [
                 'id' => $slotId,
                 'time' => substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5),
-                'price' => $this->calculateSlotPrice($field, $startTime),
+                'price' => $this->calculateSlotPrice($field, $startTime, $slotId),
                 'available' => $status === 'available',
                 'status' => $status,
             ];
@@ -527,7 +535,7 @@ class BookingController extends Controller
             ]);
         }
 
-        $slotPrice = $this->calculateSlotPrice($field, $timeSlot->start_time);
+        $slotPrice = $this->calculateSlotPrice($field, $timeSlot->start_time, $timeSlot->id);
 
         $serviceTotal = 0;
         $serviceInputs = collect($request->input('services', []));
@@ -687,21 +695,11 @@ class BookingController extends Controller
             $dateCalc->addDay();
         }
 
-        $inputTotalAmount = (float) $request->input('calculated_total_amount', 0);
-        
-        if ($inputTotalAmount > 0 && $slotCountCalc > 0) {
-            $pricePerSlot = $inputTotalAmount / $slotCountCalc;
-        } else {
-            $pricePerSlot = 250000; 
-            if (isset($field->price_per_hour) && (float)$field->price_per_hour > 0) {
-                $pricePerSlot = (float) $field->price_per_hour;
-            } elseif (isset($timeSlot->price) && (float)$timeSlot->price > 0) {
-                $pricePerSlot = (float) $timeSlot->price;
-            } else {
-                $startH = (int) substr($timeSlot->start_time ?? '00:00:00', 0, 2);
-                $pricePerSlot = $startH >= 18 ? 450000 : 250000;
-            }
-        }
+        $pricePerSlot = $this->calculateSlotPrice(
+            $field,
+            $timeSlot->start_time,
+            (int) $timeSlot->id
+        );
 
         $slotCount = 0;
         $today = Carbon::today();
@@ -1075,8 +1073,28 @@ class BookingController extends Controller
         return [trim($parts[0] ?? ''), trim($parts[1] ?? '')];
     }
 
-    private function calculateSlotPrice(object $field, ?string $startTime): float
+    private function calculateSlotPrice(object $field, ?string $startTime, ?int $timeSlotId = null): float
     {
+        if ($timeSlotId !== null) {
+            $fieldPrice = DB::table('field_time_slot_prices')
+                ->where('field_id', $field->id)
+                ->where('time_slot_id', $timeSlotId)
+                ->value('price');
+
+            if ($fieldPrice !== null) {
+                return (float) $fieldPrice;
+            }
+
+            $stadiumPrice = DB::table('stadium_time_slot_prices')
+                ->where('stadium_id', $field->stadium_id)
+                ->where('time_slot_id', $timeSlotId)
+                ->value('price');
+
+            if ($stadiumPrice !== null) {
+                return (float) $stadiumPrice;
+            }
+        }
+
         return (float) ($field->price_per_hour ?? 350000);
     }
 
