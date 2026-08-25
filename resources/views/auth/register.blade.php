@@ -295,6 +295,23 @@
 
             <div class="form-group">
                 <div class="input-wrap">
+                    <i class="bi bi-telephone input-icon"></i>
+                    <input id="phone"
+                           type="tel"
+                           name="phone"
+                           value="{{ old('phone') }}"
+                           class="auth-input @error('phone') is-invalid @enderror"
+                           placeholder="Số điện thoại"
+                           pattern="^(0|\+84)(3|5|7|8|9)[0-9]{8,9}$"
+                           required>
+                </div>
+                @error('phone')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <div class="input-wrap">
                     <i class="bi bi-shield-lock-fill input-icon"></i>
                     <input id="password"
                            type="password"
