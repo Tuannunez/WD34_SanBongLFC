@@ -31,18 +31,20 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'status' => $request->has('status'),
+        ]);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:roles,slug',
             'description' => 'nullable|string',
-            'status' => 'boolean',
+            'status' => ['nullable', 'boolean'],
         ]);
-
-        $data['status'] = $request->has('status');
 
         Role::create($data);
 
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được tạo.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được tạo.');
     }
 
     public function edit(Role $role)
@@ -52,23 +54,25 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        $request->merge([
+            'status' => $request->has('status'),
+        ]);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:roles,slug,' . $role->id,
             'description' => 'nullable|string',
-            'status' => 'boolean',
+            'status' => ['nullable', 'boolean'],
         ]);
-
-        $data['status'] = $request->has('status');
 
         $role->update($data);
 
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được cập nhật.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được cập nhật.');
     }
 
     public function destroy(Role $role)
     {
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Vai trò đã được xóa.');
+        return redirect()->route('admin.roles.index')->with('success', 'Vai trò đã được xóa.');
     }
 }

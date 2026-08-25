@@ -21,7 +21,7 @@
                     <textarea name="description" class="form-control"></textarea>
                 </div>
                 <div class="form-check mb-3">
-                    <input type="checkbox" name="status" class="form-check-input" id="status" checked>
+                    <input type="checkbox" name="status" value="1" class="form-check-input" id="status" checked>
                     <label for="status" class="form-check-label">Hoạt động</label>
                 </div>
                 <button class="btn btn-primary">Tạo</button>
