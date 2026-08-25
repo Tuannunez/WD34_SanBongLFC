@@ -280,17 +280,17 @@
 
             <div class="form-group">
                 <div class="input-wrap">
-                    <i class="bi bi-envelope input-icon"></i>
-                    <input id="email"
-                           type="email"
-                           name="email"
-                           value="{{ old('email') }}"
-                           class="auth-input @error('email') is-invalid @enderror"
-                           placeholder="Email"
+                    <i class="bi bi-person-vcard input-icon"></i>
+                    <input id="login"
+                           type="text"
+                           name="login"
+                           value="{{ old('login') }}"
+                           class="auth-input @error('login') is-invalid @enderror"
+                           placeholder="Email hoặc số điện thoại"
                            required
                            autofocus>
                 </div>
-                @error('email')
+                @error('login')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
             </div>
