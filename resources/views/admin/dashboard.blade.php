@@ -243,16 +243,6 @@ body {
 
 @section('content')
 
-<div class="dashboard-header">
-    <div>
-        <button class="btn btn-light" id="themeToggle">
-            <i class="bi bi-moon"></i>
-        </button>
-        <button class="btn btn-light dashboard-btn ms-2">
-            Refresh
-        </button>
-    </div>
-</div>
 
 <div class="row g-4">
     <div class="col-lg-3">
@@ -295,7 +285,7 @@ body {
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <div class="stat-title">Doanh thu</div>
+                        <div class="stat-title">Doanh thu tháng này</div>
                         <div class="stat-value">{{ number_format($monthlyRevenue ?? 0,0,',','.') }} đ</div>
                         <div class="stat-growth">
                             @if($revGrowth >= 0)
@@ -317,7 +307,7 @@ body {
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <div class="stat-title">Khách hàng</div>
+                        <div class="stat-title">Tổng khách hàng</div>
                         <div class="stat-value">{{ $totalCustomers ?? 0 }}</div>
                         <div class="stat-growth"><i class="bi bi-arrow-up"></i> 9%</div>
                     </div>

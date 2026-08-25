@@ -1321,6 +1321,155 @@
             .hero-content {
                 padding: 35px 0;
             }
+                /* Lớp nền */
+    #loginModal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(5px);
+
+        opacity: 0;
+        visibility: hidden;
+
+        transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease;
+    }
+
+    /* Khi mở */
+    #loginModal.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Hộp đăng nhập */
+    #loginModal .login-box {
+        width: 420px;
+        max-width: calc(100% - 30px);
+
+        background: #fff;
+        border-radius: 22px;
+
+        padding: 35px;
+
+        box-shadow:
+            0 25px 70px rgba(0, 0, 0, 0.25);
+
+        transform: translateY(25px) scale(0.94);
+        opacity: 0;
+
+        transition:
+            transform 0.3s cubic-bezier(.2,.8,.2,1),
+            opacity 0.25s ease;
+    }
+
+    /* Animation hộp khi mở */
+    #loginModal.show .login-box {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    /* Nút X */
+    .login-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+
+        width: 38px;
+        height: 38px;
+
+        border: none;
+        border-radius: 50%;
+
+        background: #f3f4f6;
+        color: #555;
+
+        font-size: 24px;
+        line-height: 1;
+
+        cursor: pointer;
+
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .login-close:hover {
+        background: #e5e7eb;
+        transform: rotate(90deg);
+    }
+
+    /* Input */
+    .login-input {
+        width: 100%;
+        padding: 13px 15px;
+
+        border: 1px solid #ddd;
+        border-radius: 10px;
+
+        outline: none;
+
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .login-input:focus {
+        border-color: #16a34a;
+
+        box-shadow:
+            0 0 0 3px rgba(22, 163, 74, 0.12);
+    }
+
+    /* Nút đăng nhập */
+    .login-submit {
+        width: 100%;
+        padding: 13px;
+
+        border: none;
+        border-radius: 10px;
+
+        background: #16a34a;
+        color: white;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition:
+            background 0.2s ease,
+            transform 0.15s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .login-submit:hover {
+        background: #15803d;
+
+        box-shadow:
+            0 8px 20px rgba(22, 163, 74, 0.25);
+    }
+
+    .login-submit:active {
+        transform: scale(0.98);
+    }
+
+    .login-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Mobile */
+    @media (max-width: 500px) {
+        #loginModal .login-box {
+            padding: 28px 20px;
+        }
+    }
         }
 
         /* Bootstrap Success Color Override */
@@ -1360,10 +1509,800 @@
 
         /* Update navbar brand color */
         .navbar-brand span { color: #d8ff5d; font-weight: 900; }
+
+
+
     </style>
 
     @stack('styles')
 </head>
+<!-- ================= REGISTER MODAL ================= -->
+
+<div id="registerModal"
+     style="
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:10000;
+        background:rgba(0,0,0,.6);
+        align-items:center;
+        justify-content:center;
+     ">
+
+    <div style="
+        position:relative;
+        width:450px;
+        max-width:90%;
+        max-height:90vh;
+        overflow-y:auto;
+        background:white;
+        border-radius:20px;
+        padding:35px;
+        box-shadow:0 20px 50px rgba(0,0,0,.3);
+    ">
+
+        <!-- Nút đóng -->
+        <button
+            type="button"
+            onclick="closeRegisterModal()"
+            style="
+                position:absolute;
+                right:15px;
+                top:10px;
+                border:0;
+                background:#f3f4f6;
+                width:40px;
+                height:40px;
+                border-radius:50%;
+                font-size:24px;
+                cursor:pointer;
+            "
+        >
+            ×
+        </button>
+
+
+        <!-- Tiêu đề -->
+        <div style="
+            text-align:center;
+            margin-bottom:25px;
+        ">
+
+            <h2 style="
+                font-size:28px;
+                font-weight:bold;
+                margin-bottom:8px;
+            ">
+                Đăng ký tài khoản
+            </h2>
+
+            <p style="color:#777;">
+                Tạo tài khoản để đặt sân nhanh hơn
+            </p>
+
+        </div>
+
+
+        <!-- Thông báo -->
+        <div
+            id="registerMessage"
+            style="
+                display:none;
+                padding:10px;
+                border-radius:8px;
+                margin-bottom:15px;
+            "
+        ></div>
+
+
+        <!-- FORM -->
+        <form id="registerForm">
+
+            @csrf
+
+
+            <!-- Họ tên -->
+            <div style="margin-bottom:15px;">
+
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Họ và tên"
+                    required
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+
+                <div
+                    id="registerErrorName"
+                    style="
+                        color:#dc2626;
+                        font-size:13px;
+                        margin-top:5px;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- Email -->
+            <div style="margin-bottom:15px;">
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    required
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+
+                <div
+                    id="registerErrorEmail"
+                    style="
+                        color:#dc2626;
+                        font-size:13px;
+                        margin-top:5px;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- Số điện thoại -->
+            <div style="margin-bottom:15px;">
+
+                <input
+                    type="text"
+                    name="phone"
+                    placeholder="Số điện thoại"
+                    required
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+
+                <div
+                    id="registerErrorPhone"
+                    style="
+                        color:#dc2626;
+                        font-size:13px;
+                        margin-top:5px;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- Mật khẩu -->
+            <div style="margin-bottom:15px;">
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Mật khẩu"
+                    required
+                    minlength="8"
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+
+                <div
+                    id="registerErrorPassword"
+                    style="
+                        color:#dc2626;
+                        font-size:13px;
+                        margin-top:5px;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- Xác nhận mật khẩu -->
+            <div style="margin-bottom:15px;">
+
+                <input
+                    type="password"
+                    name="password_confirmation"
+                    placeholder="Nhập lại mật khẩu"
+                    required
+                    minlength="8"
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+
+                <div
+                    id="registerErrorPasswordConfirmation"
+                    style="
+                        color:#dc2626;
+                        font-size:13px;
+                        margin-top:5px;
+                    "
+                ></div>
+
+            </div>
+
+
+            <!-- Submit -->
+            <button
+                type="submit"
+                id="registerButton"
+                class="btn btn-success w-100"
+                style="
+                    padding:12px;
+                    font-weight:bold;
+                "
+            >
+                Đăng ký
+            </button>
+
+        </form>
+
+
+        <div style="
+            text-align:center;
+            margin-top:18px;
+            color:#777;
+        ">
+            Đã có tài khoản?
+
+            <button
+                type="button"
+                onclick="switchToLogin()"
+                style="
+                    border:0;
+                    background:none;
+                    color:#198754;
+                    font-weight:bold;
+                    cursor:pointer;
+                "
+            >
+                Đăng nhập
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function openRegisterModal() {
+
+    const modal =
+        document.getElementById('registerModal');
+
+    if (!modal) {
+        console.error('Không tìm thấy #registerModal');
+        return;
+    }
+
+    modal.style.display = 'flex';
+
+}
+
+
+function closeRegisterModal() {
+
+    const modal =
+        document.getElementById('registerModal');
+
+    if (!modal) {
+        return;
+    }
+
+    modal.style.display = 'none';
+
+}
+
+
+function switchToLogin() {
+
+    closeRegisterModal();
+
+    openLoginModal();
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Click ra ngoài popup thì đóng
+|--------------------------------------------------------------------------
+*/
+
+document.addEventListener('click', function(event) {
+
+    const modal =
+        document.getElementById('registerModal');
+
+    if (!modal) {
+        return;
+    }
+
+    if (event.target === modal) {
+        closeRegisterModal();
+    }
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Xử lý đăng ký AJAX
+|--------------------------------------------------------------------------
+*/
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const form =
+        document.getElementById('registerForm');
+
+    if (!form) {
+        return;
+    }
+
+
+    form.addEventListener('submit', async function(e) {
+
+        e.preventDefault();
+
+
+        const button =
+            document.getElementById('registerButton');
+
+        const message =
+            document.getElementById('registerMessage');
+
+
+        /*
+        |--------------------------------------------------------------
+        | Xóa lỗi cũ
+        |--------------------------------------------------------------
+        */
+
+        document.getElementById('registerErrorName').innerText = '';
+        document.getElementById('registerErrorEmail').innerText = '';
+        document.getElementById('registerErrorPhone').innerText = '';
+        document.getElementById('registerErrorPassword').innerText = '';
+        document.getElementById('registerErrorPasswordConfirmation').innerText = '';
+
+        message.style.display = 'none';
+        message.innerText = '';
+
+
+        /*
+        |--------------------------------------------------------------
+        | Loading
+        |--------------------------------------------------------------
+        */
+
+        button.disabled = true;
+        button.innerText = 'Đang đăng ký...';
+
+
+        try {
+
+            const response = await fetch(
+                "{{ route('register') }}",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+
+                    body: new FormData(form)
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            /*
+            |----------------------------------------------------------
+            | ĐĂNG KÝ THÀNH CÔNG
+            |----------------------------------------------------------
+            */
+
+            if (response.ok && data.success) {
+
+                message.style.display = 'block';
+
+                message.style.background = '#d1fae5';
+
+                message.style.color = '#065f46';
+
+                message.innerText =
+                    data.message ||
+                    'Đăng ký thành công!';
+
+
+                /*
+                | Đợi một chút rồi đóng popup
+                */
+
+                setTimeout(function() {
+
+                    closeRegisterModal();
+
+                    form.reset();
+
+                    message.style.display = 'none';
+
+                    /*
+                    | Mở Login Modal luôn
+                    */
+
+                    openLoginModal();
+
+                }, 800);
+
+
+            }
+
+
+            /*
+            |----------------------------------------------------------
+            | VALIDATION ERROR
+            |----------------------------------------------------------
+            */
+
+            else if (response.status === 422) {
+
+                const errors = data.errors || {};
+
+
+                if (errors.name) {
+
+                    document.getElementById(
+                        'registerErrorName'
+                    ).innerText = errors.name[0];
+
+                }
+
+
+                if (errors.email) {
+
+                    document.getElementById(
+                        'registerErrorEmail'
+                    ).innerText = errors.email[0];
+
+                }
+
+
+                if (errors.phone) {
+
+                    document.getElementById(
+                        'registerErrorPhone'
+                    ).innerText = errors.phone[0];
+
+                }
+
+
+                if (errors.password) {
+
+                    document.getElementById(
+                        'registerErrorPassword'
+                    ).innerText = errors.password[0];
+
+                }
+
+
+                if (errors.password_confirmation) {
+
+                    document.getElementById(
+                        'registerErrorPasswordConfirmation'
+                    ).innerText =
+                        errors.password_confirmation[0];
+
+                }
+
+            }
+
+
+            /*
+            |----------------------------------------------------------
+            | LỖI KHÁC
+            |----------------------------------------------------------
+            */
+
+            else {
+
+                message.style.display = 'block';
+
+                message.style.background = '#fee2e2';
+
+                message.style.color = '#991b1b';
+
+                message.innerText =
+                    data.message ||
+                    'Có lỗi xảy ra. Vui lòng thử lại.';
+
+            }
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            message.style.display = 'block';
+
+            message.style.background = '#fee2e2';
+
+            message.style.color = '#991b1b';
+
+            message.innerText =
+                'Có lỗi xảy ra. Vui lòng thử lại.';
+
+
+        } finally {
+
+            button.disabled = false;
+
+            button.innerText = 'Đăng ký';
+
+        }
+
+    });
+
+});
+
+</script>
+<div id="loginModal"
+     style="
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:9999;
+        background:rgba(0,0,0,.6);
+        align-items:center;
+        justify-content:center;
+     ">
+
+    <div style="
+        position:relative;
+        width:420px;
+        max-width:90%;
+        background:white;
+        border-radius:20px;
+        padding:35px;
+        box-shadow:0 20px 50px rgba(0,0,0,.3);
+    ">
+
+        <!-- Nút đóng -->
+        <button
+            type="button"
+            onclick="closeLoginModal()"
+            style="
+                position:absolute;
+                right:15px;
+                top:10px;
+                border:0;
+                background:#f3f4f6;
+                width:40px;
+                height:40px;
+                border-radius:50%;
+                font-size:24px;
+                cursor:pointer;
+            "
+        >
+            ×
+        </button>
+
+        <div style="text-align:center;margin-bottom:25px;">
+            <h2 style="font-size:28px;font-weight:bold;margin-bottom:8px;">
+                Đăng nhập
+            </h2>
+
+            <p style="color:#777;">
+                Đăng nhập để đặt sân nhanh hơn
+            </p>
+        </div>
+
+        <div id="loginMessage"
+             style="
+                display:none;
+                padding:10px;
+                border-radius:8px;
+                margin-bottom:15px;
+             ">
+        </div>
+
+        <form id="loginForm">
+
+            @csrf
+
+            <div style="margin-bottom:15px;">
+                <input
+                    type="text"
+                    name="login"
+                    placeholder="Email hoặc số điện thoại"
+                    required
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Mật khẩu"
+                    required
+                    style="
+                        width:100%;
+                        padding:13px;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        box-sizing:border-box;
+                    "
+                >
+            </div>
+
+            <button
+                type="submit"
+                id="loginButton"
+                class="btn btn-success w-100"
+                style="padding:12px;font-weight:bold;"
+            >
+                Đăng nhập
+            </button>
+
+        </form>
+
+    </div>
+</div>
+<script>
+function openLoginModal() {
+    const modal = document.getElementById('loginModal');
+
+    if (!modal) {
+        console.error('Không tìm thấy #loginModal');
+        return;
+    }
+
+    modal.style.display = 'flex';
+}
+
+
+function closeLoginModal() {
+    const modal = document.getElementById('loginModal');
+
+    if (!modal) {
+        return;
+    }
+
+    modal.style.display = 'none';
+}
+
+
+// Click ra ngoài popup thì đóng
+document.addEventListener('click', function (event) {
+
+    const modal = document.getElementById('loginModal');
+
+    if (!modal) {
+        return;
+    }
+
+    if (event.target === modal) {
+        closeLoginModal();
+    }
+
+});
+
+
+// Xử lý đăng nhập
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form = document.getElementById('loginForm');
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', async function (e) {
+
+        e.preventDefault();
+
+        const button = document.getElementById('loginButton');
+        const message = document.getElementById('loginMessage');
+
+        button.disabled = true;
+        button.innerText = 'Đang đăng nhập...';
+
+        try {
+
+            const response = await fetch("{{ route('login') }}", {
+                method: "POST",
+
+                headers: {
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+
+                body: new FormData(form)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+
+                message.style.display = 'block';
+                message.style.background = '#d1fae5';
+                message.style.color = '#065f46';
+                message.innerText = 'Đăng nhập thành công!';
+
+                setTimeout(function () {
+                    closeLoginModal();
+                    window.location.reload();
+                }, 500);
+
+            } else {
+
+                message.style.display = 'block';
+                message.style.background = '#fee2e2';
+                message.style.color = '#991b1b';
+
+                message.innerText =
+                    data.message || 'Email/SĐT hoặc mật khẩu không đúng.';
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.style.display = 'block';
+            message.style.background = '#fee2e2';
+            message.style.color = '#991b1b';
+
+            message.innerText = 'Có lỗi xảy ra. Vui lòng thử lại.';
+
+        } finally {
+
+            button.disabled = false;
+            button.innerText = 'Đăng nhập';
+        }
+
+    });
+
+});
+</script>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-user sticky-top">
@@ -1540,18 +2479,24 @@
                         </ul>
                     </li>
                 @else
-                    <li class="nav-item">
-                        <a href="{{ route('login') }}" class="btn btn-outline-primary rounded-3">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>
-                            Đăng nhập
-                        </a>
-                    </li>
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary rounded-3"
+                        onclick="openLoginModal()"
+                    >
+                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                        Đăng nhập
+                    </button>
 
-                    <li class="nav-item">
-                        <a href="{{ route('register') }}" class="btn btn-success rounded-3">
+                   <li class="nav-item">
+                        <button
+                            type="button"
+                            class="btn btn-success rounded-3"
+                            onclick="openRegisterModal()"
+                        >
                             <i class="bi bi-person-plus me-1"></i>
                             Đăng ký
-                        </a>
+                        </button>
                     </li>
                 @endauth
             </ul>
