@@ -628,6 +628,14 @@
         </div>
     @endif
 
+    @if($errors->has('check_out'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ $errors->first('check_out') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     {{-- NÚT THÊM GIỜ (GIA HẠN SÂN) DÀNH CHO KHÁCH HÀNG KHI ĐANG ĐÁ --}}
     @if($status === 'confirmed' && $usageStatus === 'checked_in')
         <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-light">
@@ -726,9 +734,9 @@
                         <i class="bi bi-box-arrow-right"></i>
                     </span>
                     <div>
-                        <div class="fw-bold mt-2">Tự check-out</div>
+                        <div class="fw-bold mt-2">Check-out</div>
                         <div class="small text-muted">
-                            Khi hết giờ sân
+                            Tự động khi hết giờ hoặc sớm theo yêu cầu
                         </div>
                     </div>
                 </div>
@@ -742,10 +750,10 @@
                 <div>
                     <h5 class="fw-bold mb-1">
                         <i class="bi bi-geo-alt-fill text-primary me-2"></i>
-                        Check-in tại sân
+                        Check-in & check-out tại sân
                     </h5>
                     <div class="text-muted small">
-                        Chỉ bấm khi bạn đã có mặt. Check-out được thực hiện tự động.
+                        Check-out sẽ tự động khi hết giờ; bạn cũng có thể kết thúc sớm khi rời sân.
                     </div>
                 </div>
 
@@ -805,9 +813,28 @@
                                     khi hết khung giờ.
                                 @endif
                             </div>
-                            <div class="small mt-2">
-                                Bạn không cần và không thể bấm check-out thủ công.
-                            </div>
+                            <form
+                                method="POST"
+                                action="{{ route('user.bookings.check-out', $booking->id) }}"
+                                class="mt-3"
+                                data-checkout-form
+                            >
+                                @csrf
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center"
+                                    data-checkout-button
+                                >
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    Check-out sớm
+                                </button>
+
+                                <div class="small text-muted mt-2">
+                                    Check-out sớm sẽ kết thúc phiên sử dụng sân ngay. Nếu không bấm,
+                                    hệ thống vẫn tự check-out khi hết giờ.
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1173,6 +1200,12 @@
         const checkInForm = document.querySelector(
             '[data-checkin-form]'
         );
+        const checkOutForm = document.querySelector(
+            '[data-checkout-form]'
+        );
+        const checkOutButton = document.querySelector(
+            '[data-checkout-button]'
+        );
 
         if (confirmation && checkInButton) {
             confirmation.addEventListener('change', function () {
@@ -1196,6 +1229,26 @@
                     checkInButton.innerHTML =
                         '<span class="spinner-border spinner-border-sm me-2"></span>'
                         + 'Đang check-in...';
+                }
+            });
+        }
+
+        if (checkOutForm) {
+            checkOutForm.addEventListener('submit', function (event) {
+                const accepted = window.confirm(
+                    'Bạn xác nhận đã rời sân và muốn check-out sớm? Phiên sử dụng sẽ kết thúc ngay.'
+                );
+
+                if (!accepted) {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (checkOutButton) {
+                    checkOutButton.disabled = true;
+                    checkOutButton.innerHTML =
+                        '<span class="spinner-border spinner-border-sm me-2"></span>'
+                        + 'Đang check-out...';
                 }
             });
         }

@@ -22,6 +22,8 @@ final class BookingLifecycleService
 
     public const RESULT_CHECKED_IN = 'checked_in';
     public const RESULT_ALREADY_CHECKED_IN = 'already_checked_in';
+    public const RESULT_CHECKED_OUT = 'checked_out';
+    public const RESULT_ALREADY_CHECKED_OUT = 'already_checked_out';
     public const RESULT_TOO_EARLY = 'too_early';
     public const RESULT_NO_SHOW = 'no_show';
     public const RESULT_NOT_PAID = 'not_paid';
@@ -238,6 +240,124 @@ final class BookingLifecycleService
                 'starts_at' => $window->startsAt,
                 'ends_at' => $window->endsAt,
                 'deadline_at' => $deadline,
+            ];
+        }, 3);
+    }
+
+    /**
+     * Khách chủ động kết thúc phiên sử dụng sân trước giờ kết thúc.
+     * Việc này chỉ áp dụng cho đơn đã check-in; các đơn còn lại vẫn được
+     * Scheduler tự check-out khi hết khung giờ.
+     *
+     * @return array<string, mixed>
+     */
+    public function checkOutEarlyByUser(
+        int $bookingId,
+        int $userId,
+        ?CarbonInterface $at = null,
+    ): array {
+        $this->assertPrerequisites();
+        $now = $this->normalizeNow($at);
+
+        return DB::transaction(function () use ($bookingId, $userId, $now): array {
+            /** @var Booking|null $booking */
+            $booking = Booking::query()
+                ->whereKey($bookingId)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($booking === null) {
+                return ['result' => self::RESULT_NOT_FOUND];
+            }
+
+            $usageStatus = strtolower((string) (
+                $booking->usage_status ?: Booking::USAGE_NOT_CHECKED_IN
+            ));
+
+            if (
+                $usageStatus === Booking::USAGE_CHECKED_OUT
+                || strtolower((string) $booking->status) === Booking::STATUS_COMPLETED
+            ) {
+                return [
+                    'result' => self::RESULT_ALREADY_CHECKED_OUT,
+                    'checked_out_at' => $booking->checked_out_at,
+                ];
+            }
+
+            if (
+                strtolower((string) $booking->status) !== Booking::STATUS_CONFIRMED
+                || strtolower((string) $booking->payment_status) === Booking::PAYMENT_REFUNDED
+            ) {
+                return ['result' => self::RESULT_UNAVAILABLE];
+            }
+
+            if (! $this->hasSuccessfulPaymentEvidence($booking)) {
+                return ['result' => self::RESULT_NOT_PAID];
+            }
+
+            $window = $this->scheduleResolver->resolve($booking);
+
+            if ($window === null) {
+                return ['result' => self::RESULT_MISSING_SCHEDULE];
+            }
+
+            if ($usageStatus !== Booking::USAGE_CHECKED_IN) {
+                return ['result' => self::RESULT_UNAVAILABLE];
+            }
+
+            // Sau giờ kết thúc, để Scheduler xử lý và lưu lại đúng mốc hết giờ sân.
+            if ($now->greaterThanOrEqualTo($window->endsAt)) {
+                return ['result' => self::RESULT_UNAVAILABLE];
+            }
+
+            $checkOutAction = $this->actionRow(
+                booking: $booking,
+                action: self::ACTION_CHECKED_OUT,
+                category: 'usage',
+                from: Booking::USAGE_CHECKED_IN,
+                to: Booking::USAGE_CHECKED_OUT,
+                reason: 'user_early_check_out',
+                occurredAt: $now,
+                window: $window,
+                source: 'user',
+            );
+
+            $completeAction = $this->actionRow(
+                booking: $booking,
+                action: self::ACTION_COMPLETED,
+                category: 'status',
+                from: Booking::STATUS_CONFIRMED,
+                to: Booking::STATUS_COMPLETED,
+                reason: 'booking_completed_by_user_early_check_out',
+                occurredAt: $now,
+                window: $window,
+                source: 'user',
+            );
+
+            $data = $this->schema->filterColumns('bookings', [
+                'status' => Booking::STATUS_COMPLETED,
+                'usage_status' => Booking::USAGE_CHECKED_OUT,
+                'checked_out_at' => $now,
+                'completed_at' => $now,
+                'updated_at' => now(),
+            ]);
+
+            $booking->forceFill($data)->save();
+            $this->recordHistory($checkOutAction);
+            $this->recordHistory($completeAction);
+            $this->syncDetailStatus($booking, Booking::STATUS_COMPLETED);
+            $this->insertNotification(
+                $booking,
+                'Check-out sớm thành công',
+                'Đơn '.$this->bookingCode($booking).' đã được check-out sớm lúc '
+                    .$now->format('H:i d/m/Y').'.',
+            );
+
+            return [
+                'result' => self::RESULT_CHECKED_OUT,
+                'checked_out_at' => $now,
+                'ends_at' => $window->endsAt,
             ];
         }, 3);
     }
