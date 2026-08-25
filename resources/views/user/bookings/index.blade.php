@@ -184,25 +184,21 @@
             </div>
 
             {{-- THÔNG BÁO THÀNH CÔNG --}}
-            @if(session('success'))
-                <div class="alert border-0 shadow-sm rounded-4 mb-4 p-0 overflow-hidden" 
-                     style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 5px solid #2e7d32 !important;">
-                    <div class="p-3.5 px-4 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" 
-                                 style="width: 40px; height: 40px;">
-                                <i class="bi bi-check-lg fs-5"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-0" style="color: #1b5e20;">Thành công!</h6>
-                                <span class="small fw-medium" style="color: #2e7d32;">
-                                    {{ session('success') }}
-                                </span>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.6;"></button>
-                    </div>
-                </div>
+           @if(session('success'))
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        title: "Thành công!",
+                        text: "Đơn hủy đã được gửi đi thành công! Số tiền hoàn của bạn sẽ được xử lý và chuyển khoản lại trong 24h tới.",
+                        icon: "success",
+                        confirmButtonText: "Đã hiểu",
+                        confirmButtonColor: "#065f46",
+                        backdrop: true,
+                        allowOutsideClick: false
+                    });
+                });
+            </script>
             @endif
 
             {{-- THÔNG BÁO LỖI --}}
@@ -768,7 +764,29 @@
                                                                                     <div class="row g-3">
                                                                                         <div class="col-md-6">
                                                                                             <label class="form-label small fw-semibold text-secondary">Tên ngân hàng <span class="text-danger">*</span></label>
-                                                                                            <input type="text" name="bank_name" class="form-control rounded-3" placeholder="Ví dụ: MB Bank, Vietcombank..." required>
+                                                                                            
+                                                                                            <!-- Input kết hợp datalist giúp vừa chọn vừa gõ tìm kiếm tự động -->
+                                                                                            <input type="text" name="bank_name" class="form-control rounded-3" list="bankList" placeholder="Gõ để tìm hoặc chọn ngân hàng..." required autocomplete="off">
+                                                                                            
+                                                                                            <datalist id="bankList">
+                                                                                                <option value="MB Bank (Ngân hàng Quân Đội)">
+                                                                                                <option value="Vietcombank (TMCP Ngoại Thương Việt Nam)">
+                                                                                                <option value="Techcombank (TMCP Kỹ Thương Việt Nam)">
+                                                                                                <option value="BIDV (Đầu tư và Phát triển Việt Nam)">
+                                                                                                <option value="Agribank (Nông nghiệp và PTNT Việt Nam)">
+                                                                                                <option value="ACB (TMCP Á Châu)">
+                                                                                                <option value="VPBank (TMCP Việt Nam Thịnh Vượng)">
+                                                                                                <option value="TPBank (TMCP Tiên Phong)">
+                                                                                                <option value="Sacombank (TMCP Sài Gòn Thương Tín)">
+                                                                                                <option value="SHB (TMCP Sài Gòn - Hà Nội)">
+                                                                                                <option value="HDBank (TMCP Phát triển TP.HCM)">
+                                                                                                <option value="VIB (TMCP Quốc Tế Việt Nam)">
+                                                                                                <option value="SeABank (TMCP Đông Nam Á)">
+                                                                                                <option value="OCB (TMCP Phương Đông)">
+                                                                                                <option value="Eximbank (TMCP Xuất Nhập Khẩu)">
+                                                                                                <option value="MSB (TMCP Hàng Hải Việt Nam)">
+                                                                                                <option value="Nam A Bank (TMCP Nam Á)">
+                                                                                            </datalist>
                                                                                         </div>
 
                                                                                         <div class="col-md-6">
@@ -1210,4 +1228,4 @@ function printCheckinPass(elementId) {
     location.reload();
 }
 </script>
-@endsection
+

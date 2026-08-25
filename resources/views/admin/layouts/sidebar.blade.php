@@ -107,8 +107,8 @@
                 Sân bóng
             </a>
 
-            <a href="{{ url('/admin/time-slots/4') }}"
-                class="sidebar-link ps-5 {{ request()->is('admin/time-slots/4*') ? 'active':'' }}">
+            <a href="{{ route('admin.time-slots.show', ['stadium' => 2]) }}"
+                class="sidebar-link ps-5 {{ request()->routeIs('admin.time-slots.*') ? 'active':'' }}">
                 <i class="bi bi-clock"></i>
                 Khung giờ
             </a>
@@ -140,32 +140,7 @@
             </a>
         </div>
 
-        <div class="sidebar-title">
-            Thanh toán
-        </div>
-
-        <a class="sidebar-link" data-bs-toggle="collapse" href="#paymentMenu">
-            <i class="bi bi-credit-card"></i>
-            <span class="flex-grow-1">
-                Thanh toán
-            </span>
-            <i class="bi bi-chevron-down"></i>
-        </a>
-
-        <div class="collapse show" id="paymentMenu">
-            <a href="{{ url('/admin/payment-methods') }}"
-                class="sidebar-link ps-5 {{ request()->is('admin/payment-methods*') ? 'active' : '' }}">
-                <i class="bi bi-wallet2"></i>
-                Phương thức
-            </a>
-
-            <a href="{{ url('/admin/payments') }}"
-                class="sidebar-link ps-5 {{ request()->is('admin/payments*') ? 'active' : '' }}">
-                <i class="bi bi-cash-coin"></i>
-                Lịch sử thanh toán
-            </a>
-        </div>
-
+       
         <div class="sidebar-title">
             Marketing
         </div>
