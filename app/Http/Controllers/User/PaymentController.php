@@ -76,8 +76,11 @@ class PaymentController extends Controller
             return back()->withErrors(['error' => 'Không tìm thấy đơn đặt sân.']);
         }
 
-        $paymentStartedAt = $booking->payment_started_at ?? null;
-        if (empty($paymentStartedAt)) {
+        $hasPaymentStartedAtColumn = Schema::hasColumn('bookings', 'payment_started_at');
+        $paymentStartedAt = $hasPaymentStartedAtColumn
+            ? ($booking->payment_started_at ?? null)
+            : null;
+        if ($hasPaymentStartedAtColumn && empty($paymentStartedAt)) {
             $paymentStartedAt = now();
             DB::table('bookings')->where('id', $booking->id)->update([
                 'payment_started_at' => $paymentStartedAt

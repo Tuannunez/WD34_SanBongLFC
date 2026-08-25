@@ -63,7 +63,7 @@
                                 <select name="field_id" id="fieldSelect" class="form-select rounded-3 py-2.5" required>
                                     <option value="">-- Chọn sân --</option>
                                     @foreach($fields as $field)
-                                        <option value="{{ $field->id }}" data-price="{{ $field->price_per_hour ?? 250000 }}" @selected(request()->input('field') == $field->id)>
+                                        <option value="{{ $field->id }}" data-price="{{ $field->price_per_hour ?? 350000 }}" @selected(request()->input('field') == $field->id)>
                                             {{ $field->name }}
                                         </option>
                                     @endforeach
@@ -75,12 +75,12 @@
                                 <select name="time_slot_id" id="timeSlotSelect" class="form-select rounded-3 py-2.5" required>
                                     <option value="">-- Chọn khung giờ đá --</option>
                                     @foreach($timeSlots as $timeSlot)
-                                        @php
-                                            // Lấy giá chuẩn trực tiếp từ cơ sở dữ liệu của time_slot hoặc fallback về 250000 khớp với đơn lẻ
-                                            $slotPrice = $timeSlot->price ?? $timeSlot->slot_price ?? 250000;
-                                        @endphp
-                                        <option value="{{ $timeSlot->id }}" data-price="{{ $slotPrice }}">
-                                            {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }} ({{ number_format($slotPrice, 0, ',', '.') }}đ)
+                                        <option
+                                            value="{{ $timeSlot->id }}"
+                                            data-prices='@json(collect($fields)->mapWithKeys(fn ($field) => [$field->id => $fieldSlotPrices[$field->id][$timeSlot->id] ?? null]))'
+                                            data-time="{{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}"
+                                        >
+                                            {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -207,8 +207,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const dayOfWeek = parseInt(dayOfWeekSelect.value);
 
         const selectedSlot = timeSlotSelect.options[timeSlotSelect.selectedIndex];
-        // Đọc trực tiếp data-price từ option khung giờ được chọn để đồng bộ với đơn lẻ (250k)
-        let pricePerSlot = selectedSlot ? parseFloat(selectedSlot.getAttribute('data-price')) || 250000 : 250000;
+        let prices = {};
+        try {
+            prices = selectedSlot ? JSON.parse(selectedSlot.dataset.prices || '{}') : {};
+        } catch (error) {
+            prices = {};
+        }
+
+        const selectedField = fieldSelect.options[fieldSelect.selectedIndex];
+        let pricePerSlot = selectedSlot && selectedField
+            ? parseFloat(prices[selectedField.value]) || parseFloat(selectedField.dataset.price) || 350000
+            : 0;
 
         let slotCount = 0;
         const today = new Date();
