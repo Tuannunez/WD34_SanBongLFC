@@ -19,6 +19,8 @@ use App\Http\Controllers\Admin\BookingCheckInScannerController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
+use App\Http\Controllers\User\BookingCheckInController;
+use App\Http\Controllers\User\BookingCheckOutController;
 use App\Http\Controllers\User\NewsController as UserNewsController;
 use App\Http\Controllers\User\NotificationController as UserNotificationController;
 use App\Http\Controllers\User\PaymentController;
@@ -137,6 +139,16 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/don-dat-san-cua-toi/{booking}', [UserBookingController::class, 'show'])
         ->whereNumber('booking')
         ->name('user.bookings.show');
+
+    Route::post('/don-dat-san-cua-toi/{booking}/check-in', [BookingCheckInController::class, 'store'])
+        ->whereNumber('booking')
+        ->middleware('throttle:10,1')
+        ->name('user.bookings.check-in');
+
+    Route::post('/don-dat-san-cua-toi/{booking}/check-out', [BookingCheckOutController::class, 'store'])
+        ->whereNumber('booking')
+        ->middleware('throttle:10,1')
+        ->name('user.bookings.check-out');
 
     // Route tự thêm giờ & thêm dịch vụ cho khách hàng
     Route::post('/don-dat-san-cua-toi/{booking}/add-extra-time', [UserBookingController::class, 'addExtraTime'])

@@ -577,6 +577,72 @@
                                                     </a>
                                                 @endif
 
+                                                {{-- KHÁCH TỰ KẾT THÚC SỚM KHI ĐANG SỬ DỤNG SÂN --}}
+                                                @if($status === 'confirmed' && $usageStatus === 'checked_in')
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#earlyCheckOutModal{{ $booking->id }}"
+                                                        title="Kết thúc sớm – Check-out"
+                                                        aria-label="Kết thúc sớm – Check-out"
+                                                        style="width: 32px; height: 32px;"
+                                                    >
+                                                        <i class="bi bi-box-arrow-right"></i>
+                                                    </button>
+
+                                                    <div
+                                                        class="modal fade text-start"
+                                                        id="earlyCheckOutModal{{ $booking->id }}"
+                                                        tabindex="-1"
+                                                        aria-labelledby="earlyCheckOutModalLabel{{ $booking->id }}"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <form
+                                                                action="{{ route('user.bookings.check-out', $booking->id) }}"
+                                                                method="POST"
+                                                                class="modal-content border-0 shadow rounded-4"
+                                                            >
+                                                                @csrf
+
+                                                                <div class="modal-header border-0 pb-0">
+                                                                    <h5
+                                                                        class="modal-title fw-bold text-primary"
+                                                                        id="earlyCheckOutModalLabel{{ $booking->id }}"
+                                                                    >
+                                                                        <i class="bi bi-box-arrow-right me-2"></i>
+                                                                        Xác nhận check-out sớm
+                                                                    </h5>
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Đóng"
+                                                                    ></button>
+                                                                </div>
+
+                                                                <div class="modal-body pt-3">
+                                                                    Bạn xác nhận đã rời sân? Phiên sử dụng sẽ kết thúc ngay.
+                                                                </div>
+
+                                                                <div class="modal-footer border-0 pt-0">
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn btn-light border"
+                                                                        data-bs-dismiss="modal"
+                                                                    >
+                                                                        Quay lại
+                                                                    </button>
+                                                                    <button type="submit" class="btn btn-primary">
+                                                                        Xác nhận check-out
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 @if($status !== 'cancelled')
                                                     <button type="button" 
                                                             class="btn btn-sm btn-outline-success rounded-3 d-inline-flex align-items-center gap-1 py-1.5"
