@@ -37,18 +37,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 32px 24px;
         }
 
         .auth-box {
             width: 100%;
-            max-width: 520px;
+            max-width: 540px;
+            min-height: 660px;
             background: #fff;
             border-radius: 34px;
             padding: 44px 38px 36px;
             position: relative;
             border: 1px solid rgba(229, 231, 235, .9);
             box-shadow: 0 30px 80px rgba(15, 23, 42, .14);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .close-btn {
@@ -280,17 +284,17 @@
 
             <div class="form-group">
                 <div class="input-wrap">
-                    <i class="bi bi-envelope input-icon"></i>
-                    <input id="email"
-                           type="email"
-                           name="email"
-                           value="{{ old('email') }}"
-                           class="auth-input @error('email') is-invalid @enderror"
-                           placeholder="Email"
+                    <i class="bi bi-person-vcard input-icon"></i>
+                    <input id="login"
+                           type="text"
+                           name="login"
+                           value="{{ old('login') }}"
+                           class="auth-input @error('login') is-invalid @enderror"
+                           placeholder="Email hoặc số điện thoại"
                            required
                            autofocus>
                 </div>
-                @error('email')
+                @error('login')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
             </div>

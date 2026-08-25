@@ -38,18 +38,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 32px 24px;
         }
 
         .auth-box {
             width: 100%;
             max-width: 560px;
+            min-height: 680px;
             background: #fff;
             border-radius: 34px;
             padding: 44px 38px 36px;
             position: relative;
             border: 1px solid rgba(229, 231, 235, .9);
             box-shadow: 0 30px 80px rgba(15, 23, 42, .14);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .close-btn {
@@ -289,6 +293,23 @@
                            required>
                 </div>
                 @error('email')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <div class="input-wrap">
+                    <i class="bi bi-telephone input-icon"></i>
+                    <input id="phone"
+                           type="tel"
+                           name="phone"
+                           value="{{ old('phone') }}"
+                           class="auth-input @error('phone') is-invalid @enderror"
+                           placeholder="Số điện thoại"
+                           pattern="^(0|\+84)(3|5|7|8|9)[0-9]{8,9}$"
+                           required>
+                </div>
+                @error('phone')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
             </div>
