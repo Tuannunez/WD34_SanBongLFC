@@ -98,18 +98,6 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Số điện thoại liên hệ</label>
-                                    <input type="text"
-                                           name="customer_phone"
-                                           value="{{ old('customer_phone', Auth::user()->phone ?? '') }}"
-                                           class="form-control rounded-3 @error('customer_phone') is-invalid @enderror"
-                                           placeholder="Nhập số điện thoại liên hệ">
-                                    @error('customer_phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="mb-3">
                                     <label class="form-label fw-semibold">Khung giờ</label>
                                     <select name="time_slot_id" class="form-select rounded-3" required>
                                         <option value="">-- Chọn khung giờ --</option>
@@ -387,22 +375,9 @@
 
         const bookingForm = document.getElementById('singleBookingForm');
         if (bookingForm) {
-            const customerPhoneInput = bookingForm.querySelector('[name="customer_phone"]');
-
             function markInvalidFields(form) {
                 form.querySelectorAll(':invalid').forEach(function (field) {
                     field.classList.add('is-invalid');
-                });
-            }
-
-            if (customerPhoneInput) {
-                customerPhoneInput.addEventListener('input', function () {
-                    if (customerPhoneInput.validity.valid) {
-                        customerPhoneInput.classList.remove('is-invalid');
-                    }
-                });
-                customerPhoneInput.addEventListener('invalid', function () {
-                    customerPhoneInput.classList.add('is-invalid');
                 });
             }
 

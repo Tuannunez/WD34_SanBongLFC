@@ -450,21 +450,7 @@ class BookingController extends Controller
                 ]);
         }
 
-        $customerPhone = trim((string) $request->input('customer_phone', $user->phone ?? ''));
-        if ($customerPhone === '') {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'customer_phone' => 'Vui lòng nhập số điện thoại.',
-                ]);
-        }
-        if (!preg_match('/^[0-9]{1,10}$/', $customerPhone)) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'customer_phone' => 'Số điện thoại chỉ gồm số và tối đa 10 chữ số.',
-                ]);
-        }
+        $customerPhone = null;
 
         $timeSlotText = $request->input('time_slot');
         if ($timeSlotText) {
