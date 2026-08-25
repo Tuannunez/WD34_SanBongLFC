@@ -424,26 +424,6 @@
 
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">
-                                            Số điện thoại liên hệ <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text"
-                                               name="customer_phone"
-                                               value="{{ old('customer_phone', Auth::user()->phone ?? '') }}"
-                                               class="form-control rounded-3 @error('customer_phone') is-invalid @enderror"
-                                               placeholder="Nhập số điện thoại liên hệ"
-                                               inputmode="numeric"
-                                               pattern="[0-9]{1,10}"
-                                               title="Chỉ nhập số và tối đa 10 chữ số"
-                                               maxlength="10"
-                                               required>
-
-                                        <div class="invalid-feedback" id="customerPhoneFeedback">
-                                            @error('customer_phone'){{ $message }}@else Chỉ nhập số và tối đa 10 chữ số.@enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
                                             Chọn khung giờ <span class="text-danger">*</span>
                                         </label>
 
@@ -701,7 +681,6 @@
         const bookingDate = document.getElementById('bookingDate');
         const selectedField = document.getElementById('selectedField');
         const bookingForm = document.getElementById('bookingForm');
-        const customerPhoneInput = bookingForm ? bookingForm.querySelector('[name="customer_phone"]') : null;
         const serviceCheckboxes = Array.from(document.querySelectorAll('.service-select-panel'));
         const serviceQtyInputs = Array.from(document.querySelectorAll('.service-qty-panel'));
         let selectedSlotPrice = 0;
@@ -971,25 +950,6 @@
                 updateTotalPrice();
             });
         });
-
-        if (customerPhoneInput) {
-            const customerPhoneFeedback = document.getElementById('customerPhoneFeedback');
-
-            customerPhoneInput.addEventListener('invalid', function (event) {
-                event.preventDefault();
-                customerPhoneInput.classList.add('is-invalid');
-                if (customerPhoneFeedback) {
-                    customerPhoneFeedback.textContent = 'Số điện thoại chỉ gồm số và tối đa 10 chữ số.';
-                }
-            });
-
-            customerPhoneInput.addEventListener('input', function () {
-                customerPhoneInput.setCustomValidity('');
-                if (customerPhoneInput.validity.valid) {
-                    customerPhoneInput.classList.remove('is-invalid');
-                }
-            });
-        }
 
         fetchAvailability();
     });
