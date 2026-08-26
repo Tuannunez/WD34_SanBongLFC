@@ -339,6 +339,21 @@
             </button>
         </form>
 
+        <div class="d-flex align-items-center gap-3 my-3 text-muted small">
+            <hr class="flex-grow-1 my-0">
+            <span>Hoặc tiếp tục với</span>
+            <hr class="flex-grow-1 my-0">
+        </div>
+
+        <div class="d-grid gap-2">
+            <a href="{{ route('login.provider', 'google') }}" class="btn btn-outline-dark rounded-3">
+                <i class="bi bi-google me-2"></i> Google
+            </a>
+            <a href="{{ route('login.provider', 'facebook') }}" class="btn btn-primary rounded-3">
+                <i class="bi bi-facebook me-2"></i> Facebook
+            </a>
+        </div>
+
         <div class="bottom-text">
             Chưa có tài khoản?
             <a href="{{ route('register') }}">Đăng ký ngay</a>

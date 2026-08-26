@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SanBongLFC')</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1910,13 +1911,14 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
 
             const response = await fetch(
-                "{{ route('register') }}",
+                "{{ route('register.store') }}",
                 {
                     method: "POST",
 
                     headers: {
                         "Accept": "application/json",
-                        "X-Requested-With": "XMLHttpRequest"
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
                     },
 
                     body: new FormData(form)
@@ -2185,6 +2187,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         </form>
 
+        <div class="d-flex align-items-center gap-3 my-3 text-muted small">
+            <hr class="flex-grow-1 my-0">
+            <span>Hoặc tiếp tục với</span>
+            <hr class="flex-grow-1 my-0">
+        </div>
+
+        <div class="d-grid gap-2">
+            <a href="{{ route('login.provider', 'google') }}" class="btn btn-outline-dark rounded-3">
+                <i class="bi bi-google me-2"></i> Google
+            </a>
+            <a href="{{ route('login.provider', 'facebook') }}" class="btn btn-primary rounded-3">
+                <i class="bi bi-facebook me-2"></i> Facebook
+            </a>
+        </div>
+
     </div>
 </div>
 <script>
@@ -2248,12 +2265,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
 
-            const response = await fetch("{{ route('login') }}", {
+            const response = await fetch("{{ route('login.store') }}", {
                 method: "POST",
 
                 headers: {
                     "Accept": "application/json",
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
                 },
 
                 body: new FormData(form)
