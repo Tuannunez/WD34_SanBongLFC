@@ -87,6 +87,14 @@ Route::middleware('guest')->group(function (): void {
 
     Route::post('/login', [LoginController::class, 'store'])
         ->name('login.store');
+
+    Route::get('/login/{provider}', [LoginController::class, 'redirectToProvider'])
+        ->whereIn('provider', ['google', 'facebook'])
+        ->name('login.provider');
+
+    Route::get('/login/{provider}/callback', [LoginController::class, 'handleProviderCallback'])
+        ->whereIn('provider', ['google', 'facebook'])
+        ->name('login.provider.callback');
 });
 
 /*

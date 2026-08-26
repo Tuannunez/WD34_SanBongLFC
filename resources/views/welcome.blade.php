@@ -19,6 +19,224 @@
             </style>
         @endif
     </head>
+        <!-- LOGIN MODAL -->
+    <div
+        id="loginModal"
+        class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/60"
+    >
+        <div
+            class="relative w-[420px] max-w-[90%] rounded-2xl bg-white p-8 shadow-2xl"
+        >
+
+            <!-- Nút đóng -->
+            <button
+                type="button"
+                onclick="closeLoginModal()"
+                class="absolute right-4 top-3 text-2xl text-gray-500 hover:text-black"
+            >
+                ×
+            </button>
+
+            <!-- Tiêu đề -->
+            <div class="mb-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Đăng nhập
+                </h2>
+
+                <p class="mt-2 text-sm text-gray-500">
+                    Đăng nhập để tiếp tục sử dụng dịch vụ
+                </p>
+            </div>
+
+            <!-- Thông báo lỗi -->
+            <div
+                id="loginMessage"
+                class="mb-4 hidden rounded-lg px-4 py-3 text-sm"
+            ></div>
+
+            <!-- FORM -->
+            <form id="loginForm">
+
+                @csrf
+
+                <!-- Email / SĐT -->
+                <div class="mb-4">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                        Email hoặc số điện thoại
+                    </label>
+
+                    <input
+                        type="text"
+                        name="login"
+                        id="login"
+                        placeholder="Nhập email hoặc số điện thoại"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    >
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="mb-5">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                        Mật khẩu
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        id="password"
+                        placeholder="Nhập mật khẩu"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    >
+                </div>
+
+                <!-- Button -->
+                <button
+                    type="submit"
+                    id="loginButton"
+                    class="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700"
+                >
+                    Đăng nhập
+                </button>
+
+            </form>
+
+            <!-- Đăng ký -->
+            <div class="mt-5 text-center text-sm text-gray-500">
+                Chưa có tài khoản?
+                <a
+                    href="{{ route('register') }}"
+                    class="font-semibold text-blue-600 hover:underline"
+                >
+                    Đăng ký
+                </a>
+            </div>
+
+        </div>
+    </div>
+    <script>
+
+    // Mở popup
+    function openLoginModal() {
+        const modal = document.getElementById('loginModal');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        document.body.style.overflow = 'hidden';
+    }
+
+
+    // Đóng popup
+    function closeLoginModal() {
+        const modal = document.getElementById('loginModal');
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        document.body.style.overflow = '';
+    }
+
+
+    // Click ra ngoài popup thì đóng
+    document.getElementById('loginModal').addEventListener('click', function (event) {
+
+        if (event.target === this) {
+            closeLoginModal();
+        }
+
+    });
+
+
+    // XỬ LÝ ĐĂNG NHẬP
+    document.getElementById('loginForm').addEventListener('submit', async function (event) {
+
+        // QUAN TRỌNG:
+        // Không cho trình duyệt submit form và chuyển trang
+        event.preventDefault();
+
+        const form = this;
+
+        const loginButton = document.getElementById('loginButton');
+        const message = document.getElementById('loginMessage');
+
+        const formData = new FormData(form);
+
+        // Hiện trạng thái đang đăng nhập
+        loginButton.disabled = true;
+        loginButton.innerText = 'Đang đăng nhập...';
+
+        message.classList.add('hidden');
+
+        try {
+
+            const response = await fetch("{{ route('login') }}", {
+
+                method: "POST",
+
+                headers: {
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+
+                body: formData
+            });
+
+
+            const data = await response.json();
+
+
+            // Đăng nhập thành công
+            if (response.ok && data.success) {
+
+                message.className =
+                    "mb-4 rounded-lg bg-green-100 px-4 py-3 text-sm text-green-700";
+
+                message.innerText = data.message;
+
+                message.classList.remove('hidden');
+
+                // Đợi một chút rồi reload trang hiện tại
+                // Không chuyển sang /login
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
+
+                return;
+            }
+
+
+            // Đăng nhập thất bại
+            message.className =
+                "mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700";
+
+            message.innerText =
+                data.message || 'Đăng nhập thất bại.';
+
+            message.classList.remove('hidden');
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.className =
+                "mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700";
+
+            message.innerText =
+                'Có lỗi xảy ra. Vui lòng thử lại.';
+
+            message.classList.remove('hidden');
+
+        } finally {
+
+            loginButton.disabled = false;
+            loginButton.innerText = 'Đăng nhập';
+
+        }
+
+    });
+
+</script> 
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
         <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
@@ -278,3 +496,4 @@
         @endif
     </body>
 </html>
+
