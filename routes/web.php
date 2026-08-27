@@ -89,11 +89,11 @@ Route::middleware('guest')->group(function (): void {
         ->name('login.store');
 
     Route::get('/login/{provider}', [LoginController::class, 'redirectToProvider'])
-        ->whereIn('provider', ['google', 'facebook'])
+        ->whereIn('provider', ['google'])
         ->name('login.provider');
 
     Route::get('/login/{provider}/callback', [LoginController::class, 'handleProviderCallback'])
-        ->whereIn('provider', ['google', 'facebook'])
+        ->whereIn('provider', ['google'])
         ->name('login.provider.callback');
 });
 

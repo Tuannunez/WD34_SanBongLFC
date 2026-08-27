@@ -180,6 +180,24 @@
             transform: translateY(-1px);
         }
 
+        .google-login-button {
+            background-color: #facc15;
+            border-color: #eab308;
+            color: #111827;
+            transition: background-color .2s ease, border-color .2s ease, transform .15s ease;
+        }
+
+        .google-login-button:hover {
+            background-color: #eab308;
+            border-color: #ca8a04;
+            color: #111827;
+            transform: translateY(-1px);
+        }
+
+        .google-login-button:active {
+            transform: translateY(0);
+        }
+
         .forgot-link {
             display: inline-block;
             margin: 8px 0 18px;
@@ -346,11 +364,8 @@
         </div>
 
         <div class="d-grid gap-2">
-            <a href="{{ route('login.provider', 'google') }}" class="btn btn-outline-dark rounded-3">
-                <i class="bi bi-google me-2"></i> Google
-            </a>
-            <a href="{{ route('login.provider', 'facebook') }}" class="btn btn-primary rounded-3">
-                <i class="bi bi-facebook me-2"></i> Facebook
+            <a href="{{ route('login.provider', 'google') }}" class="btn google-login-button rounded-3">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="20" height="20" class="me-2"> Google
             </a>
         </div>
 

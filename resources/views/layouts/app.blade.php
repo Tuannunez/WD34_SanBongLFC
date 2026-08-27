@@ -2194,11 +2194,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="d-grid gap-2">
-            <a href="{{ route('login.provider', 'google') }}" class="btn btn-outline-dark rounded-3">
-                <i class="bi bi-google me-2"></i> Google
-            </a>
-            <a href="{{ route('login.provider', 'facebook') }}" class="btn btn-primary rounded-3">
-                <i class="bi bi-facebook me-2"></i> Facebook
+            <a href="{{ route('login.provider', 'google') }}" class="btn btn-outline-dark rounded-3" style="box-shadow:0 4px 12px rgba(0,0,0,.18);">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="20" height="20" class="me-2"> Google
             </a>
         </div>
 

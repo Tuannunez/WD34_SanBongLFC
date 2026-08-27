@@ -13,7 +13,7 @@ use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
-    private const SOCIAL_PROVIDERS = ['google', 'facebook'];
+    private const SOCIAL_PROVIDERS = ['google'];
 
     public function create()
     {
