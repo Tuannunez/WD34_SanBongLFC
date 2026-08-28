@@ -125,9 +125,12 @@ class LoginController extends Controller
 
             return redirect()->intended(route('home'));
         } catch (\Throwable $exception) {
-            report($exception);
-
-            return redirect()->route('home')->with('error', 'Đăng nhập bằng ' . ucfirst($provider) . ' không thành công.');
+    dd(
+        'GOOGLE LOGIN ERROR',
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine()
+        );
         }
     }
 
