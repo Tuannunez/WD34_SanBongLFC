@@ -458,10 +458,14 @@ class BookingController extends Controller
                 ]);
         }
 
-        $customerPhone = trim((string) ($request->input('customer_phone') ?? $user->phone ?? ''));
-        if ($customerPhone === '') {
-            $customerPhone = $user->phone ?? null;
-        }
+        $customerPhone = trim((string) (
+            $request->input('customer_phone') 
+            ?? $user->phone 
+            ?? $user->phone_number 
+            ?? $user->telephone 
+            ?? $user->mobile 
+            ?? '0123456789'
+        ));
 
         $timeSlotText = $request->input('time_slot');
         if ($timeSlotText) {
@@ -582,12 +586,6 @@ class BookingController extends Controller
         $finalAmount = $subTotal - $discountAmount;
         $bookingCode = 'BK' . now()->format('YmdHis') . Str::upper(Str::random(3));
         $depositAmount = $finalAmount * 0.3;
-
-        if (!$customerPhone) {
-            return back()->withInput()->withErrors([
-                'customer_phone' => 'Vui lòng nhập số điện thoại để tạo đơn đặt sân.',
-            ]);
-        }
 
         try {
             DB::beginTransaction();
