@@ -60,14 +60,18 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Chọn sân đá <span class="text-danger">*</span></label>
-                                <select name="field_id" id="fieldSelect" class="form-select rounded-3 py-2.5" required>
-                                    <option value="">-- Chọn sân --</option>
-                                    @foreach($fields as $field)
-                                        <option value="{{ $field->id }}" data-price="{{ $field->price_per_hour ?? 350000 }}" @selected(request()->input('field') == $field->id)>
-                                            {{ $field->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                
+                                @php
+                                    // Lấy đúng ID sân được truyền từ nút "Đặt sân" ở trang danh sách
+                                    $selectedFieldId = request()->input('field_id') ?? request()->input('field');
+                                    $selectedField = $fields->where('id', $selectedFieldId)->first() ?? $fields->first();
+                                @endphp
+
+                                {{-- Hiển thị tên sân cố định dưới dạng input readonly (màu xám, không cho chọn lại) --}}
+                                <input type="text" class="form-control rounded-3 py-2.5 bg-light" value="{{ $selectedField->name ?? 'Không xác định' }}" readonly>
+                                
+                                {{-- Input ẩn mang theo id và giá tiền chuẩn của sân đó để gửi ngầm về server & chạy JavaScript tính tiền --}}
+                                <input type="hidden" name="field_id" id="fieldSelect" value="{{ $selectedField->id ?? '' }}" data-price="{{ $selectedField->price_per_hour ?? 350000 }}">
                             </div>
 
                             <div class="col-md-6">
@@ -214,9 +218,9 @@ document.addEventListener('DOMContentLoaded', function () {
             prices = {};
         }
 
-        const selectedField = fieldSelect.options[fieldSelect.selectedIndex];
-        let pricePerSlot = selectedSlot && selectedField
-            ? parseFloat(prices[selectedField.value]) || parseFloat(selectedField.dataset.price) || 350000
+        const fieldId = fieldSelect.value;
+        let pricePerSlot = selectedSlot && fieldId
+            ? parseFloat(prices[fieldId]) || parseFloat(fieldSelect.dataset.price) || 350000
             : 0;
 
         let slotCount = 0;

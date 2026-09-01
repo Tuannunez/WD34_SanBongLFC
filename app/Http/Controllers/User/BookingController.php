@@ -17,23 +17,32 @@ class BookingController extends Controller
 {
     public function index()
     {
-        $query = DB::table('bookings')
-            ->leftJoin('booking_details', 'bookings.id', '=', 'booking_details.booking_id')
+        // Lấy danh sách đơn đặt sân chính của user, mỗi đơn chỉ hiển thị duy nhất 1 dòng
+        $bookings = DB::table('bookings')
+            ->where('user_id', Auth::id())
+            ->orderByDesc('id')
+            ->paginate(10);
+
+        // Lấy kèm thông tin chi tiết (các khung giờ, tên sân) cho từng đơn trong trang hiện tại để hiển thị nếu cần
+        $bookingIds = $bookings->pluck('id');
+        
+        $details = DB::table('booking_details')
             ->leftJoin('fields', 'booking_details.field_id', '=', 'fields.id')
             ->leftJoin('time_slots', 'booking_details.time_slot_id', '=', 'time_slots.id')
-            ->where('bookings.user_id', Auth::id())
+            ->whereIn('booking_details.booking_id', $bookingIds)
             ->select(
-                'bookings.*',
-                'booking_details.booking_date as detail_booking_date',
-                'booking_details.price as detail_price',
+                'booking_details.*',
                 'fields.name as field_name',
-                'fields.price_per_hour as field_price_per_hour',
                 'time_slots.start_time as slot_start_time',
                 'time_slots.end_time as slot_end_time'
             )
-            ->orderByDesc('bookings.id');
+            ->get()
+            ->groupBy('booking_id');
 
-        $bookings = $query->paginate(10);
+        // Gắn phần chi tiết vào từng đơn hàng để view dễ dàng lặp qua các khung giờ nếu muốn
+        foreach ($bookings as $booking) {
+            $booking->details = $details[$booking->id] ?? collect();
+        }
 
         return view('user.bookings.index', compact('bookings'));
     }
@@ -709,8 +718,11 @@ class BookingController extends Controller
             return back()->withInput()->withErrors(['error' => 'Không tìm thấy buổi đá nào hợp lệ từ hôm nay trở đi trong tháng đã chọn.']);
         }
 
-        $totalAmount = $slotCount * $pricePerSlot;
-        $payableNow = ($paymentType === 'full') ? $totalAmount : ($totalAmount * 0.50);
+       $totalAmount = $slotCount * $pricePerSlot;
+        
+        // Ưu tiên lấy số tiền cọc/thanh toán ngay do JavaScript đã tính toán từ form gửi lên
+        $payableNowInput = (float) $request->input('calculated_payable_amount', 0);
+        $payableNow = ($payableNowInput > 0) ? $payableNowInput : (($paymentType === 'full') ? $totalAmount : ($totalAmount * 0.50));
 
         $bookingCode = 'BM' . now()->format('YmdHis') . Str::upper(Str::random(3));
 
@@ -725,8 +737,8 @@ class BookingController extends Controller
                 'customer_name' => Auth::user()->name ?? 'Khách hàng',
                 'customer_email' => Auth::user()->email,
                 'customer_phone' => Auth::user()->phone ?? '0123456789',
-                'total_amount' => $totalAmount,
-                'final_amount' => $totalAmount,
+                'total_amount' => $payableNow,
+                'final_amount' => $payableNow,
                 'deposit_amount' => $payableNow,
                 'is_deposit_paid' => false,
                 'status' => 'pending',
