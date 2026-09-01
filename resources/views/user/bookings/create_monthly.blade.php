@@ -1,27 +1,29 @@
 @extends('layouts.app')
 
-@section('title', 'Đăng ký đặt sân cố định theo tháng')
+@section('title', 'Đăng ký giữ sân cố định theo tháng')
 
 @section('content')
-<div class="container py-5">
+<div class="container py-4" style="max-width: 1140px;">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- HEADER TRANG (GỌN GÀNG, CÂN ĐỐI) --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 pb-3 border-bottom">
         <div>
-            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold mb-2">
-                <i class="bi bi-calendar-range-fill me-1"></i> Lịch cố định đội bóng
+            <span class="badge bg-success bg-opacity-10 text-success px-3 py-1.5 rounded-pill fw-bold mb-2">
+                <i class="bi bi-calendar-check-fill me-1"></i> ĐẶT LỊCH ĐỊNH KỲ THÁNG
             </span>
-            <h3 class="fw-bold mb-1">Đăng ký giữ sân cố định theo tháng</h3>
-            <p class="text-muted mb-0">Cụm sân: <strong>{{ $stadium->name }}</strong></p>
+            <h3 class="fw-bold text-dark mb-1">Đăng ký giữ sân cố định theo tháng</h3>
+            <p class="text-secondary small mb-0">Cụm sân thi đấu: <strong class="text-dark">{{ $stadium->name }}</strong></p>
         </div>
-
-        <a href="{{ route('stadiums.show', $stadium->id) }}" class="btn btn-outline-secondary rounded-3">
-            <i class="bi bi-arrow-left me-1"></i> Quay lại chi tiết sân
-        </a>
+        <div>
+            <a href="{{ route('stadiums.show', $stadium->id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold bg-white">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại chi tiết sân
+            </a>
+        </div>
     </div>
 
     @if ($errors->any())
-        <div class="alert alert-danger rounded-4 mb-4 p-3 border-0 shadow-sm">
-            <div class="d-flex align-items-center gap-2 text-danger fw-bold mb-1">
+        <div class="alert alert-danger rounded-4 mb-4 p-3 border-0 shadow-sm bg-danger bg-opacity-10 text-danger">
+            <div class="d-flex align-items-center gap-2 fw-bold mb-1">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i> Vui lòng kiểm tra lại thông tin:
             </div>
             <ul class="mb-0 ps-4 small">
@@ -32,69 +34,83 @@
         </div>
     @endif
 
-    {{-- THẺ FORM ÔM TRỌN CẢ 2 CỘT ĐỂ ĐẢM BẢO GỬI ĐỦ DỮ LIỆU --}}
     <form action="{{ route('user.bookings.storeMonthly') }}" method="POST" id="monthlyBookingForm">
         @csrf
         <input type="hidden" name="stadium_id" value="{{ $stadium->id }}">
-
-        {{-- 2 THẺ ẨN TRUYỀN CHÍNH XÁC SỐ TIỀN TỪ JS SANG CONTROLLER --}}
         <input type="hidden" name="calculated_total_amount" id="inputTotalAmount" value="0">
         <input type="hidden" name="calculated_payable_amount" id="inputPayableAmount" value="0">
 
-        <div class="row g-4">
-            {{-- CỘT CẤU HÌNH LỊCH THÁNG (BÊN TRÁI) --}}
+        <div class="row g-4 align-items-start">
+            {{-- CỘT CẤU HÌNH LỊCH THÁNG (BÊN TRÁI - 8 PHẦN) --}}
             <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                    <div class="card-header bg-success text-white p-3.5 px-4 border-0">
-                        <h5 class="fw-bold mb-0 fs-6">
-                            <i class="bi bi-sliders me-2"></i> Thiết lập lịch cố định cả tháng
-                        </h5>
-                    </div>
-
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
                     <div class="card-body p-4">
-                        <div class="alert alert-warning border-0 rounded-3 small mb-4 bg-warning bg-opacity-10 text-warning-emphasis">
-                            <i class="bi bi-shield-lock-fill me-1 text-warning"></i>
-                            <strong>Quy chế đặt lịch tháng:</strong> Đội bóng có thể chọn cọc trước 50% hoặc thanh toán đủ 100%. Hệ thống chỉ tính tiền và giữ lịch từ ngày hiện tại trở đi.
+                        
+                        {{-- TIÊU ĐỀ SECTION --}}
+                        <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                            <div class="bg-success text-white rounded-3 p-2.5 d-flex align-items-center justify-content-center shadow-xs" style="width: 42px; height: 42px;">
+                                <i class="bi bi-sliders fs-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0 fs-6">Thiết lập lịch cố định cả tháng</h5>
+                                <span class="text-muted small">Chọn khung giờ vàng và lịch đá định kỳ cho đội bóng</span>
+                            </div>
+                        </div>
+
+                        {{-- CẢNH BÁO QUY CHẾ --}}
+                        <div class="alert alert-warning border-0 rounded-3 small mb-4 bg-warning bg-opacity-10 text-dark p-3 d-flex align-items-start gap-2">
+                            <i class="bi bi-shield-lock-fill fs-5 text-warning flex-shrink-0 mt-0.5"></i>
+                            <div style="line-height: 1.4;">
+                                <strong class="d-block mb-0.5 text-dark">Quy chế giữ lịch tháng:</strong>
+                                Đội bóng có thể chọn cọc trước 50% hoặc thanh toán đủ 100%. Hệ thống tự động tính toán chi phí từ ngày hôm nay trở đi.
+                            </div>
                         </div>
 
                         <div class="row g-3">
+                            {{-- CHỌN SÂN --}}
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Chọn sân đá <span class="text-danger">*</span></label>
-                                
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Sân thi đấu</label>
                                 @php
-                                    // Lấy đúng ID sân được truyền từ nút "Đặt sân" ở trang danh sách
                                     $selectedFieldId = request()->input('field_id') ?? request()->input('field');
                                     $selectedField = $fields->where('id', $selectedFieldId)->first() ?? $fields->first();
                                 @endphp
-
-                                {{-- Hiển thị tên sân cố định dưới dạng input readonly (màu xám, không cho chọn lại) --}}
-                                <input type="text" class="form-control rounded-3 py-2.5 bg-light" value="{{ $selectedField->name ?? 'Không xác định' }}" readonly>
-                                
-                                {{-- Input ẩn mang theo id và giá tiền chuẩn của sân đó để gửi ngầm về server & chạy JavaScript tính tiền --}}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 rounded-start-3 text-success fw-bold px-3">
+                                        <i class="bi bi-shield-shaded"></i>
+                                    </span>
+                                    <input type="text" class="form-control bg-light border-start-0 rounded-end-3 py-2 fw-bold text-dark shadow-none" value="{{ $selectedField->name ?? 'Không xác định' }}" readonly>
+                                </div>
                                 <input type="hidden" name="field_id" id="fieldSelect" value="{{ $selectedField->id ?? '' }}" data-price="{{ $selectedField->price_per_hour ?? 350000 }}">
                             </div>
 
+                            {{-- KHUNG GIỜ CỐ ĐỊNH --}}
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Khung giờ đá cố định <span class="text-danger">*</span></label>
-                                <select name="time_slot_id" id="timeSlotSelect" class="form-select rounded-3 py-2.5" required>
-                                    <option value="">-- Chọn khung giờ đá --</option>
-                                    @foreach($timeSlots as $timeSlot)
-                                        <option
-                                            value="{{ $timeSlot->id }}"
-                                            data-prices='@json(collect($fields)->mapWithKeys(fn ($field) => [$field->id => $fieldSlotPrices[$field->id][$timeSlot->id] ?? null]))'
-                                            data-time="{{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}"
-                                        >
-                                            {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Khung giờ cố định <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 rounded-start-3 text-success fw-bold px-3">
+                                        <i class="bi bi-clock"></i>
+                                    </span>
+                                    <select name="time_slot_id" id="timeSlotSelect" class="form-select border-start-0 rounded-end-3 py-2 shadow-none fw-medium text-dark" required>
+                                        <option value="">-- Chọn khung giờ đá --</option>
+                                        @foreach($timeSlots as $timeSlot)
+                                            <option
+                                                value="{{ $timeSlot->id }}"
+                                                data-prices='@json(collect($fields)->mapWithKeys(fn ($field) => [$field->id => $fieldSlotPrices[$field->id][$timeSlot->id] ?? null]))'
+                                                data-time="{{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}"
+                                            >
+                                                {{ substr($timeSlot->start_time, 0, 5) }} - {{ substr($timeSlot->end_time, 0, 5) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
 
+                            {{-- THỨ TRONG TUẦN --}}
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Thứ cố định trong tuần <span class="text-danger">*</span></label>
-                                <select name="day_of_week" id="dayOfWeekSelect" class="form-select rounded-3 py-2.5" required>
-                                    <option value="0" selected>Chủ Nhật (Mọi Chủ Nhật)</option>
-                                    <option value="6">Thứ Bảy (Mọi Thứ Bảy)</option>
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Thứ trong tuần <span class="text-danger">*</span></label>
+                                <select name="day_of_week" id="dayOfWeekSelect" class="form-select rounded-3 py-2 shadow-none fw-medium text-dark" required>
+                                    <option value="0" selected>Chủ Nhật (Hằng tuần)</option>
+                                    <option value="6">Thứ Bảy (Hằng tuần)</option>
                                     <option value="5">Thứ Sáu</option>
                                     <option value="4">Thứ Năm</option>
                                     <option value="3">Thứ Tư</option>
@@ -103,79 +119,108 @@
                                 </select>
                             </div>
 
+                            {{-- THÁNG ĐĂNG KÝ --}}
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Tháng đăng ký <span class="text-danger">*</span></label>
-                                <select name="month" id="monthSelect" class="form-select rounded-3 py-2.5" required>
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Tháng đăng ký <span class="text-danger">*</span></label>
+                                <select name="month" id="monthSelect" class="form-select rounded-3 py-2 shadow-none fw-medium text-dark" required>
                                     @for($m = 1; $m <= 12; $m++)
                                         <option value="{{ $m }}" @selected($m == now()->month)>Tháng {{ $m }}</option>
                                     @endfor
                                 </select>
                             </div>
 
+                            {{-- NĂM ĐĂNG KÝ --}}
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Năm đăng ký <span class="text-danger">*</span></label>
-                                <select name="year" id="yearSelect" class="form-select rounded-3 py-2.5" required>
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Năm đăng ký <span class="text-danger">*</span></label>
+                                <select name="year" id="yearSelect" class="form-select rounded-3 py-2 shadow-none fw-medium text-dark" required>
                                     <option value="2026" selected>Năm 2026</option>
                                     <option value="2027">Năm 2027</option>
                                 </select>
                             </div>
 
+                            {{-- HÌNH THỨC THANH TOÁN --}}
                             <div class="col-12 mt-3">
-                                <label class="form-label fw-semibold">Hình thức thanh toán áp dụng</label>
-                                <div class="d-flex gap-4 p-3 bg-light rounded-3 border">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment_type" id="mPayDeposit50" value="deposit_50" checked>
-                                        <label class="form-check-label fw-medium text-dark" for="mPayDeposit50">
-                                            Đặt cọc trước <strong>50% tổng tiền</strong> (50% còn lại trả theo từng buổi)
+                                <label class="form-label fw-bold text-secondary small text-uppercase mb-2">Hình thức thanh toán áp dụng</label>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <input type="radio" class="btn-check" name="payment_type" id="mPayDeposit50" value="deposit_50" checked>
+                                        <label class="card h-100 border p-3 rounded-3 cursor-pointer shadow-xs transition-all payment-card" for="mPayDeposit50">
+                                            <div class="d-flex align-items-start gap-2.5">
+                                                <div class="form-check mt-0.5">
+                                                    <input class="form-check-input shadow-none" type="radio" name="payment_type_fake" checked>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-bold text-dark d-block mb-1 small">Đặt cọc trước 50%</span>
+                                                    <span class="text-muted small d-block" style="font-size: 12px; line-height: 1.4;">50% tiền sân còn lại sẽ được thanh toán dần theo từng buổi khi ra sân.</span>
+                                                </div>
+                                            </div>
                                         </label>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment_type" id="mPayFull" value="full">
-                                        <label class="form-check-label fw-medium text-success" for="mPayFull">
-                                            Thanh toán đủ <strong>100% chi phí cả tháng</strong>
+
+                                    <div class="col-md-6">
+                                        <input type="radio" class="btn-check" name="payment_type" id="mPayFull" value="full">
+                                        <label class="card h-100 border p-3 rounded-3 cursor-pointer shadow-xs transition-all payment-card" for="mPayFull">
+                                            <div class="d-flex align-items-start gap-2.5">
+                                                <div class="form-check mt-0.5">
+                                                    <input class="form-check-input shadow-none" type="radio" name="payment_type_fake">
+                                                </div>
+                                                <div>
+                                                    <span class="fw-bold text-success d-block mb-1 small">Thanh toán đủ 100%</span>
+                                                    <span class="text-muted small d-block" style="font-size: 12px; line-height: 1.4;">Thanh toán trọn gói cả tháng, an tâm ra sân thi đấu không cần bận tâm thanh toán lẻ.</span>
+                                                </div>
+                                            </div>
                                         </label>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            {{-- CỘT HIỂN THỊ CHI TIẾT SỐ BUỔI & NÚT SUBMIT (BÊN PHẢI) --}}
+            {{-- CỘT HÓA ĐƠN THANH TOÁN (BÊN PHẢI - 4 PHẦN) --}}
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 20px;">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="fw-bold mb-0 text-success"><i class="bi bi-receipt me-2"></i>Chi tiết thanh toán</h5>
+                <div class="card border-0 shadow-sm rounded-4 position-sticky bg-white overflow-hidden" style="top: 20px;">
+                    
+                    {{-- HEADER HÓA ĐƠN CHỮ TRẮNG --}}
+                    <div class="p-3 bg-success text-white">
+                        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2 fs-6">
+                            <i class="bi bi-receipt-cutoff text-white"></i> Chi tiết thanh toán
+                        </h5>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled small text-muted mb-4">
+
+                    <div class="card-body p-3.5">
+                        <ul class="list-unstyled text-dark mb-3 small">
                             <li class="d-flex justify-content-between py-2 border-bottom">
-                                <span>Tổng số buổi (từ hôm nay):</span>
-                                <strong class="text-dark" id="totalSlotsText">0 buổi</strong>
+                                <span class="text-secondary">Tổng số buổi (từ hôm nay):</span>
+                                <strong class="text-dark fw-bold" id="totalSlotsText">0 buổi</strong>
                             </li>
                             <li class="d-flex justify-content-between py-2 border-bottom">
-                                <span>Đơn giá tạm tính/buổi:</span>
-                                <strong class="text-dark" id="slotPriceText">0đ</strong>
+                                <span class="text-secondary">Đơn giá tạm tính/buổi:</span>
+                                <strong class="text-dark fw-bold" id="slotPriceText">0đ</strong>
                             </li>
-                            <li class="d-flex justify-content-between py-2 border-bottom fs-6">
-                                <span class="fw-bold text-dark">Tổng tiền cả tháng:</span>
-                                <strong class="text-success" id="totalAmountText">0đ</strong>
-                            </li>
-                            <li class="d-flex justify-content-between py-2 pt-3 fs-6 bg-light px-2 rounded-3 mt-2" id="payableBox">
-                                <span class="fw-bold text-danger" id="payableLabel">Cần thanh toán ngay (Cọc 50%):</span>
-                                <strong class="text-danger fs-5" id="payableAmountText">0đ</strong>
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-dark fw-bold">Tổng tiền cả tháng:</span>
+                                <strong class="text-success fw-bold" id="totalAmountText">0đ</strong>
                             </li>
                         </ul>
 
-                        <div class="p-3 bg-success-subtle rounded-3 text-success mb-3 small" id="noticeText">
-                            <i class="bi bi-info-circle-fill me-1"></i>
-                            Chỉ tính tiền từ các buổi từ hôm nay trở đi trong tháng.
+                        {{-- KHUNG THÀNH TIỀN NỔI BẬT --}}
+                        <div class="p-3 bg-light rounded-3 mb-3 border">
+                            <span class="d-block text-secondary small fw-bold mb-0.5" id="payableLabel">Cần thanh toán ngay (Cọc 50%):</span>
+                            <div class="text-danger fs-3 fw-extrabold" id="payableAmountText">0đ</div>
+                        </div>
+
+                        {{-- ĐOẠN THÔNG BÁO CHỮ TRẮNG KHI DÙNG NỀN XANH LÁ --}}
+                        <div class="p-3 bg-success rounded-3 text-white mb-3 small d-flex align-items-start gap-2 shadow-xs" id="noticeText">
+                            <i class="bi bi-shield-check fs-5 flex-shrink-0 text-white mt-0.5"></i>
+                            <div class="text-white fw-medium small" style="line-height: 1.4;">50% tiền sân còn lại sẽ được thanh toán dần theo từng buổi khi ra sân.</div>
                         </div>
 
                         {{-- NÚT SUBMIT ĐẶT LỊCH THÁNG --}}
-                        <button type="submit" id="submitMonthlyBtn" class="btn btn-success rounded-3 w-100 py-2.5 fw-bold shadow-sm fs-6">
-                            <i class="bi bi-calendar-plus me-1"></i> Tạo Đơn Đặt Lịch Tháng
+                        <button type="submit" id="submitMonthlyBtn" class="btn btn-success rounded-3 w-100 py-2.5 fw-bold shadow-sm fs-6 transition-all hover-scale d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-calendar-plus-fill"></i> Tạo Đơn Đặt Lịch Tháng
                         </button>
                     </div>
                 </div>
@@ -183,6 +228,36 @@
         </div>
     </form>
 </div>
+
+{{-- CSS TÙY CHỈNH THẨM MỸ --}}
+<style>
+    .payment-card {
+        transition: all 0.2s ease-in-out;
+        background-color: #fafbfc;
+    }
+    .payment-card:hover {
+        border-color: #198754 !important;
+        background-color: #fff;
+    }
+    .btn-check:checked + .payment-card {
+        border-color: #198754 !important;
+        background-color: rgba(25, 135, 84, 0.04);
+        box-shadow: 0 0.25rem 0.75rem rgba(25, 135, 84, 0.1) !important;
+    }
+    .btn-check:checked + .payment-card .form-check-input {
+        background-color: #198754;
+        border-color: #198754;
+    }
+    .shadow-xs {
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.04);
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .fw-extrabold {
+        font-weight: 800;
+    }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -243,10 +318,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (selectedPaymentType === 'deposit_50') {
             payableAmount = totalAmount * 0.50;
             payableLabel.textContent = 'Cần thanh toán ngay (Cọc 50%):';
-            noticeText.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> 50% tiền sân còn lại sẽ được thanh toán dần theo từng buổi khi ra sân.';
+            noticeText.innerHTML = '<i class="bi bi-shield-check fs-5 flex-shrink-0 text-white mt-0.5"></i><div class="text-white fw-medium small" style="line-height: 1.4;">50% tiền sân còn lại sẽ được thanh toán dần theo từng buổi khi ra sân.</div>';
         } else {
             payableLabel.textContent = 'Thanh toán ngay (100%):';
-            noticeText.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Đội bóng đã thanh toán đủ toàn bộ chi phí các buổi trong tháng.';
+            noticeText.innerHTML = '<i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-white mt-0.5"></i><div class="text-white fw-medium small" style="line-height: 1.4;">Đội bóng đã thanh toán đủ toàn bộ chi phí các buổi trong tháng.</div>';
         }
 
         totalSlotsText.textContent = slotCount + ' buổi';
@@ -254,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function () {
         totalAmountText.textContent = new Intl.NumberFormat('vi-VN').format(totalAmount) + 'đ';
         payableAmountText.textContent = new Intl.NumberFormat('vi-VN').format(payableAmount) + 'đ';
 
-        // GÁN TRỰC TIẾP VÀO THẺ ẨN ĐỂ GỬI SANG CONTROLLER CHÍNH XÁC
         if(inputTotalAmount) inputTotalAmount.value = totalAmount;
         if(inputPayableAmount) inputPayableAmount.value = payableAmount;
     }
