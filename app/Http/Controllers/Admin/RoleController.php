@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Role;
 
 class RoleController extends Controller
@@ -11,7 +12,7 @@ class RoleController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!auth()->check() || auth()->user()->role !== 'admin') {
+            if (!Auth::check() || Auth::user()->role !== 'admin') {
                 return redirect('/');
             }
             return $next($request);

@@ -285,7 +285,7 @@
                     </div>
 
                     <div class="col-lg-2 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
+                        <button type="submit" class="btn btn-primary grow">
                             Lọc
                         </button>
                         <a
