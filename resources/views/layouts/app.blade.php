@@ -11,12 +11,19 @@
 
     <style>
         body {
+            padding-top: 60px;
             background: linear-gradient(180deg, #ebfdf2 0%, #f8fff5 100%);
             font-family: Inter, Arial, sans-serif;
             color: #0f172a;
         }
 
         .navbar-user {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 1030;
             background: rgba(8, 78, 31, 0.92);
             border-bottom: 1px solid rgba(255,255,255,0.10);
             box-shadow: 0 18px 45px rgba(4, 75, 35, .18);

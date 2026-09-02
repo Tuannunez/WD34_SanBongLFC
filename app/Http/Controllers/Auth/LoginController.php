@@ -78,7 +78,7 @@ class LoginController extends Controller
             ]);
         }
 
-        return Socialite::driver($provider)->stateless()->redirect();
+        return Socialite::driver($provider)->redirect();
     }
 
     public function handleProviderCallback(string $provider)
@@ -86,7 +86,7 @@ class LoginController extends Controller
         $this->ensureValidProvider($provider);
 
         try {
-            $socialUser = Socialite::driver($provider)->stateless()->user();
+            $socialUser = Socialite::driver($provider)->user();
             $socialId = trim((string) $socialUser->getId());
 
             if ($socialId === '') {
